@@ -1,0 +1,2111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>중2 과학 7단원 - 전류, 전압, 저항과 옴의 법칙</title>
+    <script src="./platform-config.js"></script>
+<script src="./lock-realtime-client.js"></script>
+
+    <!-- ================= [차시 및 단계 실시간 잠금 가드 스크립트] ================= -->
+    <script>
+      (function() {
+        const THIS_UNIT_KEY = "unit7";   // 7단원 전기와 자기
+        const THIS_LESSON_ID = "u7_l4";  // 4차시: 전류·전압·저항과 옴의 법칙
+        const LOCK_SCRIPT_URL = window.PLATFORM_CONFIG.LOCK_API || window.PLATFORM_CONFIG.PLATFORM_API;
+
+        function enforceLessonLock() {
+          document.documentElement.innerHTML = `
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>수업 잠김 안내</title>
+              <style>
+                body {
+                  background-color: #0b0e14; color: #e2e8f0;
+                  font-family: 'Pretendard', sans-serif;
+                  display: flex; flex-direction: column; align-items: center; justify-content: center;
+                  height: 100vh; margin: 0; text-align: center; padding: 20px;
+                }
+                .lock-card {
+                  background: #182238; border: 1px solid #334155; border-radius: 16px;
+                  padding: 30px 24px; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+                }
+                h2 { color: #f87171; margin-bottom: 10px; font-size: 1.3rem; }
+                p { color: #94a3b8; font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px; }
+                button {
+                  background: #0284c7; color: #fff; border: none; padding: 10px 20px;
+                  border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem;
+                }
+                button:hover { background: #0369a1; }
+              </style>
+            </head>
+            <body>
+              <div class="lock-card">
+                <h2>🔒 수업 준비 중 (차시 접근 제한)</h2>
+                <p>선생님에 의해 현재 차시 전체 학습이 잠겨 있습니다.<br>수업 시간에 다시 접속해주세요.</p>
+                <button onclick="location.href='index.html'">홈 포털로 이동하기</button>
+              </div>
+            </body>
+          `;
+        }
+
+        let lockCheckInFlight = null;
+
+        function enforceLockCheckFailure() {
+          document.documentElement.innerHTML = `
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>잠금 상태 확인 필요</title>
+              <style>
+                body {
+                  background-color: #0b0e14; color: #e2e8f0;
+                  font-family: 'Pretendard', sans-serif;
+                  display: flex; align-items: center; justify-content: center;
+                  min-height: 100vh; margin: 0; text-align: center; padding: 20px;
+                }
+                .lock-card {
+                  background: #182238; border: 1px solid #334155; border-radius: 16px;
+                  padding: 30px 24px; max-width: 430px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+                }
+                h2 { color: #fbbf24; margin-bottom: 10px; font-size: 1.25rem; }
+                p { color: #94a3b8; font-size: 0.95rem; line-height: 1.65; margin-bottom: 20px; }
+                button {
+                  background: #0284c7; color: #fff; border: none; padding: 10px 20px;
+                  border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem;
+                }
+                button:hover { background: #0369a1; }
+              </style>
+            </head>
+            <body>
+              <div class="lock-card">
+                <h2>⚠️ 수업 공개 상태를 확인할 수 없습니다</h2>
+                <p>서버와 잠금 상태를 확인하는 중 일시적인 오류가 발생했습니다.<br>
+                잠긴 수업이 우회되는 것을 방지하기 위해 페이지 접근을 잠시 제한합니다.</p>
+                <button onclick="location.reload()">다시 확인하기</button>
+              </div>
+            </body>
+          `;
+        }
+
+        async function fetchLockStateOnce() {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 4000);
+          try {
+            const res = await fetch(LOCK_SCRIPT_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body: JSON.stringify({ action: "get_locks" }),
+              cache: "no-store",
+              signal: controller.signal
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.json();
+          } finally {
+            clearTimeout(timer);
+          }
+        }
+
+        window.verifyLockStatus = function() {
+          if (typeof window.CLASSROOM_NETWORK_ALLOWED !== "undefined" &&
+              window.CLASSROOM_NETWORK_ALLOWED !== true) {
+            return Promise.resolve();
+          }
+
+          if (lockCheckInFlight) return lockCheckInFlight;
+
+          lockCheckInFlight = (async function() {
+            let data = null;
+            let lastError = null;
+
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              try {
+                data = await fetchLockStateOnce();
+                lastError = null;
+                break;
+              } catch (err) {
+                lastError = err;
+                if (attempt < 3) {
+                  await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+                }
+              }
+            }
+
+            if (lastError || !data || typeof data !== "object") {
+              console.warn("잠금 상태 확인 최종 실패:", lastError);
+              enforceLockCheckFailure();
+              return;
+            }
+
+            if (data[THIS_UNIT_KEY]) {
+              const unitLocked = data[THIS_UNIT_KEY].isLocked === true;
+              const lessonLocked =
+                data[THIS_UNIT_KEY].lessons &&
+                data[THIS_UNIT_KEY].lessons[THIS_LESSON_ID] === true;
+
+              if (unitLocked || lessonLocked) {
+                enforceLessonLock();
+                return;
+              }
+            }
+
+            if (window.handleStepLocksSync) {
+              window.handleStepLocksSync(data);
+            }
+          })().finally(() => {
+            lockCheckInFlight = null;
+          });
+
+          return lockCheckInFlight;
+        };
+
+        // 로컬 파일(file://)로 직접 열었을 때는 외부 네트워크 권한 팝업 반복 방지
+        const IS_LOCAL_FILE = (location.protocol === "file:");
+
+        if (!IS_LOCAL_FILE) {
+          // Initial lock check only once.
+          verifyLockStatus();
+
+          // Re-check only when Supabase Realtime announces a lock change.
+          const lockRealtimeClient = window.createLockRealtimeClient(function() {
+            return verifyLockStatus();
+          });
+
+          // Safety resync after tab/network recovery.
+          document.addEventListener("visibilitychange", function() {
+            if (document.visibilityState === "visible") {
+              lockRealtimeClient.reconnect();
+              verifyLockStatus();
+            }
+          });
+          window.addEventListener("focus", function() {
+            lockRealtimeClient.reconnect();
+            verifyLockStatus();
+          });
+          window.addEventListener("online", function() {
+            lockRealtimeClient.reconnect();
+            verifyLockStatus();
+          });
+        } else {
+          console.info("Local file mode: realtime lock check is skipped.");
+        }
+      })();
+    </script>
+    <!-- ============================================================= -->
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Pretendard', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+            background-color: #0b0e14;
+            color: #e2e8f0;
+            line-height: 1.7;
+            padding-bottom: 60px;
+        }
+
+        /* 교사용 관리자 상단 제어 바 */
+        .admin-step-bar {
+            display: none;
+            background: linear-gradient(135deg, #1e1b4b, #312e81);
+            border-bottom: 2px solid #818cf8;
+            padding: 12px 20px;
+            position: sticky; top: 0; z-index: 1000;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+        }
+        .admin-step-bar-inner {
+            max-width: 1050px; margin: 0 auto;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+        }
+        .admin-title {
+            font-size: 0.95rem; font-weight: 800; color: #c7d2fe; display: flex; align-items: center; gap: 8px;
+        }
+        .admin-btn-group {
+            display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+        }
+        .admin-toggle-chip {
+            padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 800;
+            cursor: pointer; border: 1px solid rgba(255,255,255,0.2); transition: all 0.2s ease;
+        }
+        .admin-toggle-chip.unlocked {
+            background: #059669; color: #fff; border-color: #10b981;
+        }
+        .admin-toggle-chip.locked {
+            background: #dc2626; color: #fff; border-color: #ef4444;
+        }
+        .admin-exit-btn {
+            background: #334155; color: #cbd5e1; border: 1px solid #475569;
+            padding: 6px 12px; border-radius: 8px; font-size: 0.82rem; font-weight: bold; cursor: pointer;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            padding: 25px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: static; top: 0; z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        .header-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            color: #0f172a; font-size: 0.85rem; font-weight: 800;
+            padding: 4px 12px; border-radius: 20px; margin-bottom: 8px;
+        }
+        h1 { font-size: 1.8rem; color: #f8fafc; margin-bottom: 6px; }
+        p.subtitle { color: #94a3b8; font-size: 0.95rem; }
+
+        .step-nav {
+            display: flex; justify-content: center; gap: 10px;
+            margin: 20px auto; max-width: 1050px; padding: 0 15px; flex-wrap: wrap;
+        }
+        .step-btn {
+            background: #1e293b; color: #94a3b8;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 18px; border-radius: 12px;
+            font-weight: 700; font-size: 0.9rem; cursor: pointer;
+            transition: all 0.3s ease; flex: 1; min-width: 200px; text-align: center;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .step-btn:hover:not(.is-locked) { background: #334155; color: #ffffff; }
+        .step-btn.active {
+            background: linear-gradient(135deg, #0284c7, #6366f1) !important;
+            color: #ffffff !important; border-color: transparent !important;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+        }
+
+        /* 잠긴 단계 버튼 스타일 */
+        .step-btn.is-locked {
+            background: #111827 !important;
+            color: #64748b !important;
+            border-color: #1f2937 !important;
+            cursor: not-allowed !important;
+            opacity: 0.75;
+        }
+        .lock-badge-icon {
+            font-size: 0.9rem;
+            color: #f87171;
+        }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 0 15px; }
+        .step-content {
+            display: none; background: rgba(22, 27, 38, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px; padding: 28px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.4s ease;
+        }
+        .step-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .section-title {
+            font-size: 1.35rem; color: #38bdf8; margin-bottom: 18px;
+            display: flex; align-items: center; gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px;
+        }
+
+        .textbook-section { background: #131b2e; border-radius: 12px; padding: 22px; margin-bottom: 20px; border: 1px solid #1e293b; }
+        .textbook-section h3 { color: #38bdf8; font-size: 1.15rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .textbook-section p { color: #cbd5e1; font-size: 0.96rem; margin-bottom: 12px; text-align: justify; }
+        .textbook-section ul { margin-left: 20px; color: #cbd5e1; font-size: 0.94rem; margin-bottom: 12px; }
+        .textbook-section li { margin-bottom: 6px; }
+
+        .concept-card-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px;
+        }
+        .concept-box { background: #182238; border: 1px solid #334155; border-radius: 12px; padding: 18px; }
+        .concept-box h4 { font-size: 1.05rem; color: #38bdf8; margin-bottom: 8px; }
+
+        .ohm-container {
+            display: flex; flex-direction: column; gap: 20px; align-items: center; margin: 20px 0;
+        }
+        .ohm-circle-wrap {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 15px; width: 100%; max-width: 320px;
+        }
+        .ohm-formula-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; width: 100%;
+        }
+        .formula-box-item {
+            background: #182238; border: 2px solid #38bdf8; border-radius: 12px; padding: 16px;
+            text-align: center; transition: transform 0.2s;
+        }
+        .formula-box-item.main {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border-color: #f59e0b; grid-column: 1 / -1;
+        }
+        .formula-title { font-size: 1rem; color: #94a3b8; font-weight: bold; margin-bottom: 6px; }
+        .formula-math { font-size: 1.5rem; color: #38bdf8; font-weight: bold; }
+        .formula-box-item.main .formula-math { color: #f59e0b; font-size: 1.8rem; }
+
+        .sim-box { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+        canvas { background-color: #0f172a; border-radius: 12px; border: 1px solid #334155; max-width: 100%; touch-action: none; }
+        
+        .sim-controls-vertical {
+            display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; width: 100%;
+            background: #131b2e; padding: 18px; border-radius: 12px;
+        }
+        .sim-controls-vertical .control-row {
+            display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 15px;
+        }
+        .sim-controls-vertical label { font-size: 0.95rem; color: #e2e8f0; display: flex; align-items: center; gap: 10px; flex: 1; }
+        .sim-controls-vertical input[type="range"] { cursor: pointer; flex: 1; max-width: 300px; }
+        
+        .sim-controls {
+            display: flex; gap: 15px; margin-bottom: 15px; width: 100%;
+            justify-content: center; align-items: center; flex-wrap: wrap; background: #131b2e; padding: 15px; border-radius: 12px;
+        }
+
+        .sim-btn {
+            background: linear-gradient(135deg, #0284c7, #6366f1); color: #fff; border: none;
+            padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        .sim-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .sim-btn.secondary { background: #334155; color: #e2e8f0; }
+        .sim-btn.secondary:hover { background: #475569; }
+
+        .info-panel {
+            display: flex; gap: 15px; font-size: 14px; background: #1e293b;
+            padding: 12px 20px; border-radius: 8px; border: 1px solid #334155;
+            width: 100%; justify-content: space-around; flex-wrap: wrap;
+        }
+        .badge { padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 13px; }
+        .badge-pos { background-color: #38bdf8; color: #0f172a; }
+        .badge-yellow { background-color: #f59e0b; color: #0f172a; }
+
+        .large-ammeter {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border: 2px solid #38bdf8; border-radius: 12px;
+            padding: 12px 25px; display: flex; align-items: center; gap: 15px;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+        }
+        .large-ammeter .label { font-weight: bold; color: #94a3b8; font-size: 0.9rem; }
+        .large-ammeter .value { font-size: 1.8rem; font-weight: 900; color: #38bdf8; font-family: monospace; }
+
+        /* 학생 정보 입력 및 제출 스타일 */
+        .student-info-box {
+            background: #182238; border: 1px solid #38bdf8; border-radius: 12px;
+            padding: 18px 20px; margin-bottom: 25px; display: flex; gap: 15px; flex-wrap: wrap; align-items: center;
+        }
+        .student-info-group { display: flex; align-items: center; gap: 8px; }
+        .student-info-group label { font-size: 0.9rem; color: #94a3b8; font-weight: bold; }
+        .student-info-group input {
+            background: #0f172a; border: 1px solid #334155; color: #fff;
+            padding: 7px 12px; border-radius: 6px; font-size: 0.95rem; outline: none;
+        }
+        .student-info-group input:focus { border-color: #38bdf8; }
+        .student-info-group input:disabled { background: #1e293b; color: #64748b; border-color: #334155; }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #059669, #10b981); color: #fff; border: none;
+            padding: 10px 20px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer;
+            margin-left: auto; transition: all 0.2s ease;
+        }
+        .submit-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+        .submit-btn:disabled { background: #475569 !important; color: #94a3b8 !important; cursor: not-allowed !important; transform: none !important; }
+
+        /* 퀴즈 스타일 */
+        .quiz-item { background: #1e293b; border-radius: 12px; padding: 22px; margin-bottom: 22px; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .quiz-q { font-weight: bold; font-size: 1.05rem; margin-bottom: 14px; color: #f8fafc; line-height: 1.5; }
+        .quiz-opt {
+            background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+            color: #cbd5e1; font-size: 0.94rem; margin-bottom: 8px;
+        }
+        .quiz-opt:hover { background: #334155; color: #fff; }
+        .quiz-opt.correct { background: #059669 !important; color: #fff !important; font-weight: bold; border-color: #10b981 !important; }
+        .quiz-opt.incorrect { background: #881337 !important; color: #fff !important; border-color: #f43f5e !important; }
+
+        .quiz-feedback-box {
+            margin-top: 14px; padding: 16px; border-radius: 10px; background: #0f172a;
+            display: none; border-left: 5px solid #38bdf8;
+        }
+        .quiz-feedback-box.is-correct { border-left-color: #10b981; background: rgba(6, 78, 59, 0.3); }
+        .quiz-feedback-box.is-incorrect { border-left-color: #f43f5e; background: rgba(136, 19, 55, 0.3); }
+        
+        .fb-header { font-size: 1.05rem; font-weight: bold; margin-bottom: 8px; }
+        .fb-header.correct { color: #34d399; }
+        .fb-header.incorrect { color: #f87171; }
+        
+        .fb-detail-card {
+            background: #131b2e; border: 1px solid #1e293b; border-radius: 8px;
+            padding: 14px; margin-top: 8px; font-size: 0.95rem; line-height: 1.6;
+        }
+        .fb-hint { color: #facc15; margin-top: 6px; }
+        .fb-expl { color: #e2e8f0; }
+
+        .goto-sim-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            margin-top: 12px; background: linear-gradient(135deg, #0284c7, #6366f1);
+            color: #fff; padding: 8px 14px; border-radius: 8px; font-size: 0.9rem;
+            font-weight: bold; cursor: pointer; text-decoration: none; border: none;
+            transition: all 0.2s ease;
+        }
+        .goto-sim-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        /* 플로팅 관리자 진입 버튼 */
+        .admin-float-btn {
+            position: fixed; bottom: 20px; right: 20px; z-index: 999;
+            background: #1e293b; color: #94a3b8; border: 1px solid #334155;
+            padding: 8px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: bold;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: all 0.2s;
+        }
+        .admin-float-btn:hover { color: #38bdf8; border-color: #38bdf8; background: #0f172a; }
+
+        /* 관리자 비밀번호 모달 */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 2000;
+            align-items: center; justify-content: center;
+        }
+        .modal-box {
+            background: #182238; border: 1px solid #334155; border-radius: 16px;
+            padding: 24px; width: 90%; max-width: 360px; box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+        .modal-box h3 { color: #f8fafc; font-size: 1.15rem; margin-bottom: 8px; }
+        .modal-box p { color: #94a3b8; font-size: 0.88rem; margin-bottom: 16px; }
+        .modal-box input {
+            width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155;
+            background: #0f172a; color: #fff; font-size: 1rem; outline: none; margin-bottom: 16px;
+        }
+        .modal-btn-group { display: flex; gap: 8px; }
+        .modal-btn-group button {
+            flex: 1; padding: 10px 0; border-radius: 8px; font-weight: bold; font-size: 0.9rem; cursor: pointer; border: none;
+        }
+        .modal-confirm { background: #0284c7; color: #fff; }
+        .modal-cancel { background: #334155; color: #cbd5e1; }
+
+        /* 상단 공통 로그인 영역 */
+        .header-login-area {
+            margin-top: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .header-login-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid #334155;
+            color: #94a3b8;
+            font-size: 0.84rem;
+            font-weight: 700;
+        }
+        .header-login-btn,
+        .header-logout-btn {
+            border: none;
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-size: 0.86rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .header-login-btn {
+            background: linear-gradient(135deg, #0284c7, #6366f1);
+            color: #fff;
+        }
+        .header-login-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .header-logout-btn {
+            display: none;
+            background: #334155;
+            color: #cbd5e1;
+            border: 1px solid #475569;
+        }
+        .header-logout-btn:hover { background: #475569; color: #fff; }
+
+        footer {
+            margin-top: 50px;
+            text-align: center;
+            color: #64748b;
+            font-size: 0.88rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- [교사용 상단 원터치 잠금 통제 바] -->
+    <div id="adminStepBar" class="admin-step-bar">
+        <div class="admin-step-bar-inner">
+            <div class="admin-title">
+                <span>🛠️ <b>수업 단계 잠금 제어기</b></span>
+                <span id="syncStatusTag" style="font-size:0.78rem; background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:12px; color:#a5b4fc;">실시간 동기화 켬</span>
+            </div>
+            <div class="admin-btn-group">
+                <button class="admin-toggle-chip unlocked" id="admBtn1" onclick="toggleStepLock(1)">1단계: 🔓공개</button>
+                <button class="admin-toggle-chip locked" id="admBtn2" onclick="toggleStepLock(2)">2단계: 🔒잠김</button>
+                <button class="admin-toggle-chip locked" id="admBtn3" onclick="toggleStepLock(3)">3단계: 🔒잠김</button>
+                <button class="admin-toggle-chip locked" id="admBtn4" onclick="toggleStepLock(4)">4단계: 🔒잠김</button>
+                <button class="admin-exit-btn" onclick="exitAdminMode()">관리자 모드 닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <header>
+        <span class="header-tag">중학교 2학년 과학 - 7. 전기와 자기</span>
+        <h1>⚡ 전류, 전압, 저항과 옴의 법칙</h1>
+        <p class="subtitle">도선의 변화에 따른 저항 탐구 및 인터랙티브 옴의 법칙 탐구</p>
+        <div class="header-login-area">
+            <span id="headerLoginStatus" class="header-login-status">👤 미로그인</span>
+            <button id="headerLoginBtn" class="header-login-btn" onclick="openPageLoginModal()">🔑 로그인</button>
+            <button id="headerLogoutBtn" class="header-logout-btn" onclick="logoutPageUser()">로그아웃</button>
+        </div>
+    </header>
+
+    <div class="step-nav">
+        <button class="step-btn active" id="tabBtn1" onclick="trySwitchStep(1)">
+            <span>1단계: 교과서 개념 상세 학습</span>
+            <span class="lock-badge-icon" id="tabLockIcon1"></span>
+        </button>
+        <button class="step-btn is-locked" id="tabBtn2" onclick="trySwitchStep(2)">
+            <span>2단계: 도선 굵기·길이 & 저항 탐구</span>
+            <span class="lock-badge-icon" id="tabLockIcon2">🔒</span>
+        </button>
+        <button class="step-btn is-locked" id="tabBtn3" onclick="trySwitchStep(3)">
+            <span>3단계: 옴의 법칙 회로 & 그래프 탐구</span>
+            <span class="lock-badge-icon" id="tabLockIcon3">🔒</span>
+        </button>
+        <button class="step-btn is-locked" id="tabBtn4" onclick="trySwitchStep(4)">
+            <span>4단계: 핵심 형성평가 & 결과 제출</span>
+            <span class="lock-badge-icon" id="tabLockIcon4">🔒</span>
+        </button>
+    </div>
+
+    <div class="container">
+
+        <div id="step1" class="step-content active">
+            <h2 class="section-title">📖 1단계. 전류, 전압, 저항과 옴의 법칙 (상세 개념)</h2>
+            
+            <div class="textbook-section">
+                <h3>1. 전류(Current)와 전압(Voltage)의 관계</h3>
+                <p>
+                    전기 회로에 전류가 흐르기 위해서는 전하를 이동시키는 원동력이 필요합니다. 이처럼 회로에 전류를 흐르게 하는 능력을 <b>전압(Voltage)</b>이라고 하며, 단위는 <b>볼트(V)</b>를 사용합니다. 
+                    전원이 제공하는 전압이 높을수록 도선 내 내부 전하들이 받는 힘이 커지므로, 단위 시간 동안 도선의 단면을 통과하는 전하의 양인 <b>전류(Current, 단위: A 또는 mA)</b>의 세기가 더욱 세집니다.
+                </p>
+                <ul>
+                    <li><b>전류의 세기(I):</b> 1초 동안 도선의 단면을 통과하는 전하의 양입니다. 1 A = 1000 mA입니다.</li>
+                    <li><b>전압(V):</b> 전기 회로에서 전류를 흐르게 하는 능력(압력)입니다. 건전지를 직렬로 연결할수록 전압이 높아집니다.</li>
+                </ul>
+            </div>
+
+            <div class="textbook-section">
+                <h3>2. 전기 저항(Electrical Resistance)의 본질</h3>
+                <p>
+                    전기 회로에 전압을 걸어주면 전자들이 이동하기 시작합니다. 하지만 전자들은 빈 공간을 자유롭게 나아가는 것이 아니라, 도선을 구성하는 <b>원자(또는 이온)</b>들과 끊임없이 충돌하게 됩니다.
+                    이와 같이 <b>전하의 흐름을 방해하는 성질</b>을 <b>전기 저항(Resistance)</b>이라고 하며, 기호로는 <b>R</b>, 단위는 <b>옴(Ω)</b>을 사용합니다. 1 Ω은 1 V의 전압을 걸었을 때 1 A의 전류가 흐르는 저항의 크기입니다.
+                </p>
+                <div class="concept-card-grid">
+                    <div class="concept-box">
+                        <h4>📏 도선의 길이에 따른 저항</h4>
+                        <p>도선의 재질과 굵기가 같을 때, 도선의 길이가 길수록 전자가 원자와 충돌할 기회가 늘어납니다. 따라서 <b>저항은 도선의 길이에 비례</b>하여 증가합니다.</p>
+                    </div>
+                    <div class="concept-box">
+                        <h4>📐 도선의 단면적(굵기)에 따른 저항</h4>
+                        <p>도선의 재질과 길이가 같을 때, 도선이 굵을수록(단면적이 넓을수록) 전자가 통과할 수 있는 공간이 넓어져 충돌 확률이 낮아집니다. 따라서 <b>저항은 단면적에 반비례</b>합니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="textbook-section">
+                <h3>3. 물질의 종류에 따른 전기적 성질 (도체 · 부도체 · 반도체)</h3>
+                <p>
+                    우리 주변의 물질들은 물질마다 내부 원자 구조와 자유 전자의 유무가 다르기 때문에 고유한 저항값을 가지고 있습니다. 전류가 흐르는 정도에 따라 물질을 다음과 같이 분류할 수 있습니다.
+                </p>
+                <div class="concept-card-grid">
+                    <div class="concept-box">
+                        <h4>⚡ 도체 (Conductor)</h4>
+                        <p>전기 저항이 매우 작아 <b>전류가 잘 흐르는 물질</b>입니다. 내부 자유 전자가 쉽게 이동할 수 있으며, <b>금, 은, 구리, 철</b> 등이 해당합니다. 전선, 집게 전선 등의 내부 전도체로 활용됩니다.</p>
+                    </div>
+                    <div class="concept-box">
+                        <h4>🛡️ 부도체 / 절연체 (Insulator)</h4>
+                        <p>전기 저항이 매우 커서 <b>전류가 거의 흐르지 않는 물질</b>입니다. <b>유리, 플라스틱, 고무, 종이</b> 등이 해당하며, 감전을 막기 위한 <b>절연 장갑, 전선 피복, 스위치 외하우징</b> 등에 활용됩니다.</p>
+                    </div>
+                    <div class="concept-box">
+                        <h4>💎 반도체 (Semiconductor)</h4>
+                        <p>순수한 상태에서는 전류가 거의 흐르지 않는 부도체와 비슷하지만, <b>열, 빛, 불순물 혼합 등 특정 조건이 되면 도체처럼 전류가 흐르는 물질</b>입니다. 대표적 재료인 <b>규소(Silicon)</b>는 컴퓨터, 스마트폰의 IC 칩 및 전자 부품 제작에 광범위하게 쓰입니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="textbook-section">
+                <h3>4. 옴의 법칙 (Ohm's Law)</h3>
+                <p>
+                    독일의 물리학자 옴(Ohm)은 실험을 통해 전기 회로에 흐르는 전류의 세기는 걸어준 <b>전압에 비례</b>하고, 회로의 <b>전기 저항에 반비례</b>한다는 사실을 밝혀냈습니다. 이를 <b>옴의 법칙</b>이라고 합니다.
+                </p>
+                
+                <div class="ohm-container">
+                    <div class="ohm-circle-wrap">
+                        <div style="font-size:0.88rem; color:#38bdf8; font-weight:bold; margin-bottom:8px;">💡 쉽게 암기하는 옴의 법칙 원형 마법진</div>
+                        <svg width="180" height="180" viewBox="0 0 200 200">
+                            <circle cx="100" cy="100" r="90" fill="#1e293b" stroke="#38bdf8" stroke-width="4"/>
+                            <line x1="10" y1="100" x2="190" y2="100" stroke="#38bdf8" stroke-width="4"/>
+                            <line x1="100" y1="100" x2="100" y2="190" stroke="#38bdf8" stroke-width="4"/>
+                            <text x="100" y="65" fill="#f59e0b" font-size="38" font-weight="bold" text-anchor="middle">V</text>
+                            <text x="55" y="155" fill="#38bdf8" font-size="32" font-weight="bold" text-anchor="middle">I</text>
+                            <text x="145" y="155" fill="#38bdf8" font-size="32" font-weight="bold" text-anchor="middle">R</text>
+                        </svg>
+                        <p style="font-size:0.8rem; color:#94a3b8; margin-top:8px; text-align:center;">
+                            원 위쪽은 전압(V), 아래쪽은 전류(I)와 저항(R)<br>
+                            구하고자 하는 값에 손가락을 대면 공식이 보입니다!
+                        </p>
+                    </div>
+
+                    <div class="ohm-formula-grid">
+                        <div class="formula-box-item main">
+                            <div class="formula-title">⭐ 핵심 기본 공식 (전압 구하기)</div>
+                            <div class="formula-math">V = I × R</div>
+                            <div style="font-size:0.85rem; color:#cbd5e1; margin-top:4px;">전압 = 전류 × 저항</div>
+                        </div>
+                        <div class="formula-box-item">
+                            <div class="formula-title">전류 구하기</div>
+                            <div class="formula-math">I = V / R</div>
+                            <div style="font-size:0.82rem; color:#94a3b8; margin-top:4px;">전류 = 전압 ÷ 저항</div>
+                        </div>
+                        <div class="formula-box-item">
+                            <div class="formula-title">저항 구하기</div>
+                            <div class="formula-math">R = V / I</div>
+                            <div style="font-size:0.82rem; color:#94a3b8; margin-top:4px;">저항 = 전압 ÷ 전류</div>
+                        </div>
+                    </div>
+                </div>
+
+                <p>
+                    옴의 법칙에 따라 전압이 일정할 때 저항이 2배, 3배 커지면 전류는 1/2, 1/3로 줄어들고, 저항이 일정할 때 전압이 2배, 3배 커지면 전류도 2배, 3배로 커지게 됩니다.
+                </p>
+            </div>
+        </div>
+
+        <div id="step2" class="step-content">
+            <h2 class="section-title">🧪 2단계. 도선 굵기·길이 변화에 따른 저항과 전류 탐구</h2>
+            <p style="margin-bottom: 15px; color: #cbd5e1; font-size: 0.94rem;">
+                아래 슬라이더를 조절하여 **도선의 길이**와 **굵기(단면적)**, 그리고 **전압**을 직접 바꿔보세요.<br>
+                도선 내부를 통과하는 전자들의 흐름과 저항 및 전류 변화를 관찰할 수 있습니다.
+            </p>
+
+            <div class="sim-controls-vertical">
+                <div class="control-row">
+                    <label>📏 <b>도선 길이 (L):</b>
+                        <input type="range" id="step2Length" min="1" max="4" step="1" value="2" oninput="updateStep2Sim()">
+                        <span id="lenVal" style="color:#38bdf8; font-weight:bold; width: 45px;">x2</span>
+                    </label>
+                </div>
+                <div class="control-row">
+                    <label>📐 <b>도선 굵기 (S):</b>
+                        <input type="range" id="step2Thick" min="1" max="4" step="1" value="2" oninput="updateStep2Sim()">
+                        <span id="thickVal" style="color:#38bdf8; font-weight:bold; width: 45px;">x2</span>
+                    </label>
+                </div>
+                <div class="control-row">
+                    <label>🔋 <b>전압 설정:</b>
+                        <input type="range" id="step2Voltage" min="1.5" max="9.0" step="1.5" value="3.0" oninput="updateStep2Sim()">
+                        <span id="voltVal2" style="color:#38bdf8; font-weight:bold; width: 45px;">3.0 V</span>
+                    </label>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 5px;">
+                    <button class="sim-btn secondary" id="graphToggleBtnVI" onclick="toggleGraphVI()">👁️ 전압-전류 그래프 보이기</button>
+                    <button class="sim-btn secondary" id="graphToggleBtnRI" onclick="toggleGraphRI()">👁️ 저항-전류 그래프 보이기</button>
+                </div>
+            </div>
+
+            <div class="sim-box">
+                <canvas id="simCanvas2" width="850" height="220"></canvas>
+
+                <div class="info-panel">
+                    <div>계산된 전기 저항 (R): <span id="s2ResistLabel" class="badge badge-yellow">10.0 Ω</span></div>
+                    <div>흐르는 전류의 세기 (I): <span id="s2CurrentLabel" class="badge badge-pos">300 mA (0.30 A)</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="step3" class="step-content">
+            <h2 class="section-title">📊 3단계. 옴의 법칙 회로 & 그래프 탐구</h2>
+            <p style="margin-bottom: 12px; color: #cbd5e1; font-size: 0.93rem;">
+                • **배터리 드래그** 또는 슬라이더로 전압을 조절하세요.<br>
+                • 저항 값(5, 10, 15, 20 Ω)을 지정하여 저항의 크기에 따라 전자의 이동 속도가 어떻게 달라지는지 관찰하세요.
+            </p>
+
+            <div class="sim-controls">
+                <div style="display:flex; align-items:center; gap:15px; flex-wrap:wrap; width:100%;">
+                    <span style="font-weight:bold;">⚙️ 저항값 설정 (Ω):</span>
+                    <label><input type="radio" name="resRadio" value="5" onchange="updateStep3Data()"> 5 Ω</label>
+                    <label><input type="radio" name="resRadio" value="10" checked onchange="updateStep3Data()"> 10 Ω</label>
+                    <label><input type="radio" name="resRadio" value="15" onchange="updateStep3Data()"> 15 Ω</label>
+                    <label><input type="radio" name="resRadio" value="20" onchange="updateStep3Data()"> 20 Ω</label>
+                </div>
+                
+                <div style="display:flex; align-items:center; justify-content:space-between; width:100%; margin-top:10px;">
+                    <label>🔋 <b>배터리 전압 조절:</b>
+                        <input type="range" id="voltageSlider3" min="0" max="9" step="1.5" value="3.0" oninput="updateStep3Data()">
+                        <span id="sliderVal3" style="color:#38bdf8; font-weight:bold;">3.0 V</span>
+                    </label>
+                    
+                    <button class="sim-btn secondary" id="graphToggleBtn3" onclick="toggleGraph3()">👁️ 그래프 보이기</button>
+                </div>
+
+                <div id="allResGraphOption" style="display:none; width:100%; margin-top:8px; text-align:right;">
+                    <label style="cursor:pointer; font-size:0.88rem; color:#38bdf8;">
+                        <input type="checkbox" id="showAllResCheck" onchange="updateStep3Data()"> 📈 모든 저항값 그래프 함께 비교하기
+                    </label>
+                </div>
+            </div>
+
+            <div class="sim-box">
+                <canvas id="simCanvas3" width="850" height="380"></canvas>
+
+                <div style="display:flex; gap:20px; align-items:center; width:100%; justify-content:center; flex-wrap:wrap;">
+                    <div class="large-ammeter">
+                        <span class="label">⏱️ 실시간 측정 전류계 (Ammeter)</span>
+                        <span class="value" id="largeAmpVal">0.30 A</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="step4" class="step-content">
+            <h2 class="section-title">📝 4단계. 핵심 형성평가 & 결과 제출</h2>
+            <p style="margin-bottom: 15px; color: #cbd5e1;">
+                학번과 이름을 입력하고 4문제를 모두 풀어보세요. 오답 시 <b>선택한 선지가 왜 오답인지에 대한 이유와 맞춤 힌트, 바로가기</b>가 제공됩니다. (제출은 1회만 가능하며, 제출 후 자유롭게 다시 눌러보며 복습할 수 있습니다)
+            </p>
+
+            <div class="student-info-box">
+                <div class="student-info-group">
+                    <label for="studentIdInput">학번: </label>
+                    <input type="text" id="studentIdInput" placeholder="예: 20301" style="width: 110px;">
+                </div>
+                <div class="student-info-group">
+                    <label for="studentNameInput">이름: </label>
+                    <input type="text" id="studentNameInput" placeholder="예: 홍길동" style="width: 110px;">
+                </div>
+                <button class="submit-btn" id="quizSubmitBtn" onclick="submitQuizResults()">📤 문제풀이 결과 교사에게 제출</button>
+            </div>
+
+            <div class="quiz-item" id="quiz-block-1">
+                <div class="quiz-q">Q1. 전기 저항 및 도선의 특징에 대한 설명으로 옳은 것은?</div>
+                <div class="quiz-opt" onclick="handleQuiz(1, this, false, 1)">① 도선의 길이가 길어질수록 전기 저항은 작아진다.</div>
+                <div class="quiz-opt" onclick="handleQuiz(1, this, true, 2)">② 도선의 굵기(단면적)가 굵어질수록 전기 저항은 작아진다.</div>
+                <div class="quiz-opt" onclick="handleQuiz(1, this, false, 3)">③ 전기 저항은 전하의 흐름을 돕는 성질이다.</div>
+                <div class="quiz-opt" onclick="handleQuiz(1, this, false, 4)">④ 전지의 전압이 0V가 되면 도선의 전기 저항도 0Ω이 된다.</div>
+                
+                <div id="fb-1" class="quiz-feedback-box">
+                    <div id="fb-title-1" class="fb-header"></div>
+                    <div class="fb-detail-card">
+                        <div id="fb-content-1"></div>
+                        <button class="goto-sim-btn" onclick="trySwitchStep(2)">🧪 2단계 도선 굵기·길이 시뮬레이션 복습 ➔</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quiz-item" id="quiz-block-2">
+                <div class="quiz-q">Q2. [계산] 20 Ω의 전기 저항이 연결된 회로에 6 V의 전압을 걸어주었을 때, 회로에 흐르는 전류의 세기는 얼마인가요?</div>
+                <div class="quiz-opt" onclick="handleQuiz(2, this, false, 1)">① 0.15 A</div>
+                <div class="quiz-opt" onclick="handleQuiz(2, this, true, 2)">② 0.30 A</div>
+                <div class="quiz-opt" onclick="handleQuiz(2, this, false, 3)">③ 1.20 A</div>
+                <div class="quiz-opt" onclick="handleQuiz(2, this, false, 4)">④ 3.33 A</div>
+
+                <div id="fb-2" class="quiz-feedback-box">
+                    <div id="fb-title-2" class="fb-header"></div>
+                    <div class="fb-detail-card">
+                        <div id="fb-content-2"></div>
+                        <button class="goto-sim-btn" onclick="trySwitchStep(3)">🧪 3단계 옴의 법칙 회로 확인 ➔</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quiz-item" id="quiz-block-3">
+                <div class="quiz-q">Q3. [계산] 어떤 전기 회로에 1.5 A의 전류가 흐르고 있고, 연결된 저항이 4 Ω일 때 전원이 공급하는 전압은 얼마인가요?</div>
+                <div class="quiz-opt" onclick="handleQuiz(3, this, false, 1)">① 2.67 V</div>
+                <div class="quiz-opt" onclick="handleQuiz(3, this, false, 2)">② 4.0 V</div>
+                <div class="quiz-opt" onclick="handleQuiz(3, this, true, 3)">③ 6.0 V</div>
+                <div class="quiz-opt" onclick="handleQuiz(3, this, false, 4)">④ 12.0 V</div>
+
+                <div id="fb-3" class="quiz-feedback-box">
+                    <div id="fb-title-3" class="fb-header"></div>
+                    <div class="fb-detail-card">
+                        <div id="fb-content-3"></div>
+                        <button class="goto-sim-btn" onclick="trySwitchStep(3)">🧪 3단계 옴의 법칙 탐구 바로가기 ➔</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quiz-item" id="quiz-block-4">
+                <div class="quiz-q">Q4. [그래프 분석] 전압을 3 V에서 6 V로 2배 올렸더니, 회로에 흐르는 전류가 0.2 A에서 0.4 A로 늘어났습니다. 이 회로에 연결된 저항의 크기는 얼마인가요?</div>
+                <div class="quiz-opt" onclick="handleQuiz(4, this, false, 1)">① 5 Ω</div>
+                <div class="quiz-opt" onclick="handleQuiz(4, this, false, 2)">② 10 Ω</div>
+                <div class="quiz-opt" onclick="handleQuiz(4, this, true, 3)">③ 15 Ω</div>
+                <div class="quiz-opt" onclick="handleQuiz(4, this, false, 4)">④ 30 Ω</div>
+
+                <div id="fb-4" class="quiz-feedback-box">
+                    <div id="fb-title-4" class="fb-header"></div>
+                    <div class="fb-detail-card">
+                        <div id="fb-content-4"></div>
+                        <button class="goto-sim-btn" onclick="trySwitchStep(3)">📊 3단계 전압-전류 그래프 확인 ➔</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- 우측 하단 관리자 로그인 버튼 -->
+    <button class="admin-float-btn" onclick="openAdminModal()">⚙️ 교사용 단계 잠금 관리</button>
+
+    <!-- 관리자 인증 모달 -->
+    <div id="adminModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>🔑 관리자 비밀번호 인증</h3>
+            <p>교사용 관리자 비밀번호를 입력하면 수업 단계별 실시간 잠금 제어 바가 활성화됩니다.</p>
+            <input type="password" id="adminPwInput" placeholder="비밀번호 입력" autocomplete="off">
+            <div class="modal-btn-group">
+                <button class="modal-cancel" onclick="closeAdminModal()">취소</button>
+                <button class="modal-confirm" id="adminModalConfirmBtn" onclick="submitAdminAuth()">인증하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 페이지 공통 학생/교사 로그인 모달 -->
+    <div id="pageLoginModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>🔑 로그인</h3>
+            <p>학번 또는 관리자 ID와 비밀번호를 입력해 주세요.</p>
+            <input type="text" id="pageLoginId" maxlength="10" placeholder="학번(4자리) 또는 ID(admin)" autocomplete="username">
+            <input type="password" id="pageLoginPw" placeholder="비밀번호 입력" autocomplete="current-password">
+            <div class="modal-btn-group">
+                <button class="modal-cancel" onclick="closePageLoginModal()">닫기</button>
+                <button class="modal-confirm" id="btnSubmitPageLogin" onclick="submitPageLogin()">로그인</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 중2 과학 전류, 전압, 저항과 옴의 법칙 탐구 프로그램</p>
+    </footer>
+
+    <script>
+        // ==========================================
+        // ★ 실시간 단계별 잠금 상태 관리 (POST 방식)
+        // ==========================================
+        const GOOGLE_SCRIPT_URL = window.PLATFORM_CONFIG.PLATFORM_API;
+        const SUBMISSION_API_URL = window.PLATFORM_CONFIG.SUBMISSION_API;
+        const ACADEMIC_YEAR_API_URL = window.PLATFORM_CONFIG.ACADEMIC_YEAR_API;
+        let CURRENT_SCHOOL_YEAR = 2026; // 서버 확인 실패 시 fallback
+        const THIS_LESSON_KEY = "u7_l4";
+
+        // ==========================================
+        // ★ 학생/교사 계정 세션 확인 및 4단계 자동 입력·인-페이지 로그인
+        // ==========================================
+        let currentSchoolYearLoadPromise = null;
+
+        async function ensureCurrentSchoolYear() {
+            if (currentSchoolYearLoadPromise) return currentSchoolYearLoadPromise;
+            currentSchoolYearLoadPromise = (async () => {
+                try {
+                    const res = await fetch(ACADEMIC_YEAR_API_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "text/plain;charset=utf-8" },
+                        body: JSON.stringify({ action: "get_public_config" }),
+                        cache: "no-store"
+                    });
+                    const data = await res.json();
+                    const year = Number(data && data.currentSchoolYear);
+                    if (res.ok && data && data.success === true && Number.isInteger(year) && year >= 2000 && year <= 2100) {
+                        CURRENT_SCHOOL_YEAR = year;
+                    }
+                } catch (err) {
+                    console.warn("현재 학년도 확인 실패 - fallback 사용:", err);
+                }
+                return CURRENT_SCHOOL_YEAR;
+            })();
+            return currentSchoolYearLoadPromise;
+        }
+
+        async function sha256(str) {
+            const buffer = new TextEncoder().encode(str);
+            const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+        }
+
+        let clientIpAddress = "알 수 없음";
+
+        // 로컬 파일로 직접 열 때는 외부 IP 조회를 하지 않아 네트워크 권한 팝업을 방지
+        if (location.protocol !== "file:") {
+            fetch("https://api.ipify.org?format=json")
+                .then(res => res.json())
+                .then(data => { clientIpAddress = data.ip; })
+                .catch(() => { clientIpAddress = "내부망/미확인"; });
+        } else {
+            clientIpAddress = "로컬파일/미확인";
+        }
+
+        function checkAndApplyStudentAuth() {
+            const rawUser = sessionStorage.getItem("current_student");
+            const sIdInput = document.getElementById("studentIdInput");
+            const sNameInput = document.getElementById("studentNameInput");
+            const headerLoginBtn = document.getElementById("headerLoginBtn");
+            const headerLogoutBtn = document.getElementById("headerLogoutBtn");
+            const headerLoginStatus = document.getElementById("headerLoginStatus");
+
+            if (rawUser) {
+                try {
+                    const user = JSON.parse(rawUser);
+
+                    if (sIdInput) {
+                        sIdInput.value = user.studentId || "";
+                        sIdInput.readOnly = true;
+                        sIdInput.style.backgroundColor = "#1e293b";
+                        sIdInput.style.color = "#38bdf8";
+                        sIdInput.style.fontWeight = "bold";
+                        sIdInput.style.cursor = "not-allowed";
+                    }
+
+                    if (sNameInput) {
+                        sNameInput.value = user.name || "";
+                        sNameInput.readOnly = true;
+                        sNameInput.style.backgroundColor = "#1e293b";
+                        sNameInput.style.color = "#38bdf8";
+                        sNameInput.style.fontWeight = "bold";
+                        sNameInput.style.cursor = "not-allowed";
+                    }
+
+                    if (headerLoginStatus) {
+                        const displayName = user.name || user.studentId || "사용자";
+                        headerLoginStatus.textContent = `✅ ${displayName} 로그인 중`;
+                        headerLoginStatus.style.color = "#86efac";
+                        headerLoginStatus.style.borderColor = "#166534";
+                    }
+                    if (headerLoginBtn) headerLoginBtn.style.display = "none";
+                    if (headerLogoutBtn) headerLogoutBtn.style.display = "inline-block";
+
+                    // 관리자 공통 로그인 세션이 있으면 별도 비밀번호 입력 없이 관리자 모드를 복원합니다.
+                    if (user.isAdmin === true) {
+                        activateAdminModeFromSession(false);
+                    }
+                    return;
+                } catch (error) {
+                    console.warn("current_student 정보를 읽는 중 오류 발생:", error);
+                    sessionStorage.removeItem("current_student");
+                }
+            }
+
+            // 미로그인 사용자는 4단계에서 학번과 이름을 직접 입력하고 그대로 제출할 수 있음
+            if (sIdInput) {
+                sIdInput.readOnly = false;
+                sIdInput.placeholder = "학번 직접 입력";
+                sIdInput.style.backgroundColor = "";
+                sIdInput.style.color = "";
+                sIdInput.style.fontWeight = "";
+                sIdInput.style.cursor = "text";
+            }
+
+            if (sNameInput) {
+                sNameInput.readOnly = false;
+                sNameInput.placeholder = "이름 직접 입력";
+                sNameInput.style.backgroundColor = "";
+                sNameInput.style.color = "";
+                sNameInput.style.fontWeight = "";
+                sNameInput.style.cursor = "text";
+            }
+
+            if (headerLoginStatus) {
+                headerLoginStatus.textContent = "👤 미로그인";
+                headerLoginStatus.style.color = "#94a3b8";
+                headerLoginStatus.style.borderColor = "#334155";
+            }
+            if (headerLoginBtn) headerLoginBtn.style.display = "inline-block";
+            if (headerLogoutBtn) headerLogoutBtn.style.display = "none";
+        }
+
+        function logoutPageUser() {
+            sessionStorage.removeItem("current_student");
+            sessionStorage.removeItem("current_admin_key");
+            isAdminActive = false;
+            cachedAdminKey = "";
+            const adminBar = document.getElementById('adminStepBar');
+            if (adminBar) adminBar.style.display = 'none';
+            closePageLoginModal();
+            checkAndApplyStudentAuth();
+            updateStepLockUI();
+            alert("로그아웃되었습니다.");
+        }
+
+        function openPageLoginModal() {
+            const modal = document.getElementById("pageLoginModal");
+            const idInput = document.getElementById("pageLoginId");
+            const pwInput = document.getElementById("pageLoginPw");
+            if (!modal) return;
+
+            if (idInput) idInput.value = "";
+            if (pwInput) pwInput.value = "";
+            modal.style.display = "flex";
+            setTimeout(() => { if (idInput) idInput.focus(); }, 50);
+        }
+
+        function closePageLoginModal() {
+            const modal = document.getElementById("pageLoginModal");
+            if (modal) modal.style.display = "none";
+        }
+
+        async function submitPageLogin() {
+            const idElement = document.getElementById("pageLoginId");
+            const pwElement = document.getElementById("pageLoginPw");
+            const btn = document.getElementById("btnSubmitPageLogin");
+
+            if (!idElement || !pwElement || !btn) {
+                alert("로그인 입력 요소를 찾을 수 없습니다.");
+                return;
+            }
+
+            const idInput = idElement.value.trim();
+            const pwInput = pwElement.value.trim();
+
+            if (!idInput) {
+                alert("학번(4자리) 또는 ID(admin)를 입력해주세요.");
+                return;
+            }
+            if (!pwInput) {
+                alert("비밀번호를 입력해주세요.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "로그인 중...";
+
+            try {
+                await ensureCurrentSchoolYear();
+                const pwHash = await sha256(pwInput);
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({
+                        action: "student_login",
+                        studentId: idInput,
+                        schoolYear: CURRENT_SCHOOL_YEAR,
+                        passwordHash: pwHash,
+                        ip: clientIpAddress,
+                        userAgent: navigator.userAgent
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const isAdminUser = data.isAdmin === true;
+
+                    sessionStorage.setItem("current_student", JSON.stringify({
+                        studentId: data.studentId,
+                        name: data.name,
+                        isAdmin: isAdminUser,
+                        studentSessionToken: data.studentSessionToken || "",
+                        userId: data.userId || "",
+                        schoolYear: data.schoolYear || "",
+                        accountType: data.accountType || (isAdminUser ? "admin" : "student"),
+                        isManager: data.isManager === true,
+                        permissions: Array.isArray(data.permissions) ? data.permissions : []
+                    }));
+
+                    // 관리자 계정으로 공통 로그인에 성공한 경우에만 현재 탭 세션에 관리자 키를 보관합니다.
+                    // localStorage가 아니라 sessionStorage를 사용하므로 탭/창을 닫으면 함께 사라집니다.
+                    if (isAdminUser) {
+                        sessionStorage.setItem("current_admin_key", data.adminSessionToken || "");
+                    } else {
+                        sessionStorage.removeItem("current_admin_key");
+                    }
+
+                    alert(`👋 반갑습니다, ${data.name} 님!`);
+                    closePageLoginModal();
+                    checkAndApplyStudentAuth();
+                } else {
+                    alert("❌ " + (data.message || "로그인에 실패했습니다."));
+                }
+            } catch (err) {
+                console.error("로그인 오류:", err);
+                alert("통신 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "로그인";
+            }
+        }
+
+        let currentActiveStep = 1;
+        let isAdminActive = false;
+        let cachedAdminKey = "";
+        let fullCloudLocks = {};
+
+        // 기본 잠금 상태: 1단계만 공개(false), 2·3·4단계 잠김(true)
+        let stepLocks = {
+            1: false,
+            2: true,
+            3: true,
+            4: true
+        };
+
+        // 서버에서 받아온 잠금 상태 동기화
+        window.handleStepLocksSync = function(cloudData) {
+            fullCloudLocks = cloudData || {};
+            if (cloudData.step_locks && cloudData.step_locks[THIS_LESSON_KEY]) {
+                const cloudSteps = cloudData.step_locks[THIS_LESSON_KEY];
+                for (let i = 1; i <= 4; i++) {
+                    if (cloudSteps[i] !== undefined) {
+                        stepLocks[i] = cloudSteps[i] === true;
+                    }
+                }
+            }
+            updateStepLockUI();
+
+            // 만약 현재 학생이 보고 있는 단계가 선생님에 의해 갑자기 잠겼다면 1단계로 강제 복귀
+            if (!isAdminActive && stepLocks[currentActiveStep] === true) {
+                alert(`📢 선생님이 ${currentActiveStep}단계를 잠갔습니다. 1단계로 자동 이동합니다.`);
+                switchStep(1);
+            }
+        };
+
+        // UI에 자물쇠 및 버튼 활성/비활성 반영
+        function updateStepLockUI() {
+            for (let i = 1; i <= 4; i++) {
+                const isLocked = stepLocks[i];
+                const tabBtn = document.getElementById(`tabBtn${i}`);
+                const lockIcon = document.getElementById(`tabLockIcon${i}`);
+                const admBtn = document.getElementById(`admBtn${i}`);
+
+                if (tabBtn) {
+                    tabBtn.classList.toggle('is-locked', isLocked && !isAdminActive);
+                }
+                if (lockIcon) {
+                    lockIcon.innerText = isLocked ? "🔒" : "";
+                }
+                if (admBtn) {
+                    admBtn.className = `admin-toggle-chip ${isLocked ? 'locked' : 'unlocked'}`;
+                    admBtn.innerText = `${i}단계: ${isLocked ? '🔒잠김' : '🔓공개'}`;
+                }
+            }
+        }
+
+        // 학생/교사의 탭 클릭 처리
+        function trySwitchStep(stepNum) {
+            if (!isAdminActive && stepLocks[stepNum] === true) {
+                alert(`🔒 ${stepNum}단계는 현재 선생님에 의해 잠겨 있습니다.\n선생님의 수업 안내에 따라 순서대로 학습해 주세요!`);
+                return;
+            }
+            switchStep(stepNum);
+        }
+
+        // 실제 탭 전환
+        function switchStep(stepNum) {
+            currentActiveStep = stepNum;
+            document.querySelectorAll('.step-btn').forEach((btn, idx) => {
+                btn.classList.toggle('active', idx === stepNum - 1);
+            });
+            document.querySelectorAll('.step-content').forEach((sec, idx) => {
+                sec.classList.toggle('active', idx === stepNum - 1);
+            });
+
+            if (stepNum === 2) updateStep2Sim();
+            if (stepNum === 3) updateStep3Data();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 교사용 단계 잠금/해제 토글
+        function toggleStepLock(stepNum) {
+            if (!isAdminActive || !cachedAdminKey) return;
+
+            stepLocks[stepNum] = !stepLocks[stepNum];
+            updateStepLockUI();
+
+            const syncTag = document.getElementById('syncStatusTag');
+            syncTag.innerText = "⏳ 클라우드 저장 중...";
+            syncTag.style.color = "#facc15";
+
+            // 기존 단원/차시 잠금 데이터를 보존하면서 step_locks 업데이트
+            if (!fullCloudLocks.step_locks) fullCloudLocks.step_locks = {};
+            fullCloudLocks.step_locks[THIS_LESSON_KEY] = stepLocks;
+
+            fetch(window.PLATFORM_CONFIG.LOCK_API || GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({
+                    action: "save_locks",
+                    adminKey: cachedAdminKey,
+                    locks: fullCloudLocks
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "success" || data.success === true) {
+                    syncTag.innerText = "✅ 실시간 저장 완료";
+                    syncTag.style.color = "#4ade80";
+                } else {
+                    syncTag.innerText = "❌ 저장 실패 (비번 확인)";
+                    syncTag.style.color = "#f87171";
+                }
+            })
+            .catch(() => {
+                syncTag.innerText = "⚠️ 네트워크 통신 오류";
+                syncTag.style.color = "#f87171";
+            });
+        }
+
+        // 관리자 공통 로그인 세션에서 관리자 키 확인
+        function getAdminKeyFromSession() {
+            const rawUser = sessionStorage.getItem("current_student");
+            const storedAdminKey = sessionStorage.getItem("current_admin_key") || "";
+            if (!rawUser || !storedAdminKey) return "";
+
+            try {
+                const user = JSON.parse(rawUser);
+                return user && user.isAdmin === true ? storedAdminKey : "";
+            } catch (error) {
+                console.warn("관리자 세션 정보를 읽는 중 오류 발생:", error);
+                return "";
+            }
+        }
+
+        // 이미 관리자 계정으로 로그인했다면 별도 비밀번호 입력 없이 관리자 모드 활성화
+        function activateAdminModeFromSession(showAlert = false) {
+            const storedAdminKey = getAdminKeyFromSession();
+            if (!storedAdminKey) return false;
+
+            isAdminActive = true;
+            cachedAdminKey = storedAdminKey;
+
+            const adminBar = document.getElementById('adminStepBar');
+            if (adminBar) adminBar.style.display = 'block';
+            updateStepLockUI();
+
+            if (showAlert) {
+                alert("🔓 로그인된 관리자 계정으로 관리자 모드가 활성화되었습니다.");
+            }
+            return true;
+        }
+
+        // 관리자 모드 인증
+        function openAdminModal() {
+            // 공통 로그인에서 관리자 인증이 끝난 상태라면 재입력 없이 즉시 진입
+            if (activateAdminModeFromSession(false)) return;
+
+            document.getElementById('adminPwInput').value = '';
+            document.getElementById('adminModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('adminPwInput').focus(), 50);
+        }
+
+        function closeAdminModal() {
+            document.getElementById('adminModal').style.display = 'none';
+        }
+
+        async function submitAdminAuth() {
+            const inputVal = document.getElementById('adminPwInput').value.trim();
+            if (!inputVal) {
+                alert("비밀번호를 입력해주세요.");
+                return;
+            }
+
+            const btn = document.getElementById('adminModalConfirmBtn');
+            btn.innerText = "인증 중...";
+            btn.disabled = true;
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ action: "verifyAuth", passwordHash: await sha256(inputVal) })
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.innerText = "인증하기";
+                btn.disabled = false;
+                if (data && (data.success === true || data.ok === true)) {
+                    isAdminActive = true;
+                    cachedAdminKey = data.adminSessionToken || "";
+
+                    // 공통 로그인된 사용자가 관리자라면 이후 관리자 모드 진입에서도 재사용합니다.
+                    try {
+                        const rawUser = sessionStorage.getItem("current_student");
+                        const user = rawUser ? JSON.parse(rawUser) : null;
+                        if (user && user.isAdmin === true) {
+                            sessionStorage.setItem("current_admin_key", cachedAdminKey);
+                        }
+                    } catch (error) {
+                        console.warn("관리자 키 세션 저장 중 오류 발생:", error);
+                    }
+
+                    closeAdminModal();
+                    document.getElementById('adminStepBar').style.display = 'block';
+                    updateStepLockUI();
+                    alert("🔓 교사용 관리자 모드가 활성화되었습니다.\n상단 바에서 각 단계를 자유롭게 잠그고 풀어보세요!");
+                } else {
+                    alert("❌ 관리자 비밀번호가 일치하지 않습니다.");
+                }
+            })
+            .catch(err => {
+                btn.innerText = "인증하기";
+                btn.disabled = false;
+                alert("⚠️ 인증 통신 오류가 발생했습니다. 네트워크 상태를 확인해주세요.");
+            });
+        }
+
+        document.getElementById('adminPwInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') submitAdminAuth();
+            if (e.key === 'Escape') closeAdminModal();
+        });
+
+        function exitAdminMode() {
+            isAdminActive = false;
+            cachedAdminKey = "";
+            document.getElementById('adminStepBar').style.display = 'none';
+            updateStepLockUI();
+            alert("관리자 모드가 종료되었습니다.");
+        }
+
+        // ==========================================
+        // 4단계 형성평가 상태 관리 및 Google Sheets 전송 로직
+        // ==========================================
+        const LESSON_NAME = "7단원 4차시 - 전류, 전압, 저항과 옴의 법칙";
+        const TOTAL_QUESTIONS = 4;
+        const userQuizState = { q1: null, q2: null, q3: null, q4: null };
+        let isSubmitted = false;
+
+        const quizData = {
+            1: {
+                correct: 2,
+                wrongReasons: {
+                    1: "<b>①번이 오답인 이유:</b> 도선의 길이가 길어질수록 전자가 원자와 충돌할 기회가 늘어나므로 전기 저항은 커집니다.",
+                    3: "<b>③번이 오답인 이유:</b> 전기 저항은 전하의 흐름을 '방해'하는 성질입니다.",
+                    4: "<b>④번이 오답인 이유:</b> 전기 저항은 도선의 재질, 길이, 굵기에 의해 결정되는 고유한 성질이므로 전압이 0V가 되어도 저항 자체가 0Ω이 되지는 않습니다."
+                },
+                wrongHint: "💡 <b>핵심 힌트:</b> 2단계 시뮬레이터에서 도선의 굵기(단면적)를 굵게 조절했을 때 저항값(Ω)과 전류가 어떻게 변하는지 확인해 보세요!",
+                correctFb: "🎉 정답입니다! (②번 정답)",
+                correctExpl: "📖 <b>상세 해설:</b> 도선의 굵기(단면적)가 굵어질수록 전자가 통과할 수 있는 공간이 넓어져 충돌 확률이 낮아지므로 <b>전기 저항은 단면적에 반비례하여 작아집니다</b>. 반면 길이가 길어질수록 충돌 횟수가 많아져 저항이 커집니다."
+            },
+            2: {
+                correct: 2,
+                wrongReasons: {
+                    1: "<b>①번이 오답인 이유:</b> 옴의 법칙 공식 I = V / R = 6 V / 20 Ω = 0.30 A 입니다.",
+                    3: "<b>③번이 오답인 이유:</b> 1.20 A는 전압과 저항의 계산이 잘못 적용된 수치입니다.",
+                    4: "<b>④번이 오답인 이유:</b> 3.33 A는 저항을 전압으로 나눈(R / V) 역수 계산 오류입니다."
+                },
+                wrongHint: "💡 <b>핵심 힌트:</b> 전류(I)를 구하는 옴의 법칙 공식은 <b>I = V / R (전류 = 전압 ÷ 저항)</b> 입니다. 6 ÷ 20 을 계산해 보세요!",
+                correctFb: "🎉 정답입니다! (②번 정답)",
+                correctExpl: "📖 <b>상세 해설:</b> 옴의 법칙에 따라 <b>전류(I) = 전압(V) ÷ 저항(R)</b> 입니다.<br>• I = 6 V ÷ 20 Ω = <b>0.30 A</b> (300 mA)가 흐릅니다."
+            },
+            3: {
+                correct: 3,
+                wrongReasons: {
+                    1: "<b>①번이 오답인 이유:</b> 2.67 V는 저항을 전류로 나눈(R / I) 잘못된 계산입니다.",
+                    2: "<b>②번이 오답인 이유:</b> 4.0 V는 주어진 저항 수치일 뿐 계산된 전압 값이 아닙니다.",
+                    4: "<b>④번이 오답인 이유:</b> 12.0 V는 계산 공식이 잘못 적용된 수치입니다."
+                },
+                wrongHint: "💡 <b>핵심 힌트:</b> 전압(V)을 구하는 옴의 법칙 핵심 공식은 <b>V = I × R (전압 = 전류 × 저항)</b> 입니다. 1.5 × 4 를 계산해 보세요!",
+                correctFb: "🎉 정답입니다! (③번 정답)",
+                correctExpl: "📖 <b>상세 해설:</b> 옴의 법칙 공식 <b>전압(V) = 전류(I) × 저항(R)</b>을 적용합니다.<br>• V = 1.5 A × 4 Ω = <b>6.0 V</b> 입니다."
+            },
+            4: {
+                correct: 3,
+                wrongReasons: {
+                    1: "<b>①번이 오답인 이유:</b> 저항이 5 Ω이라면 3 V일 때 0.6 A가 흘러야 합니다.",
+                    2: "<b>②번이 오답인 이유:</b> 저항이 10 Ω이라면 3 V일 때 0.3 A가 흘러야 합니다.",
+                    4: "<b>④번이 오답인 이유:</b> 30 Ω은 전압과 전류의 비례 계산이 잘못 적용된 수치입니다."
+                },
+                wrongHint: "💡 <b>핵심 힌트:</b> 저항(R)을 구하는 옴의 법칙 공식은 <b>R = V / I (저항 = 전압 ÷ 전류)</b> 입니다. 3 ÷ 0.2 또는 6 ÷ 0.4 를 계산해 보세요!",
+                correctFb: "🎉 정답입니다! (③번 정답)",
+                correctExpl: "📖 <b>상세 해설:</b> 옴의 법칙 <b>저항(R) = 전압(V) ÷ 전류(I)</b>를 이용합니다.<br>• R = 3 V ÷ 0.2 A = <b>15 Ω</b> (또는 R = 6 V ÷ 0.4 A = 15 Ω)<br>전압-전류 그래프에서 직선의 기울기 역수가 저항에 해당합니다."
+            }
+        };
+
+        function handleQuiz(qNum, el, isCorrect, optNum) {
+            const block = document.getElementById(`quiz-block-${qNum}`);
+            block.querySelectorAll('.quiz-opt').forEach(opt => opt.classList.remove('correct', 'incorrect'));
+            
+            if (isCorrect) {
+                el.classList.add('correct');
+            } else {
+                el.classList.add('incorrect');
+            }
+
+            if (!isSubmitted) {
+                userQuizState[`q${qNum}`] = isCorrect;
+                block.querySelectorAll('.quiz-opt').forEach(opt => {
+                    opt.style.pointerEvents = 'none';
+                });
+            }
+
+            const fbBox = document.getElementById(`fb-${qNum}`);
+            const fbTitle = document.getElementById(`fb-title-${qNum}`);
+            const fbContent = document.getElementById(`fb-content-${qNum}`);
+
+            fbBox.style.display = 'block';
+            const data = quizData[qNum];
+
+            if (isCorrect) {
+                fbBox.className = "quiz-feedback-box is-correct";
+                fbTitle.className = "fb-header correct";
+                fbTitle.innerText = "⭕ 정답입니다!";
+                fbContent.innerHTML = `<div class="fb-expl">${data.correctExpl}</div>`;
+            } else {
+                fbBox.className = "quiz-feedback-box is-incorrect";
+                fbTitle.className = "fb-header incorrect";
+                fbTitle.innerText = `❌ 오답입니다. (선택한 선지: ${optNum}번)`;
+                
+                const specificReason = data.wrongReasons[optNum] || "선택하신 선지는 옳지 않은 설명입니다.";
+                fbContent.innerHTML = `
+                    <div style="color:#fca5a5; margin-bottom:10px; line-height:1.6;">${specificReason}</div>
+                    <div class="fb-hint">${data.wrongHint}</div>
+                `;
+            }
+        }
+
+        async function submitQuizResults() {
+            if (isSubmitted) {
+                alert("⚠️ 이미 풀이 결과를 제출하셨습니다. 재제출은 불가능합니다.");
+                return;
+            }
+
+            const sIdInput = document.getElementById('studentIdInput');
+            const sNameInput = document.getElementById('studentNameInput');
+            const sId = sIdInput.value.trim();
+            const sName = sNameInput.value.trim();
+
+            if (!sId || !sName) {
+                alert("⚠️ 학번과 이름을 모두 입력해 주세요!");
+                return;
+            }
+
+            let currentUser = null;
+            try {
+                currentUser = JSON.parse(sessionStorage.getItem("current_student") || "null");
+            } catch (error) {
+                currentUser = null;
+            }
+
+            if (!currentUser || currentUser.isAdmin === true || !currentUser.studentSessionToken) {
+                alert("🔑 포인트를 적립하려면 학생 계정으로 로그인해 주세요.\n\n이미 로그인한 상태였다면 한 번 로그아웃한 뒤 다시 로그인해 주세요.");
+                return;
+            }
+
+            let answeredCount = 0;
+            for (let i = 1; i <= TOTAL_QUESTIONS; i++) {
+                if (userQuizState[`q${i}`] !== null) answeredCount++;
+            }
+
+            if (answeredCount < TOTAL_QUESTIONS) {
+                alert(`⚠️ 모든 문제를 풀고 정답 확인을 진행한 뒤 제출해 주세요! (현재 ${answeredCount}/${TOTAL_QUESTIONS} 완료)`);
+                return;
+            }
+
+            let score = 0;
+            for (let i = 1; i <= TOTAL_QUESTIONS; i++) {
+                if (userQuizState[`q${i}`] === true) score++;
+            }
+
+            const accuracy = Math.round((score / TOTAL_QUESTIONS) * 100);
+
+            const payload = {
+                action: "submit_lesson_result",
+                lesson: LESSON_NAME,
+                lessonName: LESSON_NAME,
+                lessonKey: THIS_LESSON_KEY,
+                studentSessionToken: currentUser.studentSessionToken,
+                studentId: sId,
+                studentName: sName,
+                q1: userQuizState.q1,
+                q2: userQuizState.q2,
+                q3: userQuizState.q3,
+                q4: userQuizState.q4,
+                score: score,
+                total: TOTAL_QUESTIONS,
+                accuracy: accuracy,
+                ip: clientIpAddress,
+                userAgent: navigator.userAgent
+            };
+
+            const submitBtn = document.getElementById('quizSubmitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = "⏳ 결과 전송 중...";
+
+            try {
+                const response = await fetch(SUBMISSION_API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    if (result.sessionExpired) {
+                        alert("⚠️ 로그인 세션이 만료되었습니다.\n로그아웃 후 다시 로그인한 다음 제출해 주세요.");
+                    } else {
+                        alert("⚠️ 제출에 실패했습니다.\n" + (result.message || "잠시 후 다시 시도해 주세요."));
+                    }
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "📤 문제풀이 결과 교사에게 제출";
+                    return;
+                }
+
+                isSubmitted = true;
+                submitBtn.innerText = "✅ 제출 완료 (자유롭게 복습 가능 / 재제출 불가)";
+                submitBtn.disabled = true;
+                sIdInput.disabled = true;
+                sNameInput.disabled = true;
+
+                // 제출 완료 후: 모든 문항 선택지 잠금 해제하여 자유롭게 복습 가능
+                document.querySelectorAll('.quiz-opt').forEach(opt => {
+                    opt.style.pointerEvents = 'auto';
+                });
+
+                const awardedPoints = Number(result.awardedPoints) || 0;
+                const currentPoints = Number(result.currentPoints) || 0;
+
+                if (result.isFirstSubmission) {
+                    alert(
+                        `✅ ${sName} 학생의 풀이 결과가 성공적으로 제출되었습니다!\n` +
+                        `- 학번: ${sId}\n` +
+                        `- 이름: ${sName}\n` +
+                        `- 총점: ${score}/${TOTAL_QUESTIONS}점\n` +
+                        `- 정답률: ${accuracy}%\n\n` +
+                        `⭐ 정답률에 따라 ${awardedPoints}P를 획득했습니다!\n` +
+                        `💰 현재 보유 포인트: ${currentPoints}P`
+                    );
+                } else {
+                    alert(
+                        `✅ ${sName} 학생의 재제출 결과가 저장되었습니다!\n` +
+                        `- 학번: ${sId}\n` +
+                        `- 이름: ${sName}\n` +
+                        `- 총점: ${score}/${TOTAL_QUESTIONS}점\n` +
+                        `- 정답률: ${accuracy}%\n\n` +
+                        `ℹ️ 이 차시는 이미 최초 제출 포인트가 지급되어 추가 포인트는 지급되지 않습니다.\n` +
+                        `💰 현재 보유 포인트: ${currentPoints}P`
+                    );
+                }
+            } catch (err) {
+                console.error("퀴즈 제출 오류:", err);
+                submitBtn.disabled = false;
+                submitBtn.innerText = "📤 문제풀이 결과 교사에게 제출";
+                alert("⚠️ 전송 중 오류가 발생했습니다. 네트워크 연결 상태를 확인한 후 다시 시도해 주세요.");
+            }
+        }
+
+        // ==========================================
+        // STEP 2: 도선 굵기/길이 & 저항 시뮬레이션
+        // ==========================================
+        const canvas2 = document.getElementById('simCanvas2');
+        const ctx2 = canvas2.getContext('2d');
+        let electrons2 = [];
+        let showGraphVI = false;
+        let showGraphRI = false;
+
+        function toggleGraphVI() {
+            showGraphVI = !showGraphVI;
+            document.getElementById('graphToggleBtnVI').innerText = showGraphVI ? "🙈 전압-전류 그래프 감추기" : "📊 전압-전류 그래프 보이기";
+            updateCanvas2Height();
+        }
+
+        function toggleGraphRI() {
+            showGraphRI = !showGraphRI;
+            document.getElementById('graphToggleBtnRI').innerText = showGraphRI ? "🙈 저항-전류 그래프 감추기" : "📊 저항-전류 그래프 보이기";
+            updateCanvas2Height();
+        }
+
+        function updateCanvas2Height() {
+            let h = 220;
+            if (showGraphVI) h += 380;
+            if (showGraphRI) h += 380;
+            canvas2.height = h;
+            updateStep2Sim();
+        }
+
+        function initStep2() {
+            electrons2 = [];
+            for (let i = 0; i < 30; i++) {
+                electrons2.push({
+                    x: Math.random() * 200 + 100,
+                    y: Math.random() * 40 + 80,
+                    vx: (Math.random() - 0.5) * 1.5,
+                    vy: (Math.random() - 0.5) * 1.5
+                });
+            }
+            updateStep2Sim();
+        }
+
+        function updateStep2Sim() {
+            const lenStep = parseInt(document.getElementById('step2Length').value);
+            const thickStep = parseInt(document.getElementById('step2Thick').value);
+            const voltVal = parseFloat(document.getElementById('step2Voltage').value);
+
+            document.getElementById('lenVal').innerText = `x${lenStep}`;
+            document.getElementById('thickVal').innerText = `x${thickStep}`;
+            document.getElementById('voltVal2').innerText = voltVal.toFixed(1) + " V";
+
+            const resistance = 10 * (lenStep / thickStep);
+            const currentA = voltVal / resistance;
+            const currentmA = currentA * 1000;
+
+            document.getElementById('s2ResistLabel').innerText = `${resistance.toFixed(1)} Ω`;
+            document.getElementById('s2CurrentLabel').innerText = `${Math.round(currentmA)} mA (${currentA.toFixed(2)} A)`;
+        }
+
+        function animStep2() {
+            if (document.getElementById('step2').classList.contains('active')) {
+                ctx2.clearRect(0, 0, canvas2.width, canvas2.height);
+
+                const lenStep = parseInt(document.getElementById('step2Length').value);
+                const thickStep = parseInt(document.getElementById('step2Thick').value);
+                const voltVal = parseFloat(document.getElementById('step2Voltage').value);
+                const resistance = 10 * (lenStep / thickStep);
+
+                const wireWidth = 150 + lenStep * 120;
+                const wireHeight = 25 + thickStep * 20;
+                const startX = (850 - wireWidth) / 2;
+                const startY = 110 - wireHeight / 2;
+
+                ctx2.fillStyle = "#1e293b"; ctx2.fillRect(15, 15, 820, 190);
+                ctx2.strokeStyle = "#334155"; ctx2.lineWidth = 2; ctx2.strokeRect(15, 15, 820, 190);
+
+                ctx2.fillStyle = "#0f172a"; ctx2.fillRect(startX, startY, wireWidth, wireHeight);
+                ctx2.strokeStyle = "#38bdf8"; ctx2.lineWidth = 3; ctx2.strokeRect(startX, startY, wireWidth, wireHeight);
+
+                const driftSpeed = (voltVal / resistance) * 1.5;
+
+                electrons2.forEach(e => {
+                    e.vx += (Math.random() - 0.5) * 0.4;
+                    e.vy += (Math.random() - 0.5) * 0.4;
+
+                    e.vx = Math.max(-1.2, Math.min(1.2, e.vx));
+                    e.vy = Math.max(-1.2, Math.min(1.2, e.vy));
+
+                    e.x += e.vx + driftSpeed;
+                    e.y += e.vy;
+
+                    if (e.y < startY + 6) { e.y = startY + 6; e.vy *= -1; }
+                    if (e.y > startY + wireHeight - 6) { e.y = startY + wireHeight - 6; e.vy *= -1; }
+
+                    if (e.x > startX + wireWidth - 6) {
+                        e.x = startX + 6;
+                        e.y = startY + Math.random() * (wireHeight - 12) + 6;
+                    }
+                    if (e.x < startX + 6) e.x = startX + 6;
+
+                    ctx2.fillStyle = "#38bdf8";
+                    ctx2.beginPath(); ctx2.arc(e.x, e.y, 4, 0, Math.PI * 2); ctx2.fill();
+                });
+
+                let gyOffset = 220;
+
+                // 전압-전류 관계 그래프
+                if (showGraphVI) {
+                    const gx = 15, gy = gyOffset, gw = 820, gh = 360;
+                    ctx2.fillStyle = "#1e293b"; ctx2.fillRect(gx, gy, gw, gh);
+                    ctx2.strokeStyle = "#38bdf8"; ctx2.lineWidth = 1.5; ctx2.strokeRect(gx, gy, gw, gh);
+
+                    ctx2.fillStyle = "#38bdf8"; ctx2.font = "bold 14px sans-serif"; ctx2.textAlign = "left";
+                    ctx2.fillText("📊 [ 전압 - 전류 관계 그래프 ] (저항이 일정할 때)", gx + 25, gy + 35);
+
+                    const ox = gx + 80, oy = gy + 290;
+                    const axisW = 680; 
+                    const axisH = 220; 
+
+                    ctx2.strokeStyle = "#cbd5e1"; ctx2.lineWidth = 2;
+                    ctx2.beginPath();
+                    ctx2.moveTo(ox, oy); ctx2.lineTo(ox + axisW, oy);
+                    ctx2.moveTo(ox, oy); ctx2.lineTo(ox, oy - axisH);
+                    ctx2.stroke();
+
+                    ctx2.fillStyle = "#cbd5e1"; ctx2.font = "12px sans-serif"; ctx2.textAlign = "center";
+                    const maxV = 9.0;
+                    for (let vStep = 0.0; vStep <= 9.0; vStep += 1.5) {
+                        const tickX = ox + (vStep / maxV) * (axisW - 40);
+                        ctx2.strokeStyle = "#64748b"; ctx2.lineWidth = 1;
+                        ctx2.beginPath(); ctx2.moveTo(tickX, oy); ctx2.lineTo(tickX, oy + 6); ctx2.stroke();
+                        ctx2.fillText(`${vStep.toFixed(1)}V`, tickX, oy + 22);
+                    }
+                    ctx2.font = "bold 12px sans-serif";
+                    ctx2.fillText("전압 (V)", ox + axisW - 10, oy + 42);
+
+                    ctx2.textAlign = "right"; ctx2.font = "12px sans-serif";
+                    const maxI = 4.0;
+                    for (let iStep = 0; iStep <= maxI; iStep += 1.0) {
+                        const tickY = oy - (iStep / maxI) * axisH;
+                        ctx2.strokeStyle = "#64748b"; ctx2.lineWidth = 1;
+                        ctx2.beginPath(); ctx2.moveTo(ox - 6, tickY); ctx2.lineTo(ox, tickY); ctx2.stroke();
+                        ctx2.fillText(`${iStep.toFixed(1)}A`, ox - 10, tickY + 4);
+                    }
+                    ctx2.font = "bold 12px sans-serif";
+                    ctx2.fillText("전류 (A)", ox - 10, oy - axisH - 12);
+
+                    const curI = voltVal / resistance;
+                    const endV = 9.0;
+                    const endI = endV / resistance;
+
+                    const lineEndX = ox + (endV / maxV) * (axisW - 40);
+                    const lineEndY = oy - (endI / maxI) * axisH;
+
+                    if (lineEndX >= ox) {
+                        ctx2.strokeStyle = "#f59e0b"; ctx2.lineWidth = 2.5;
+                        ctx2.beginPath(); ctx2.moveTo(ox, oy); ctx2.lineTo(lineEndX, lineEndY); ctx2.stroke();
+                    }
+
+                    const curX = ox + (voltVal / maxV) * (axisW - 40);
+                    const curY = oy - (curI / maxI) * axisH;
+
+                    ctx2.setLineDash([4, 4]);
+                    ctx2.strokeStyle = "#38bdf8"; ctx2.lineWidth = 1.5;
+                    ctx2.beginPath();
+                    ctx2.moveTo(curX, oy); ctx2.lineTo(curX, curY); ctx2.lineTo(ox, curY);
+                    ctx2.stroke();
+                    ctx2.setLineDash([]);
+
+                    ctx2.fillStyle = "#38bdf8"; 
+                    ctx2.beginPath(); ctx2.arc(curX, curY, 7, 0, Math.PI * 2); ctx2.fill();
+                    ctx2.strokeStyle = "#ffffff"; ctx2.lineWidth = 2; ctx2.stroke();
+                    
+                    gyOffset += 380;
+                }
+
+                // 저항-전류 관계 그래프
+                if (showGraphRI) {
+                    const gx = 15, gy = gyOffset, gw = 820, gh = 360;
+                    ctx2.fillStyle = "#1e293b"; ctx2.fillRect(gx, gy, gw, gh);
+                    ctx2.strokeStyle = "#38bdf8"; ctx2.lineWidth = 1.5; ctx2.strokeRect(gx, gy, gw, gh);
+
+                    ctx2.fillStyle = "#38bdf8"; ctx2.font = "bold 14px sans-serif"; ctx2.textAlign = "left";
+                    ctx2.fillText("📊 [ 저항 - 전류 관계 그래프 ] (전압이 일정할 때)", gx + 25, gy + 35);
+
+                    const ox = gx + 80, oy = gy + 290;
+                    const axisW = 680; 
+                    const axisH = 220; 
+
+                    ctx2.strokeStyle = "#cbd5e1"; ctx2.lineWidth = 2;
+                    ctx2.beginPath();
+                    ctx2.moveTo(ox, oy); ctx2.lineTo(ox + axisW, oy);
+                    ctx2.moveTo(ox, oy); ctx2.lineTo(ox, oy - axisH);
+                    ctx2.stroke();
+
+                    ctx2.fillStyle = "#cbd5e1"; ctx2.font = "12px sans-serif"; ctx2.textAlign = "center";
+                    const maxR = 40;
+                    for (let rStep = 0; rStep <= 40; rStep += 10) {
+                        const tickX = ox + (rStep / maxR) * (axisW - 40);
+                        ctx2.strokeStyle = "#64748b"; ctx2.lineWidth = 1;
+                        ctx2.beginPath(); ctx2.moveTo(tickX, oy); ctx2.lineTo(tickX, oy + 6); ctx2.stroke();
+                        ctx2.fillText(`${rStep}Ω`, tickX, oy + 22);
+                    }
+                    ctx2.font = "bold 12px sans-serif";
+                    ctx2.fillText("저항 (Ω)", ox + axisW - 10, oy + 42);
+
+                    ctx2.textAlign = "right"; ctx2.font = "12px sans-serif";
+                    const maxI = 4.0;
+                    for (let iStep = 0; iStep <= maxI; iStep += 1.0) {
+                        const tickY = oy - (iStep / maxI) * axisH;
+                        ctx2.strokeStyle = "#64748b"; ctx2.lineWidth = 1;
+                        ctx2.beginPath(); ctx2.moveTo(ox - 6, tickY); ctx2.lineTo(ox, tickY); ctx2.stroke();
+                        ctx2.fillText(`${iStep.toFixed(1)}A`, ox - 10, tickY + 4);
+                    }
+                    ctx2.font = "bold 12px sans-serif";
+                    ctx2.fillText("전류 (A)", ox - 10, oy - axisH - 12);
+
+                    if (voltVal > 0) {
+                        ctx2.strokeStyle = "#10b981"; ctx2.lineWidth = 2.5;
+                        ctx2.beginPath();
+                        let started = false;
+                        for (let rPlot = 2.5; rPlot <= 40; rPlot += 0.5) {
+                            let iPlot = voltVal / rPlot;
+                            if (iPlot > maxI) continue;
+                            let px = ox + (rPlot / maxR) * (axisW - 40);
+                            let py = oy - (iPlot / maxI) * axisH;
+                            if (!started) {
+                                ctx2.moveTo(px, py);
+                                started = true;
+                            } else {
+                                ctx2.lineTo(px, py);
+                            }
+                        }
+                        ctx2.stroke();
+
+                        const curX = ox + (resistance / maxR) * (axisW - 40);
+                        const curY = oy - ((voltVal / resistance) / maxI) * axisH;
+
+                        ctx2.setLineDash([4, 4]);
+                        ctx2.strokeStyle = "#10b981"; ctx2.lineWidth = 1.5;
+                        ctx2.beginPath();
+                        ctx2.moveTo(curX, oy); ctx2.lineTo(curX, curY); ctx2.lineTo(ox, curY);
+                        ctx2.stroke();
+                        ctx2.setLineDash([]);
+
+                        ctx2.fillStyle = "#10b981"; 
+                        ctx2.beginPath(); ctx2.arc(curX, curY, 7, 0, Math.PI * 2); ctx2.fill();
+                        ctx2.strokeStyle = "#ffffff"; ctx2.lineWidth = 2; ctx2.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animStep2);
+        }
+
+        // ==========================================
+        // STEP 3: 회로 & 그래프 시뮬레이션
+        // ==========================================
+        const canvas3 = document.getElementById('simCanvas3');
+        const ctx3 = canvas3.getContext('2d');
+        let showGraph3 = false;
+        let electrons3 = [];
+        let isDraggingBattery = false;
+
+        function toggleGraph3() {
+            showGraph3 = !showGraph3;
+            document.getElementById('graphToggleBtn3').innerText = showGraph3 ? "🙈 그래프 감추기" : "📊 그래프 보이기";
+            document.getElementById('allResGraphOption').style.display = showGraph3 ? 'block' : 'none';
+        }
+
+        function initStep3() {
+            electrons3 = [];
+            for (let i = 0; i < 24; i++) {
+                electrons3.push({ pos: i * 30 });
+            }
+            
+            canvas3.addEventListener('mousedown', onMouseDown3);
+            canvas3.addEventListener('mousemove', onMouseMove3);
+            canvas3.addEventListener('mouseup', () => isDraggingBattery = false);
+
+            canvas3.addEventListener('touchstart', onTouchStart3, { passive: false });
+            canvas3.addEventListener('touchmove', onTouchMove3, { passive: false });
+            canvas3.addEventListener('touchend', () => isDraggingBattery = false);
+
+            updateStep3Data();
+        }
+
+        function onMouseDown3(e) {
+            const rect = canvas3.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+
+            if (mx >= 40 && mx <= 240 && my >= 130 && my <= 310) {
+                isDraggingBattery = true;
+            }
+        }
+
+        function onMouseMove3(e) {
+            if (!isDraggingBattery) return;
+            const rect = canvas3.getBoundingClientRect();
+            const my = e.clientY - rect.top;
+
+            let newV = (280 - my) / 12;
+            newV = Math.max(0, Math.min(9, newV));
+            newV = Math.round(newV / 1.5) * 1.5;
+
+            document.getElementById('voltageSlider3').value = newV;
+            updateStep3Data();
+        }
+
+        function onTouchStart3(e) {
+            const rect = canvas3.getBoundingClientRect();
+            const touch = e.touches[0];
+            const mx = touch.clientX - rect.left;
+            const my = touch.clientY - rect.top;
+
+            if (mx >= 40 && mx <= 240 && my >= 130 && my <= 310) {
+                isDraggingBattery = true;
+                e.preventDefault();
+            }
+        }
+
+        function onTouchMove3(e) {
+            if (!isDraggingBattery) return;
+            const rect = canvas3.getBoundingClientRect();
+            const touch = e.touches[0];
+            const my = touch.clientY - rect.top;
+
+            let newV = (280 - my) / 12;
+            newV = Math.max(0, Math.min(9, newV));
+            newV = Math.round(newV / 1.5) * 1.5;
+
+            document.getElementById('voltageSlider3').value = newV;
+            updateStep3Data();
+            e.preventDefault();
+        }
+
+        function updateStep3Data() {
+            const v = parseFloat(document.getElementById('voltageSlider3').value);
+            document.getElementById('sliderVal3').innerText = v.toFixed(1) + " V";
+
+            const selectedR = parseFloat(document.querySelector('input[name="resRadio"]:checked').value);
+            const mainI = v / selectedR;
+            document.getElementById('largeAmpVal').innerText = `${mainI.toFixed(2)} A`;
+        }
+
+        function animStep3() {
+            if (document.getElementById('step3').classList.contains('active')) {
+                ctx3.clearRect(0, 0, canvas3.width, canvas3.height);
+
+                const v = parseFloat(document.getElementById('voltageSlider3').value);
+                const selectedR = parseFloat(document.querySelector('input[name="resRadio"]:checked').value);
+                const currentI = v / selectedR;
+
+                const circuitWidth = showGraph3 ? 410 : 810;
+
+                ctx3.fillStyle = "#1e293b"; ctx3.fillRect(15, 15, circuitWidth, 350);
+                ctx3.strokeStyle = "#334155"; ctx3.lineWidth = 2; ctx3.strokeRect(15, 15, circuitWidth, 350);
+
+                ctx3.fillStyle = "#38bdf8"; ctx3.font = "bold 13px sans-serif"; ctx3.textAlign = "left";
+                ctx3.fillText("⚡ [ 실시간 작동 전기 회로 ]", 30, 42);
+
+                const left = showGraph3 ? 65 : 150;
+                const right = showGraph3 ? 340 : 650;
+                const top = 85;
+                const bottom = 295;
+                const circuitLength = 2 * (right - left) + 2 * (bottom - top);
+
+                ctx3.strokeStyle = "#475569"; ctx3.lineWidth = 6;
+                ctx3.strokeRect(left, top, right - left, bottom - top);
+
+                const batX = left;
+                const batY = (top + bottom) / 2;
+                
+                ctx3.fillStyle = "#0f172a"; ctx3.fillRect(batX - 25, batY - 40, 50, 80);
+                ctx3.strokeStyle = "#38bdf8"; ctx3.lineWidth = 2; ctx3.strokeRect(batX - 25, batY - 40, 50, 80);
+
+                ctx3.fillStyle = "#ef4444"; ctx3.fillRect(batX - 20, batY - 35, 40, 30);
+                ctx3.fillStyle = "#fff"; ctx3.font = "bold 16px sans-serif"; ctx3.textAlign = "center";
+                ctx3.fillText("+", batX, batY - 15);
+
+                ctx3.fillStyle = "#3b82f6"; ctx3.fillRect(batX - 20, batY + 5, 40, 30);
+                ctx3.fillStyle = "#fff"; ctx3.fillText("-", batX, batY + 25);
+
+                ctx3.fillStyle = "#f59e0b"; ctx3.font = "bold 12px sans-serif";
+                ctx3.fillText(`${v.toFixed(1)} V`, batX, batY + 55);
+
+                const resX = right;
+                const resY = (top + bottom) / 2;
+                ctx3.strokeStyle = "#f59e0b"; ctx3.lineWidth = 5;
+                ctx3.beginPath();
+                ctx3.moveTo(resX, resY - 30);
+                ctx3.lineTo(resX - 10, resY - 20); ctx3.lineTo(resX + 10, resY - 10);
+                ctx3.lineTo(resX - 10, resY); ctx3.lineTo(resX + 10, resY + 10);
+                ctx3.lineTo(resX - 10, resY + 20); ctx3.lineTo(resX, resY + 30);
+                ctx3.stroke();
+
+                ctx3.fillStyle = "#f59e0b"; ctx3.textAlign = "center";
+                ctx3.fillText(`${selectedR} Ω`, resX + (showGraph3 ? -35 : 45), resY);
+
+                if (v > 0) {
+                    const eSpeed = 2.0;
+                    electrons3.forEach(e => {
+                        e.pos = (e.pos + eSpeed) % circuitLength;
+                        let ex = 0, ey = 0;
+
+                        if (e.pos < (right - left) / 2) {
+                            ex = left + (right - left) / 2 + e.pos; ey = bottom;
+                        } else if (e.pos < (right - left) / 2 + (bottom - top)) {
+                            ex = right; ey = bottom - (e.pos - (right - left) / 2);
+                        } else if (e.pos < (right - left) * 1.5 + (bottom - top)) {
+                            ex = right - (e.pos - ((right - left) / 2 + (bottom - top))); ey = top;
+                        } else if (e.pos < (right - left) * 1.5 + 2 * (bottom - top)) {
+                            ex = left; ey = top + (e.pos - ((right - left) * 1.5 + (bottom - top)));
+                        } else {
+                            ex = left + (e.pos - ((right - left) * 1.5 + 2 * (bottom - top))); ey = bottom;
+                        }
+
+                        ctx3.fillStyle = "#38bdf8";
+                        ctx3.beginPath(); ctx3.arc(ex, ey, 5, 0, Math.PI * 2); ctx3.fill();
+                    });
+                }
+
+                if (showGraph3) {
+                    const gx = 440, gy = 15, gw = 395, gh = 350;
+                    ctx3.fillStyle = "#1e293b"; ctx3.fillRect(gx, gy, gw, gh);
+                    ctx3.strokeStyle = "#38bdf8"; ctx3.lineWidth = 1.5; ctx3.strokeRect(gx, gy, gw, gh);
+
+                    ctx3.fillStyle = "#38bdf8"; ctx3.font = "bold 13px sans-serif"; ctx3.textAlign = "left";
+                    ctx3.fillText("📊 [ 전압 - 전류 관계 그래프 ]", gx + 15, gy + 28);
+
+                    const ox = gx + 50, oy = gy + 280;
+                    const axisW = 270;
+                    const axisH = 210;
+
+                    ctx3.strokeStyle = "#cbd5e1"; ctx3.lineWidth = 1.5;
+                    ctx3.beginPath();
+                    ctx3.moveTo(ox, oy); ctx3.lineTo(ox + axisW + 20, oy);
+                    ctx3.moveTo(ox, oy); ctx3.lineTo(ox, oy - axisH - 10);
+                    ctx3.stroke();
+
+                    ctx3.fillStyle = "#cbd5e1"; ctx3.font = "11px sans-serif"; ctx3.textAlign = "center";
+                    for (let voltStep = 0; voltStep <= 9; voltStep += 1.5) {
+                        const tickX = ox + (voltStep / 9) * axisW;
+                        ctx3.strokeStyle = "#64748b"; ctx3.lineWidth = 1;
+                        ctx3.beginPath(); ctx3.moveTo(tickX, oy); ctx3.lineTo(tickX, oy + 4); ctx3.stroke();
+                        ctx3.fillText(`${voltStep}`, tickX, oy + 16);
+                    }
+                    ctx3.fillText("전압(V)", ox + axisW + 10, oy + 32);
+
+                    ctx3.textAlign = "right";
+                    const maxAxisI = 1.8;
+                    for (let ampStep = 0; ampStep <= maxAxisI; ampStep += 0.4) {
+                        const tickY = oy - (ampStep / maxAxisI) * axisH;
+                        ctx3.strokeStyle = "#64748b"; ctx3.lineWidth = 1;
+                        ctx3.beginPath(); ctx3.moveTo(ox - 4, tickY); ctx3.lineTo(ox, tickY); ctx3.stroke();
+                        ctx3.fillText(`${ampStep.toFixed(1)}`, ox - 7, tickY + 4);
+                    }
+                    ctx3.fillText("전류(A)", ox - 5, oy - axisH - 12);
+
+                    const showAll = document.getElementById('showAllResCheck').checked;
+                    const rList = showAll ? [5, 10, 15, 20] : [selectedR];
+                    const colors = { 5: '#ef4444', 10: '#f59e0b', 15: '#10b981', 20: '#818cf8' };
+
+                    rList.forEach(rVal => {
+                        const endI = 9 / rVal;
+                        const lineEndX = ox + axisW;
+                        const lineEndY = oy - (endI / maxAxisI) * axisH;
+
+                        ctx3.strokeStyle = colors[rVal] || '#38bdf8';
+                        ctx3.lineWidth = (rVal === selectedR) ? 3 : 1.5;
+                        ctx3.beginPath(); ctx3.moveTo(ox, oy); ctx3.lineTo(lineEndX, lineEndY); ctx3.stroke();
+
+                        ctx3.fillStyle = colors[rVal];
+                        ctx3.font = "bold 11px sans-serif";
+                        ctx3.textAlign = "left";
+                        ctx3.fillText(`${rVal}Ω`, lineEndX + 4, lineEndY + 4);
+
+                        if (v > 0) {
+                            const curIVal = v / rVal;
+                            const curX = ox + (v / 9) * axisW;
+                            const curY = oy - (curIVal / maxAxisI) * axisH;
+                            ctx3.fillStyle = colors[rVal];
+                            ctx3.beginPath(); ctx3.arc(curX, curY, (rVal === selectedR) ? 6 : 4, 0, Math.PI * 2); ctx3.fill();
+                        }
+                    });
+                }
+            }
+            requestAnimationFrame(animStep3);
+        }
+
+        // 초기 구동
+        window.addEventListener('DOMContentLoaded', () => {
+            checkAndApplyStudentAuth();
+            updateStepLockUI();
+            initStep2();
+            animStep2();
+            initStep3();
+            animStep3();
+
+            const pageLoginId = document.getElementById('pageLoginId');
+            const pageLoginPw = document.getElementById('pageLoginPw');
+            if (pageLoginId) {
+                pageLoginId.addEventListener('keydown', e => {
+                    if (e.key === 'Enter') submitPageLogin();
+                    if (e.key === 'Escape') closePageLoginModal();
+                });
+            }
+            if (pageLoginPw) {
+                pageLoginPw.addEventListener('keydown', e => {
+                    if (e.key === 'Enter') submitPageLogin();
+                    if (e.key === 'Escape') closePageLoginModal();
+                });
+            }
+        });
+    
+        ensureCurrentSchoolYear();
+</script>
+</body>
+</html>
