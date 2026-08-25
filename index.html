@@ -2967,6 +2967,7 @@
         const ACCOUNT_API_URL = window.PLATFORM_CONFIG.ACCOUNT_API;
         const ACADEMIC_YEAR_API_URL = window.PLATFORM_CONFIG.ACADEMIC_YEAR_API;
         const SUBMISSION_API_URL = window.PLATFORM_CONFIG.SUBMISSION_API;
+        const LOCK_API_URL = window.PLATFORM_CONFIG.LOCK_API || window.PLATFORM_CONFIG.PLATFORM_API;
         const ADMIN_TOOLS_API_URL = `${window.PLATFORM_CONFIG.baseUrl}/functions/v1/admin-tools-api`;
         const ADMIN_DASHBOARD_API_URL = `${window.PLATFORM_CONFIG.baseUrl}/functions/v1/admin-dashboard-api`;
 
@@ -5426,13 +5427,158 @@
             return true;
         }
 
+
+        // ============================================================
+        // Supabase Realtime 잠금 변경 수신기
+        // - 주기적 polling 없음
+        // - 교사가 잠금 변경 시 broadcast 수신 → 실제 lock_states 1회 재조회
+        // - WebSocket 재연결 시 실제 상태 1회 재확인
+        // ============================================================
+        function createLockRealtimeClient(onResync) {
+            const cfg = window.PLATFORM_CONFIG || {};
+            const baseUrl = String(cfg.baseUrl || "");
+            const apiKey = String(cfg.SUPABASE_PUBLISHABLE_KEY || "");
+            const channelName = String(cfg.REALTIME_LOCK_TOPIC || "science-platform-locks");
+            if (!baseUrl || !apiKey || typeof WebSocket === "undefined") {
+                console.warn("Realtime 잠금 수신기를 시작할 수 없습니다. platform-config.js를 확인해 주세요.");
+                return { reconnect(){}, close(){} };
+            }
+
+            const wsBase = baseUrl.replace(/^http:/, "ws:").replace(/^https:/, "wss:");
+            const wsUrl = `${wsBase}/realtime/v1/websocket?apikey=${encodeURIComponent(apiKey)}&vsn=1.0.0`;
+            const topic = `realtime:${channelName}`;
+
+            let socket = null;
+            let heartbeatTimer = null;
+            let reconnectTimer = null;
+            let refCounter = 0;
+            let joinRef = "";
+            let stopped = false;
+            let everJoined = false;
+            let reconnectAttempt = 0;
+
+            function nextRef() {
+                refCounter += 1;
+                return String(refCounter);
+            }
+
+            function send(topicName, event, payload, refValue = null) {
+                if (!socket || socket.readyState !== WebSocket.OPEN) return null;
+                const ref = refValue || nextRef();
+                socket.send(JSON.stringify({
+                    topic: topicName,
+                    event,
+                    payload: payload || {},
+                    ref
+                }));
+                return ref;
+            }
+
+            function clearTimers() {
+                if (heartbeatTimer) clearInterval(heartbeatTimer);
+                heartbeatTimer = null;
+                if (reconnectTimer) clearTimeout(reconnectTimer);
+                reconnectTimer = null;
+            }
+
+            function scheduleReconnect() {
+                if (stopped || reconnectTimer) return;
+                const delays = [1000, 2000, 5000, 10000, 15000];
+                const delay = delays[Math.min(reconnectAttempt, delays.length - 1)];
+                reconnectAttempt += 1;
+                reconnectTimer = setTimeout(() => {
+                    reconnectTimer = null;
+                    connect();
+                }, delay);
+            }
+
+            function connect() {
+                if (stopped) return;
+                if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return;
+
+                try {
+                    socket = new WebSocket(wsUrl);
+                } catch (err) {
+                    console.warn("Realtime WebSocket 생성 실패:", err);
+                    scheduleReconnect();
+                    return;
+                }
+
+                socket.addEventListener("open", () => {
+                    joinRef = send(topic, "phx_join", {
+                        config: {
+                            broadcast: { ack: false, self: false },
+                            presence: { enabled: false },
+                            private: false
+                        }
+                    }) || "";
+
+                    heartbeatTimer = setInterval(() => {
+                        send("phoenix", "heartbeat", {}, nextRef());
+                    }, 25000);
+                });
+
+                socket.addEventListener("message", (event) => {
+                    let msg;
+                    try { msg = JSON.parse(event.data); } catch (_) { return; }
+
+                    if (msg.event === "phx_reply" &&
+                        String(msg.ref || "") === String(joinRef) &&
+                        msg.payload && msg.payload.status === "ok") {
+                        reconnectAttempt = 0;
+                        if (everJoined) {
+                            Promise.resolve(onResync("reconnected")).catch(err =>
+                                console.warn("Realtime 재연결 후 잠금 동기화 실패:", err)
+                            );
+                        }
+                        everJoined = true;
+                        return;
+                    }
+
+                    if (msg.event === "broadcast" &&
+                        msg.payload &&
+                        msg.payload.event === "lock_changed") {
+                        Promise.resolve(onResync("broadcast")).catch(err =>
+                            console.warn("Realtime 잠금 변경 동기화 실패:", err)
+                        );
+                    }
+                });
+
+                socket.addEventListener("close", () => {
+                    if (heartbeatTimer) clearInterval(heartbeatTimer);
+                    heartbeatTimer = null;
+                    socket = null;
+                    scheduleReconnect();
+                });
+
+                socket.addEventListener("error", () => {
+                    // close 이벤트에서 재연결 처리
+                });
+            }
+
+            connect();
+
+            return {
+                reconnect() {
+                    if (stopped) return;
+                    if (!socket || socket.readyState === WebSocket.CLOSED) connect();
+                },
+                close() {
+                    stopped = true;
+                    clearTimers();
+                    try { if (socket) socket.close(); } catch (_) {}
+                    socket = null;
+                }
+            };
+        }
+
         async function loadLocksFromCloud(callback) {
             const maxAttempts = 3;
             let lastError = null;
 
             for (let attempt = 1; attempt <= maxAttempts; attempt++) {
                 try {
-                    const data = await fetchJsonWithTimeout(GOOGLE_SCRIPT_URL, {
+                    const data = await fetchJsonWithTimeout(LOCK_API_URL, {
                         method: "POST",
                         headers: { "Content-Type": "text/plain;charset=utf-8" },
                         body: JSON.stringify({ action: "get_locks" }),
@@ -5497,11 +5643,11 @@
             }
 
             const expectedLocks = buildLockPayload();
-            fetch(GOOGLE_SCRIPT_URL, {
+            fetch(LOCK_API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
                 body: JSON.stringify({
-                    type: "save_locks",
+                    action: "save_locks",
                     ...getPrivilegedAuthPayload(),
                     locks: expectedLocks
                 }),
@@ -6981,6 +7127,24 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+
+        // ============================================================
+        // 차시 활동 페이지에서 같은 탭으로 돌아왔을 때 단원 화면 자동 열기
+        // 예: index.html?unit=unit7 / index.html?unit=unit3
+        // ============================================================
+        function openRequestedUnitFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const requestedUnit = String(params.get('unit') || '').trim();
+            if (!requestedUnit) return false;
+
+            const unit = defaultCurriculum[requestedUnit];
+            if (!unit) return false;
+
+            // 기존 enterUnit()을 그대로 사용하므로 잠금/평가관 접근 규칙도 그대로 유지됩니다.
+            enterUnit(requestedUnit);
+            return currentUnitKey === requestedUnit;
+        }
+
         function backToHub() {
             currentUnitKey = null;
             document.getElementById('unitHubView').style.display = 'block';
@@ -7196,6 +7360,44 @@
             }
         });
 
+
+        // Realtime 이벤트/재연결/탭 복귀 시 필요한 경우에만 잠금 상태 재확인
+        let lockResyncTimer = null;
+        function scheduleLockStateResync(reason = "manual", delay = 80) {
+            if (lockResyncTimer) clearTimeout(lockResyncTimer);
+            lockResyncTimer = setTimeout(() => {
+                lockResyncTimer = null;
+                loadLocksFromCloud((ok) => {
+                    if (!ok) {
+                        console.warn(`잠금 상태 재동기화 실패 (${reason})`);
+                        return;
+                    }
+                    updateEvalHallAdminControls();
+                    renderUnitHub();
+                    if (currentUnitKey && defaultCurriculum[currentUnitKey]) {
+                        renderLessonCards(defaultCurriculum[currentUnitKey]);
+                    }
+                    renderFloatingBarStatus();
+                });
+            }, delay);
+        }
+
+        const lockRealtimeClient = createLockRealtimeClient((reason) => {
+            scheduleLockStateResync(reason, 40);
+        });
+
+        // 주기 polling 대신 상태가 바뀔 가능성이 높은 순간에만 1회 재확인
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") {
+                lockRealtimeClient.reconnect();
+                scheduleLockStateResync("visibility", 120);
+            }
+        });
+        window.addEventListener("online", () => {
+            lockRealtimeClient.reconnect();
+            scheduleLockStateResync("online", 120);
+        });
+
         // 초기 실행
         applyFloatingWingMode();
         updateProductionServerPanelVisibility();
@@ -7245,6 +7447,9 @@
             }
             updateEvalHallAdminControls();
             renderUnitHub();
+
+            // 차시의 [← 단원 선택]에서 돌아온 경우 해당 단원 목록을 같은 탭에서 바로 엽니다.
+            openRequestedUnitFromUrl();
         });
     
         document.addEventListener('keydown', function(e){

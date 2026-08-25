@@ -2511,6 +2511,131 @@
   });
 
 
+
+  // ============================================================
+  // Lesson → portal navigation (same tab only)
+  // ============================================================
+  function lessonPortalUnitKey() {
+    try {
+      if (typeof THIS_UNIT_KEY !== "undefined" && THIS_UNIT_KEY) {
+        return String(THIS_UNIT_KEY).trim();
+      }
+    } catch (_) {}
+
+    try {
+      if (typeof MASTER_CONFIG !== "undefined" && MASTER_CONFIG?.UNIT_KEY) {
+        return String(MASTER_CONFIG.UNIT_KEY).trim();
+      }
+    } catch (_) {}
+
+    const lessonId = (typeof classroomLessonId === "function")
+      ? String(classroomLessonId() || "")
+      : "";
+
+    if (/^u7_/i.test(lessonId)) return "unit7";
+    if (/^u3_/i.test(lessonId)) return "unit3";
+    if (/^u3e_/i.test(lessonId)) return "unit3_eval";
+    return "";
+  }
+
+  function lessonPortalIndexUrl(unitKey = "") {
+    const url = new URL("index.html", window.location.href);
+    url.search = "";
+    url.hash = "";
+    if (unitKey) url.searchParams.set("unit", unitKey);
+    return url.href;
+  }
+
+  function goToLessonPortalMain() {
+    // 새 탭/새 창을 열지 않고 현재 탭 자체를 이동합니다.
+    window.location.assign(lessonPortalIndexUrl(""));
+  }
+
+  function goToLessonPortalUnit() {
+    const unitKey = lessonPortalUnitKey();
+    window.location.assign(lessonPortalIndexUrl(unitKey));
+  }
+
+  function ensureLessonPortalNavigation() {
+    if (document.getElementById("lessonPortalNavigation")) return;
+
+    const header = document.querySelector("body > header") || document.querySelector("header");
+    if (!header) return;
+
+    if (!document.getElementById("lessonPortalNavigationStyle")) {
+      const style = document.createElement("style");
+      style.id = "lessonPortalNavigationStyle";
+      style.textContent = `
+        .lesson-portal-navigation{
+          display:flex;
+          justify-content:center;
+          align-items:center;
+          gap:8px;
+          flex-wrap:wrap;
+          margin:0 auto 14px;
+          padding:0 6px;
+        }
+        .lesson-portal-nav-btn{
+          appearance:none;
+          border:1px solid #475569;
+          background:rgba(15,23,42,.78);
+          color:#cbd5e1;
+          border-radius:10px;
+          padding:8px 12px;
+          font-size:.82rem;
+          font-weight:850;
+          cursor:pointer;
+          transition:background .18s ease,border-color .18s ease,transform .18s ease,color .18s ease;
+          box-shadow:0 4px 14px rgba(0,0,0,.16);
+        }
+        .lesson-portal-nav-btn:hover{
+          background:#334155;
+          border-color:#64748b;
+          color:#fff;
+          transform:translateY(-1px);
+        }
+        .lesson-portal-nav-btn:focus-visible{
+          outline:2px solid #38bdf8;
+          outline-offset:2px;
+        }
+        @media(max-width:520px){
+          .lesson-portal-navigation{margin-bottom:11px;gap:6px;}
+          .lesson-portal-nav-btn{padding:7px 10px;font-size:.76rem;}
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    const nav = document.createElement("nav");
+    nav.id = "lessonPortalNavigation";
+    nav.className = "lesson-portal-navigation";
+    nav.setAttribute("aria-label", "학습 포털로 돌아가기");
+
+    const unitBtn = document.createElement("button");
+    unitBtn.type = "button";
+    unitBtn.className = "lesson-portal-nav-btn";
+    unitBtn.textContent = "← 단원 선택";
+    unitBtn.title = "현재 단원의 차시 선택 화면으로 돌아가기";
+    unitBtn.addEventListener("click", goToLessonPortalUnit);
+
+    const mainBtn = document.createElement("button");
+    mainBtn.type = "button";
+    mainBtn.className = "lesson-portal-nav-btn";
+    mainBtn.textContent = "🏠 메인";
+    mainBtn.title = "중2 과학 디지털 탐구 포털 메인으로 돌아가기";
+    mainBtn.addEventListener("click", goToLessonPortalMain);
+
+    nav.appendChild(unitBtn);
+    nav.appendChild(mainBtn);
+    header.insertBefore(nav, header.firstChild);
+  }
+
+  window.LessonPortalNavigation = Object.freeze({
+    main: goToLessonPortalMain,
+    unit: goToLessonPortalUnit,
+    unitKey: lessonPortalUnitKey
+  });
+
   window.StudentPointBalance = Object.freeze({
     refresh: refreshStudentPointBalance,
     setBalance: setStudentPointBalance,
@@ -2522,12 +2647,14 @@
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
       ensureUi();
+      ensureLessonPortalNavigation();
       initStudentSessionGuard();
       initStudentPointBadge();
       initClassroomPresence();
     }, { once: true });
   } else {
     ensureUi();
+    ensureLessonPortalNavigation();
     initStudentSessionGuard();
     initStudentPointBadge();
     initClassroomPresence();
