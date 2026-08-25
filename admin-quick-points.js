@@ -1089,8 +1089,17 @@
   // ============================================================
   // Realtime classroom presence + teacher one-click warnings
   // ============================================================
-  const CLASSROOM_AWAY_DELAY_MS = 10000;
+  const CLASSROOM_AWAY_DELAY_MS = 5000;
   const CLASSROOM_TOPIC_PREFIX = "science-classroom-";
+  const CLASSROOM_ALERT_PREF_KEY = "classroom_status_alerts_enabled";
+
+  function readClassroomAlertPreference() {
+    try {
+      return sessionStorage.getItem(CLASSROOM_ALERT_PREF_KEY) === "1";
+    } catch (_) {
+      return false;
+    }
+  }
 
   const classroomState = {
     socketClient: null,
@@ -1107,6 +1116,7 @@
     knownStudents: new Map(),
     alertedAway: new Set(),
     alertLog: [],
+    alertsEnabled: readClassroomAlertPreference(),
     panelOpen: false,
     search: "",
     adminObserver: null,
@@ -1256,6 +1266,11 @@
         .cp-log-item{font-size:.78rem;line-height:1.45;background:#0b1220;border-radius:8px;padding:7px 8px;border:1px solid #263247;color:#cbd5e1;}
         .cp-connection{font-size:.72rem;border-radius:999px;padding:3px 7px;font-weight:900;background:#3f3f46;color:#e4e4e7;}
         .cp-connection.on{background:#052e16;color:#86efac;}
+        .cp-title-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+        .cp-alert-toggle{border:1px solid #475569;background:#1f2937;color:#cbd5e1;border-radius:999px;padding:5px 8px;cursor:pointer;font-size:.71rem;font-weight:950;white-space:nowrap;}
+        .cp-alert-toggle.on{background:#052e16;color:#86efac;border-color:#16a34a;}
+        .admin-classroom-alert-toggle{background:#334155!important;color:#e2e8f0!important;border-color:#64748b!important;}
+        .admin-classroom-alert-toggle.on{background:#14532d!important;color:#dcfce7!important;border-color:#22c55e!important;}
         #classroomAdminToast{position:fixed;right:22px;bottom:22px;z-index:100012;background:#431407;color:#ffedd5;border:1px solid #c2410c;border-radius:11px;padding:12px 14px;font-weight:900;box-shadow:0 10px 30px rgba(0,0,0,.38);max-width:min(430px,90vw);display:none;}
         #classroomStudentWarning{position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:100020;width:min(520px,calc(100vw - 28px));display:none;background:#111827;color:#f8fafc;border:2px solid #f59e0b;border-radius:14px;box-shadow:0 16px 42px rgba(0,0,0,.48);padding:15px 16px;}
         .csw-title{font-size:1rem;font-weight:950;color:#fde68a;}
@@ -1281,13 +1296,29 @@
       btn.textContent = "👥 학생 현황";
       btn.addEventListener("click", openClassroomPanel);
 
+      const alertBtn = document.createElement("button");
+      alertBtn.type = "button";
+      alertBtn.id = "classroomAlertToggleBtn";
+      alertBtn.className = "admin-exit-btn admin-classroom-alert-toggle";
+      alertBtn.addEventListener("click", () => {
+        setClassroomStatusAlertsEnabled(!classroomState.alertsEnabled);
+      });
+
       const quickBtn = adminGroup.querySelector(".admin-quick-point-launch");
-      if (quickBtn) quickBtn.insertAdjacentElement("afterend", btn);
-      else {
+      if (quickBtn) {
+        quickBtn.insertAdjacentElement("afterend", btn);
+        btn.insertAdjacentElement("afterend", alertBtn);
+      } else {
         const exitBtn = Array.from(adminGroup.querySelectorAll("button")).find(b => /관리자 모드 닫기/.test(b.textContent || ""));
-        if (exitBtn) exitBtn.insertAdjacentElement("beforebegin", btn);
-        else adminGroup.appendChild(btn);
+        if (exitBtn) {
+          exitBtn.insertAdjacentElement("beforebegin", alertBtn);
+          alertBtn.insertAdjacentElement("beforebegin", btn);
+        } else {
+          adminGroup.appendChild(btn);
+          adminGroup.appendChild(alertBtn);
+        }
       }
+      updateClassroomAlertToggleUi();
     }
 
     if (!document.getElementById("classroomPresenceOverlay")) {
@@ -1305,7 +1336,7 @@
 
           <div class="cp-summary">
             <div class="cp-summary-card"><div class="cp-summary-num" id="cpActiveCount">0</div><div class="cp-summary-label">🟢 화면 활성</div></div>
-            <div class="cp-summary-card"><div class="cp-summary-num" id="cpAwayCount">0</div><div class="cp-summary-label">🟠 10초+ 이탈</div></div>
+            <div class="cp-summary-card"><div class="cp-summary-num" id="cpAwayCount">0</div><div class="cp-summary-label">🟠 5초+ 이탈</div></div>
             <div class="cp-summary-card"><div class="cp-summary-num" id="cpOfflineCount">0</div><div class="cp-summary-label">⚫ 연결 끊김</div></div>
             <div class="cp-summary-card"><div class="cp-summary-num" id="cpTotalCount">0</div><div class="cp-summary-label">확인된 학생</div></div>
           </div>
@@ -1313,7 +1344,10 @@
           <section class="cp-section">
             <div class="cp-section-title">
               <span>현재 이 차시 접속 현황</span>
-              <span class="cp-connection" id="cpConnectionTag">연결 준비</span>
+              <span class="cp-title-actions">
+                <button type="button" class="cp-alert-toggle" id="cpAlertToggleBtn">🔕 팝업 알림 꺼짐</button>
+                <span class="cp-connection" id="cpConnectionTag">연결 준비</span>
+              </span>
             </div>
             <input id="cpSearch" class="cp-search" type="search" placeholder="학번 또는 이름 검색">
             <div class="cp-list" id="cpStudentList"><div class="cp-empty">학생 접속을 기다리는 중...</div></div>
@@ -1325,8 +1359,9 @@
           </section>
 
           <div style="font-size:.73rem;color:#64748b;line-height:1.55;margin:13px 2px 4px;">
-            화면 활성 여부는 브라우저 탭의 표시 상태를 기준으로 합니다. 실제 시선이나 행동을 감지하지 않습니다.
-            10초 안에 돌아온 짧은 화면 전환은 이탈로 기록하지 않습니다.
+            같은 차시 안에서 1~4단계를 이동하는 것은 알림 대상이 아닙니다.
+            다른 탭·창으로 전환하거나 브라우저를 최소화한 상태가 5초 이상 지속되면 화면 이탈로 기록합니다.
+            페이지 종료·이동 또는 Realtime 연결 끊김도 별도로 기록합니다. 실제 시선이나 행동을 감지하지는 않습니다.
           </div>
         </aside>
       `;
@@ -1339,6 +1374,10 @@
         classroomState.search = String(e.target.value || "").trim().toLowerCase();
         renderClassroomPanel();
       });
+      document.getElementById("cpAlertToggleBtn").addEventListener("click", () => {
+        setClassroomStatusAlertsEnabled(!classroomState.alertsEnabled);
+      });
+      updateClassroomAlertToggleUi();
     }
 
     if (!document.getElementById("classroomAdminToast")) {
@@ -1364,6 +1403,47 @@
     }
   }
 
+  function updateClassroomAlertToggleUi() {
+    const enabled = classroomState.alertsEnabled === true;
+    const label = enabled ? "🔔 팝업 알림 켜짐" : "🔕 팝업 알림 꺼짐";
+
+    const topBtn = document.getElementById("classroomAlertToggleBtn");
+    if (topBtn) {
+      topBtn.textContent = enabled ? "🔔 이탈 알림 켜짐" : "🔕 이탈 알림 꺼짐";
+      topBtn.classList.toggle("on", enabled);
+      topBtn.setAttribute("aria-pressed", enabled ? "true" : "false");
+      topBtn.title = enabled
+        ? "학생의 화면 이탈·페이지 종료·연결 끊김 팝업 알림을 끕니다."
+        : "학생의 화면 이탈·페이지 종료·연결 끊김 팝업 알림을 켭니다.";
+    }
+
+    const panelBtn = document.getElementById("cpAlertToggleBtn");
+    if (panelBtn) {
+      panelBtn.textContent = label;
+      panelBtn.classList.toggle("on", enabled);
+      panelBtn.setAttribute("aria-pressed", enabled ? "true" : "false");
+    }
+  }
+
+  function setClassroomStatusAlertsEnabled(enabled) {
+    classroomState.alertsEnabled = enabled === true;
+    try {
+      sessionStorage.setItem(
+        CLASSROOM_ALERT_PREF_KEY,
+        classroomState.alertsEnabled ? "1" : "0"
+      );
+    } catch (_) {}
+
+    if (!classroomState.alertsEnabled) {
+      const toast = document.getElementById("classroomAdminToast");
+      if (toast) toast.style.display = "none";
+      clearTimeout(classroomAdminToast._timer);
+    }
+
+    updateClassroomAlertToggleUi();
+    renderClassroomPanel();
+  }
+
   function classroomAdminToast(message) {
     ensureClassroomUi();
     const el = document.getElementById("classroomAdminToast");
@@ -1372,6 +1452,11 @@
     el.style.display = "block";
     clearTimeout(classroomAdminToast._timer);
     classroomAdminToast._timer = setTimeout(() => { el.style.display = "none"; }, 4200);
+  }
+
+  function classroomStatusAlertToast(message) {
+    if (classroomState.alertsEnabled !== true) return;
+    classroomAdminToast(message);
   }
 
   function classroomStudentWarning(kind, message) {
@@ -1786,8 +1871,8 @@
       if (current.status === "away") {
         if (!classroomState.alertedAway.has(id)) {
           classroomState.alertedAway.add(id);
-          classroomAddLog(`${current.studentId} ${current.name || ""} · ${current.step}단계에서 10초 이상 화면 이탈`, "away");
-          classroomAdminToast(`⚠ ${current.name || current.studentId} 학생이 ${current.step}단계에서 10초 이상 수업 화면을 벗어났습니다.`);
+          classroomAddLog(`${current.studentId} ${current.name || ""} · 수업 화면 5초 이상 이탈`, "away");
+          classroomStatusAlertToast(`⚠ ${current.name || current.studentId} 학생이 5초 이상 수업 화면을 벗어났습니다.`);
         }
       } else if (current.status === "active") {
         if (classroomState.alertedAway.has(id)) {
@@ -1806,7 +1891,8 @@
           disconnectedAt: now
         });
         classroomState.alertedAway.delete(id);
-        classroomAddLog(`${prev.studentId} ${prev.name || ""} · 연결 끊김 또는 페이지 종료`, "offline");
+        classroomAddLog(`${prev.studentId} ${prev.name || ""} · 페이지 종료/이동 또는 연결 끊김`, "offline");
+        classroomStatusAlertToast(`⚠ ${prev.name || prev.studentId} 학생이 수업 페이지를 나갔거나 연결이 끊겼습니다.`);
       }
     }
 
@@ -1889,32 +1975,48 @@
     }, true);
   }
 
-  function classroomHandleVisibilityChange() {
+  function classroomBeginAwayCountdown() {
+    if (classroomState.role !== "student" || classroomState.awaySent) return;
+    clearTimeout(classroomState.awayTimer);
+    classroomState.awayTimer = setTimeout(() => {
+      classroomState.awayTimer = null;
+      const trulyAway =
+        document.hidden === true ||
+        (typeof document.hasFocus === "function" && document.hasFocus() === false);
+
+      if (classroomState.role === "student" && trulyAway && !classroomState.awaySent) {
+        classroomState.awaySent = true;
+        classroomTrackStudent("away", Date.now());
+      }
+    }, CLASSROOM_AWAY_DELAY_MS);
+  }
+
+  function classroomReturnFromAway() {
     if (classroomState.role !== "student") return;
-
-    if (document.hidden) {
-      clearTimeout(classroomState.awayTimer);
-      classroomState.awayTimer = setTimeout(() => {
-        classroomState.awayTimer = null;
-        if (classroomState.role === "student" && document.hidden && !classroomState.awaySent) {
-          classroomState.awaySent = true;
-          classroomTrackStudent("away", Date.now());
-        }
-      }, CLASSROOM_AWAY_DELAY_MS);
-      return;
-    }
-
     clearTimeout(classroomState.awayTimer);
     classroomState.awayTimer = null;
+
+    const stillAway =
+      document.hidden === true ||
+      (typeof document.hasFocus === "function" && document.hasFocus() === false);
+    if (stillAway) return;
+
     if (classroomState.awaySent) {
       classroomState.awaySent = false;
       classroomTrackStudent("active", 0);
     } else {
+      // 같은 페이지 안의 단계 변경은 상태 표시만 갱신하며 알림을 만들지 않습니다.
       const step = classroomCurrentStep();
       if (step !== classroomState.trackedStep) classroomTrackStudent("active", 0);
     }
 
     classroomState.socketClient?.reconnect?.();
+  }
+
+  function classroomHandleVisibilityChange() {
+    if (classroomState.role !== "student") return;
+    if (document.hidden) classroomBeginAwayCountdown();
+    else classroomReturnFromAway();
   }
 
   function classroomMaybeSwitchRole() {
@@ -1970,11 +2072,12 @@
     ensureClassroomUi();
     const label = document.getElementById("cpLessonLabel");
     const tag = document.getElementById("cpConnectionTag");
-    if (label) label.textContent = `${classroomLessonName()} · 10초 이상 화면 이탈 시 관리자에게 알림`;
+    if (label) label.textContent = `${classroomLessonName()} · 다른 화면 5초 이상 이탈 또는 페이지/연결 종료를 감지`;
     if (tag) {
       tag.textContent = classroomState.connected ? "Realtime 연결됨" : "Realtime 연결 확인 중";
       tag.classList.toggle("on", classroomState.connected);
     }
+    updateClassroomAlertToggleUi();
 
     const rows = Array.from(classroomState.knownStudents.values());
     const active = rows.filter(s => s.online !== false && s.status === "active");
@@ -2103,6 +2206,25 @@
     ensureClassroomUi();
 
     document.addEventListener("visibilitychange", classroomHandleVisibilityChange);
+
+    // 탭 전환뿐 아니라 Alt+Tab 등 다른 창/앱으로 포커스가 넘어가는 경우도 감지합니다.
+    window.addEventListener("blur", () => {
+      if (classroomState.role === "student") classroomBeginAwayCountdown();
+    });
+    window.addEventListener("focus", () => {
+      if (classroomState.role === "student") classroomReturnFromAway();
+    });
+
+    // 페이지 이동/종료 시 Presence leave를 가능한 한 즉시 전달합니다.
+    window.addEventListener("pagehide", () => {
+      if (classroomState.role === "student") {
+        try { classroomState.socketClient?.close?.(); } catch (_) {}
+      }
+    });
+    window.addEventListener("pageshow", () => {
+      setTimeout(classroomMaybeSwitchRole, 30);
+    });
+
     window.addEventListener("online", () => {
       classroomState.socketClient?.reconnect?.();
       classroomMaybeSwitchRole();
@@ -2142,7 +2264,9 @@
     open: openClassroomPanel,
     close: closeClassroomPanel,
     sendWarning: classroomSendWarning,
-    refresh: classroomMaybeSwitchRole
+    refresh: classroomMaybeSwitchRole,
+    setAlertsEnabled: setClassroomStatusAlertsEnabled,
+    alertsEnabled: () => classroomState.alertsEnabled === true
   });
 
 
