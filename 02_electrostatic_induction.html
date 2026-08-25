@@ -1701,7 +1701,12 @@
 
                 if (!result.success) {
                     if (result.sessionExpired) {
-                        alert("⚠️ 로그인 세션이 만료되었습니다.\n로그아웃 후 다시 로그인한 다음 제출해 주세요.");
+                        if (window.StudentSessionGuard) {
+                            window.StudentSessionGuard.handleSubmissionExpired(result.message);
+                        } else {
+                            alert("⚠️ 로그인 세션이 만료되었습니다.\n다시 로그인한 다음 제출해 주세요.\n\n풀어둔 답안은 그대로 유지됩니다.");
+                            if (typeof openPageLoginModal === "function") openPageLoginModal();
+                        }
                     } else {
                         alert("⚠️ 제출에 실패했습니다.\n" + (result.message || "잠시 후 다시 시도해 주세요."));
                     }

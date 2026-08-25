@@ -1468,6 +1468,17 @@
             })
             .then(data => {
                 if (!data || data.success === false || data.status === "error") {
+                    if (data && data.sessionExpired === true) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = "📤 문제풀이 결과 교사에게 제출";
+                        if (window.StudentSessionGuard) {
+                            window.StudentSessionGuard.handleSubmissionExpired(data.message);
+                        } else {
+                            alert("⚠️ 로그인 세션이 만료되었습니다.\n다시 로그인한 다음 제출해 주세요.\n\n풀어둔 답안은 그대로 유지됩니다.");
+                            if (typeof openPageLoginModal === "function") openPageLoginModal();
+                        }
+                        return;
+                    }
                     throw new Error((data && data.message) || "서버에서 제출을 처리하지 못했습니다.");
                 }
 
