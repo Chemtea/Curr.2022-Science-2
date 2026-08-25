@@ -1484,6 +1484,7 @@
                 const isFirstSubmission = data.isFirstSubmission === true;
                 const awardedPoints = Number(data.awardedPoints || 0);
                 const currentPoints = Number(data.currentPoints || 0);
+                if (window.StudentPointBalance) window.StudentPointBalance.setBalance(currentPoints);
                 const attemptNo = data.attemptNo;
                 const serverMessage = data.message || "";
 

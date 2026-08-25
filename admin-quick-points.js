@@ -507,11 +507,509 @@
     document.body.style.overflow = "";
   }
 
+  // ============================================================
+  // Student point balance badge beside the login status
+  // ============================================================
+  const pointBadgeState = {
+    lastFetchAt: 0,
+    inFlight: null,
+    renderedStudentId: "",
+    realtimeStudentId: "",
+    realtimeClient: null,
+    currentBalance: null
+  };
+
+  const POINT_REALTIME_TOPIC_PREFIX = "science-platform-points-";
+
+  async function sha256HexForPointTopic(value) {
+    const data = new TextEncoder().encode(String(value || "").trim().toLowerCase());
+    const digest = await crypto.subtle.digest("SHA-256", data);
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+  function closePointRealtimeClient() {
+    try { pointBadgeState.realtimeClient?.close?.(); } catch (_) {}
+    pointBadgeState.realtimeClient = null;
+    pointBadgeState.realtimeStudentId = "";
+  }
+
+  function createPointRealtimeSocket(topicName, onPointChanged) {
+    const cfg = window.PLATFORM_CONFIG || {};
+    const baseUrl = String(cfg.baseUrl || "");
+    const apiKey = String(cfg.SUPABASE_PUBLISHABLE_KEY || "");
+
+    if (!baseUrl || !apiKey || typeof WebSocket === "undefined") {
+      console.warn("[POINT REALTIME] 설정 부족 또는 WebSocket 미지원");
+      return { reconnect(){}, close(){} };
+    }
+
+    const wsBase = baseUrl.replace(/^http:/, "ws:").replace(/^https:/, "wss:");
+    const wsUrl = `${wsBase}/realtime/v1/websocket?apikey=${encodeURIComponent(apiKey)}&vsn=1.0.0`;
+    const topic = `realtime:${topicName}`;
+
+    let socket = null;
+    let heartbeatTimer = null;
+    let reconnectTimer = null;
+    let refCounter = 0;
+    let joinRef = "";
+    let stopped = false;
+    let everJoined = false;
+    let reconnectAttempt = 0;
+
+    const nextRef = () => String(++refCounter);
+
+    function send(topicNameInner, event, payload, refValue = null) {
+      if (!socket || socket.readyState !== WebSocket.OPEN) return null;
+      const ref = refValue || nextRef();
+      socket.send(JSON.stringify({
+        topic: topicNameInner,
+        event,
+        payload: payload || {},
+        ref
+      }));
+      return ref;
+    }
+
+    function clearHeartbeat() {
+      if (heartbeatTimer) clearInterval(heartbeatTimer);
+      heartbeatTimer = null;
+    }
+
+    function scheduleReconnect() {
+      if (stopped || reconnectTimer) return;
+      const delays = [1000, 2000, 5000, 10000, 15000];
+      const delay = delays[Math.min(reconnectAttempt, delays.length - 1)];
+      reconnectAttempt += 1;
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        connect();
+      }, delay);
+    }
+
+    function connect() {
+      if (stopped) return;
+      if (socket && (
+        socket.readyState === WebSocket.OPEN ||
+        socket.readyState === WebSocket.CONNECTING
+      )) return;
+
+      try {
+        socket = new WebSocket(wsUrl);
+      } catch (err) {
+        console.warn("[POINT REALTIME] WebSocket 생성 실패", err);
+        scheduleReconnect();
+        return;
+      }
+
+      socket.addEventListener("open", () => {
+        joinRef = send(topic, "phx_join", {
+          config: {
+            broadcast: { ack: false, self: false },
+            presence: { enabled: false },
+            private: false
+          }
+        }) || "";
+
+        heartbeatTimer = setInterval(() => {
+          send("phoenix", "heartbeat", {}, nextRef());
+        }, 25000);
+      });
+
+      socket.addEventListener("message", (event) => {
+        let msg;
+        try { msg = JSON.parse(event.data); } catch (_) { return; }
+
+        if (
+          msg.event === "phx_reply" &&
+          String(msg.ref || "") === String(joinRef) &&
+          msg.payload &&
+          msg.payload.status === "ok"
+        ) {
+          reconnectAttempt = 0;
+          console.info("[POINT REALTIME] 연결됨");
+          if (everJoined && typeof onPointChanged === "function") {
+            Promise.resolve(onPointChanged("reconnected"))
+              .catch((err) => console.warn("[POINT REALTIME] 재연결 후 동기화 실패", err));
+          }
+          everJoined = true;
+          return;
+        }
+
+        if (
+          msg.event === "broadcast" &&
+          msg.payload &&
+          msg.payload.event === "point_changed"
+        ) {
+          if (typeof onPointChanged === "function") {
+            Promise.resolve(onPointChanged("broadcast"))
+              .catch((err) => console.warn("[POINT REALTIME] 포인트 동기화 실패", err));
+          }
+        }
+      });
+
+      socket.addEventListener("close", () => {
+        clearHeartbeat();
+        socket = null;
+        if (!stopped) scheduleReconnect();
+      });
+
+      socket.addEventListener("error", () => {
+        // close 이벤트에서 재연결을 담당합니다.
+      });
+    }
+
+    connect();
+
+    return {
+      reconnect() {
+        if (stopped) return;
+        if (!socket || socket.readyState === WebSocket.CLOSED) connect();
+      },
+      close() {
+        stopped = true;
+        clearHeartbeat();
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+        try { if (socket) socket.close(); } catch (_) {}
+        socket = null;
+      }
+    };
+  }
+
+  async function ensurePointRealtimeForCurrentUser() {
+    const user = getCurrentUser();
+    if (!user || user.isAdmin === true) {
+      closePointRealtimeClient();
+      return;
+    }
+
+    const studentId = String(user.studentId || "").trim();
+    if (!studentId) {
+      closePointRealtimeClient();
+      return;
+    }
+
+    if (
+      pointBadgeState.realtimeStudentId === studentId &&
+      pointBadgeState.realtimeClient
+    ) {
+      return;
+    }
+
+    closePointRealtimeClient();
+    pointBadgeState.realtimeStudentId = studentId;
+
+    try {
+      const digest = await sha256HexForPointTopic(studentId);
+      const latestUser = getCurrentUser();
+      if (
+        !latestUser ||
+        latestUser.isAdmin === true ||
+        String(latestUser.studentId || "").trim() !== studentId
+      ) {
+        closePointRealtimeClient();
+        return;
+      }
+
+      const topicName = POINT_REALTIME_TOPIC_PREFIX + digest.slice(0, 24);
+      pointBadgeState.realtimeClient = createPointRealtimeSocket(
+        topicName,
+        async () => {
+          await refreshStudentPointBalance(true);
+        }
+      );
+    } catch (err) {
+      console.warn("[POINT REALTIME] 학생 채널 생성 실패", err);
+      closePointRealtimeClient();
+    }
+  }
+
+  function ensureStudentPointBadge() {
+    let badge = document.getElementById("headerPointBalance");
+    if (badge) return badge;
+
+    const loginStatus = document.getElementById("headerLoginStatus");
+    if (!loginStatus || !loginStatus.parentElement) return null;
+
+    if (!document.getElementById("studentPointBadgeStyle")) {
+      const style = document.createElement("style");
+      style.id = "studentPointBadgeStyle";
+      style.textContent = `
+        #headerPointBalance{display:none;align-items:center;gap:4px;padding:6px 10px;border:1px solid #854d0e;border-radius:8px;background:rgba(120,53,15,.22);color:#fde68a;font-size:.82rem;font-weight:900;white-space:nowrap;cursor:pointer;user-select:none;transition:transform .16s ease,border-color .16s ease,background .16s ease,opacity .16s ease;}
+        #headerPointBalance:hover{border-color:#f59e0b;background:rgba(180,83,9,.28);transform:translateY(-1px);}
+        #headerPointBalance.loading{opacity:.72;cursor:wait;}
+        #headerPointBalance.error{border-color:#7f1d1d;color:#fecaca;background:rgba(127,29,29,.20);}
+        #headerPointBalance.point-gain-pulse{animation:pointBalanceGainPulse .42s ease-out;}
+        #headerPointBalance.point-loss-pulse{animation:pointBalanceLossPulse .42s ease-out;}
+        .student-point-delta-fx{
+          position:fixed;
+          z-index:2147483000;
+          pointer-events:none;
+          user-select:none;
+          font-family:'Pretendard','Malgun Gothic',sans-serif;
+          font-size:1rem;
+          font-weight:1000;
+          letter-spacing:.01em;
+          white-space:nowrap;
+          text-shadow:0 2px 8px rgba(0,0,0,.55);
+          opacity:0;
+          will-change:transform,opacity;
+        }
+        .student-point-delta-fx.gain{
+          color:#fde047;
+          animation:studentPointGainFloat 1.05s cubic-bezier(.18,.72,.28,1) forwards;
+        }
+        .student-point-delta-fx.loss{
+          color:#fca5a5;
+          animation:studentPointLossDrop 1.05s cubic-bezier(.28,.05,.55,1) forwards;
+        }
+        @keyframes studentPointGainFloat{
+          0%{opacity:0;transform:translate(-50%,6px) scale(.84);}
+          18%{opacity:1;transform:translate(-50%,0) scale(1.08);}
+          72%{opacity:1;transform:translate(-50%,-22px) scale(1);}
+          100%{opacity:0;transform:translate(-50%,-32px) scale(.96);}
+        }
+        @keyframes studentPointLossDrop{
+          0%{opacity:0;transform:translate(-50%,-5px) scale(.84);}
+          18%{opacity:1;transform:translate(-50%,0) scale(1.06);}
+          72%{opacity:1;transform:translate(-50%,20px) scale(1);}
+          100%{opacity:0;transform:translate(-50%,31px) scale(.96);}
+        }
+        @keyframes pointBalanceGainPulse{
+          0%{transform:scale(1);}
+          42%{transform:scale(1.09);}
+          100%{transform:scale(1);}
+        }
+        @keyframes pointBalanceLossPulse{
+          0%{transform:scale(1);}
+          42%{transform:scale(.94);}
+          100%{transform:scale(1);}
+        }
+        @media (prefers-reduced-motion: reduce){
+          #headerPointBalance.point-gain-pulse,
+          #headerPointBalance.point-loss-pulse{animation:none;}
+          .student-point-delta-fx.gain,
+          .student-point-delta-fx.loss{
+            animation:none;
+            opacity:1;
+            transform:translate(-50%,0);
+            transition:opacity .35s ease;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    badge = document.createElement("span");
+    badge.id = "headerPointBalance";
+    badge.setAttribute("role", "button");
+    badge.setAttribute("tabindex", "0");
+    badge.title = "현재 보유 포인트 · 클릭하여 새로고침";
+    badge.textContent = "⭐ --P";
+    loginStatus.insertAdjacentElement("afterend", badge);
+
+    badge.addEventListener("click", () => refreshStudentPointBalance(true));
+    badge.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        refreshStudentPointBalance(true);
+      }
+    });
+    return badge;
+  }
+
+  function showStudentPointDeltaEffect(delta, badge) {
+    const amount = Math.trunc(Number(delta) || 0);
+    if (!amount || !badge || !badge.isConnected) return;
+
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
+    const fx = document.createElement("span");
+    fx.className = `student-point-delta-fx ${amount > 0 ? "gain" : "loss"}`;
+    fx.textContent = `${amount > 0 ? "+" : ""}${amount}⭐`;
+    fx.setAttribute("aria-hidden", "true");
+
+    const rect = badge.getBoundingClientRect();
+    fx.style.left = `${Math.round(rect.left + rect.width / 2)}px`;
+    fx.style.top = `${Math.round(amount > 0 ? rect.top - 4 : rect.bottom - 10)}px`;
+    document.body.appendChild(fx);
+
+    badge.classList.remove("point-gain-pulse", "point-loss-pulse");
+    void badge.offsetWidth;
+    badge.classList.add(amount > 0 ? "point-gain-pulse" : "point-loss-pulse");
+
+    if (reducedMotion) {
+      requestAnimationFrame(() => {
+        setTimeout(() => { fx.style.opacity = "0"; }, 450);
+      });
+    }
+
+    setTimeout(() => {
+      fx.remove();
+      badge.classList.remove("point-gain-pulse", "point-loss-pulse");
+    }, reducedMotion ? 900 : 1200);
+  }
+
+  function resetStudentPointBalance() {
+    const badge = ensureStudentPointBadge();
+    pointBadgeState.renderedStudentId = "";
+    pointBadgeState.lastFetchAt = 0;
+    pointBadgeState.currentBalance = null;
+    closePointRealtimeClient();
+    if (!badge) return;
+    badge.style.display = "none";
+    badge.classList.remove("loading", "error");
+    badge.textContent = "⭐ --P";
+  }
+
+  function setStudentPointBalance(value) {
+    const user = getCurrentUser();
+    const badge = ensureStudentPointBadge();
+    if (!badge || !user || user.isAdmin === true) {
+      resetStudentPointBalance();
+      return;
+    }
+
+    const balance = Math.max(0, Math.trunc(Number(value) || 0));
+    const studentId = String(user.studentId || "");
+    const sameStudent = pointBadgeState.renderedStudentId === studentId;
+    const previousBalance =
+      sameStudent && Number.isFinite(pointBadgeState.currentBalance)
+        ? pointBadgeState.currentBalance
+        : null;
+    const delta = previousBalance == null ? 0 : balance - previousBalance;
+
+    pointBadgeState.renderedStudentId = studentId;
+    pointBadgeState.currentBalance = balance;
+    pointBadgeState.lastFetchAt = Date.now();
+
+    badge.style.display = "inline-flex";
+    badge.classList.remove("loading", "error");
+    badge.textContent = `⭐ ${balance.toLocaleString("ko-KR")}P`;
+    badge.title = `현재 보유 포인트: ${balance.toLocaleString("ko-KR")}P · 클릭하여 새로고침`;
+
+    if (delta !== 0) {
+      showStudentPointDeltaEffect(delta, badge);
+    }
+  }
+
+  async function refreshStudentPointBalance(force = false) {
+    const badge = ensureStudentPointBadge();
+    const user = getCurrentUser();
+    if (!badge) return;
+    if (!user || user.isAdmin === true) {
+      resetStudentPointBalance();
+      return;
+    }
+
+    ensurePointRealtimeForCurrentUser();
+
+    const token = String(user.studentSessionToken || "").trim();
+    if (!token) {
+      badge.style.display = "inline-flex";
+      badge.classList.remove("loading");
+      badge.classList.add("error");
+      badge.textContent = "⭐ 세션 확인";
+      badge.title = "포인트를 확인하려면 로그아웃 후 다시 로그인해 주세요.";
+      return;
+    }
+
+    badge.style.display = "inline-flex";
+    const studentId = String(user.studentId || "");
+    const now = Date.now();
+    if (!force && pointBadgeState.renderedStudentId === studentId && now - pointBadgeState.lastFetchAt < 10000) return;
+    if (pointBadgeState.inFlight) return pointBadgeState.inFlight;
+
+    const url = pointApiUrl();
+    if (!url) {
+      badge.classList.add("error");
+      badge.textContent = "⭐ --P";
+      badge.title = "POINT_API 설정을 찾을 수 없습니다.";
+      return;
+    }
+
+    badge.classList.add("loading");
+    badge.classList.remove("error");
+    badge.textContent = "⭐ 확인 중";
+
+    pointBadgeState.inFlight = (async () => {
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "get_point_summary", studentSessionToken: token })
+        });
+        let data = null;
+        try { data = await response.json(); } catch (_) {}
+        if (!response.ok || !data?.success) throw new Error(data?.message || `포인트 조회 실패 (HTTP ${response.status})`);
+        setStudentPointBalance(Number(data.balance ?? data.currentPoints ?? 0));
+      } catch (err) {
+        badge.style.display = "inline-flex";
+        badge.classList.remove("loading");
+        badge.classList.add("error");
+        badge.textContent = "⭐ 확인 실패";
+        badge.title = `${err?.message || "포인트 조회 실패"} · 클릭하여 다시 시도`;
+      } finally {
+        pointBadgeState.inFlight = null;
+      }
+    })();
+    return pointBadgeState.inFlight;
+  }
+
+  function initStudentPointBadge() {
+    ensureStudentPointBadge();
+    const status = document.getElementById("headerLoginStatus");
+    if (status && !status.dataset.pointBadgeObserver) {
+      status.dataset.pointBadgeObserver = "1";
+      const observer = new MutationObserver(() => {
+        const user = getCurrentUser();
+        if (user && user.isAdmin !== true) {
+          ensurePointRealtimeForCurrentUser();
+          refreshStudentPointBalance(true);
+        } else {
+          resetStudentPointBalance();
+        }
+      });
+      observer.observe(status, { childList: true, characterData: true, subtree: true });
+    }
+    window.addEventListener("focus", () => refreshStudentPointBalance(false));
+    window.addEventListener("online", () => {
+      ensurePointRealtimeForCurrentUser();
+      pointBadgeState.realtimeClient?.reconnect?.();
+      refreshStudentPointBalance(true);
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        ensurePointRealtimeForCurrentUser();
+        pointBadgeState.realtimeClient?.reconnect?.();
+        refreshStudentPointBalance(false);
+      }
+    });
+    window.addEventListener("science-platform-points-changed", (event) => {
+      const balance = event?.detail?.currentPoints;
+      if (Number.isFinite(Number(balance))) setStudentPointBalance(Number(balance));
+      else refreshStudentPointBalance(true);
+    });
+    ensurePointRealtimeForCurrentUser();
+    refreshStudentPointBalance(true);
+  }
+
+  window.StudentPointBalance = Object.freeze({
+    refresh: refreshStudentPointBalance,
+    setBalance: setStudentPointBalance,
+    reset: resetStudentPointBalance
+  });
+
   window.AdminQuickPoints = Object.freeze({ open, close, reload: loadStudents });
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", ensureUi, { once: true });
+    document.addEventListener("DOMContentLoaded", () => {
+      ensureUi();
+      initStudentPointBadge();
+    }, { once: true });
   } else {
     ensureUi();
+    initStudentPointBadge();
   }
 })();

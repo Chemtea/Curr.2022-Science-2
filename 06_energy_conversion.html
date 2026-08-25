@@ -1680,6 +1680,7 @@
 
                 const awardedPoints = Number(result.awardedPoints) || 0;
                 const currentPoints = Number(result.currentPoints) || 0;
+                if (window.StudentPointBalance) window.StudentPointBalance.setBalance(currentPoints);
 
                 if (result.isFirstSubmission) {
                     alert(
