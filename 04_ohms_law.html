@@ -957,6 +957,19 @@
             if (rawUser) {
                 try {
                     const user = JSON.parse(rawUser);
+                    const isAdminUser = user.isAdmin === true;
+                    const storedStudentToken = String(user.studentSessionToken || "").trim();
+                    const storedAdminToken = String(sessionStorage.getItem("current_admin_key") || "").trim();
+
+                    // 예전 버그로 저장된 "토큰 없는 로그인"은 로그인으로 인정하지 않습니다.
+                    if (
+                        (!isAdminUser && !storedStudentToken.startsWith("stu_")) ||
+                        (isAdminUser && !storedAdminToken.startsWith("adm_"))
+                    ) {
+                        sessionStorage.removeItem("current_student");
+                        if (isAdminUser) sessionStorage.removeItem("current_admin_key");
+                        throw new Error("유효한 로그인 세션 토큰이 없습니다.");
+                    }
 
                     if (sIdInput) {
                         sIdInput.value = user.studentId || "";
@@ -1095,37 +1108,86 @@
                     })
                 });
 
-                const data = await response.json();
+                let data = await response.json();
 
-                if (data.success) {
-                    const isAdminUser = data.isAdmin === true;
+                if (!data.success) {
+                    alert("❌ " + (data.message || "로그인에 실패했습니다."));
+                    return;
+                }
 
-                    sessionStorage.setItem("current_student", JSON.stringify({
-                        studentId: data.studentId,
-                        name: data.name,
-                        isAdmin: isAdminUser,
-                        studentSessionToken: data.studentSessionToken || "",
-                        userId: data.userId || "",
-                        schoolYear: data.schoolYear || "",
-                        accountType: data.accountType || (isAdminUser ? "admin" : "student"),
-                        isManager: data.isManager === true,
-                        permissions: Array.isArray(data.permissions) ? data.permissions : []
-                    }));
+                // 비밀번호 초기화/최초 로그인 계정은 지금 입력한 비밀번호를 새 비밀번호로 등록하고
+                // 실제 studentSessionToken이 발급된 뒤에만 로그인 완료 처리합니다.
+                if (data.isFirstLogin === true && data.isAdmin !== true) {
+                    btn.innerText = "새 비밀번호 설정 중...";
 
-                    // 관리자 계정으로 공통 로그인에 성공한 경우에만 현재 탭 세션에 관리자 키를 보관합니다.
-                    // localStorage가 아니라 sessionStorage를 사용하므로 탭/창을 닫으면 함께 사라집니다.
-                    if (isAdminUser) {
-                        sessionStorage.setItem("current_admin_key", data.adminSessionToken || "");
-                    } else {
-                        sessionStorage.removeItem("current_admin_key");
+                    const registerResponse = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "text/plain;charset=utf-8" },
+                        body: JSON.stringify({
+                            action: "register_initial_password",
+                            studentId: idInput,
+                            schoolYear: CURRENT_SCHOOL_YEAR,
+                            newPasswordHash: pwHash,
+                            newPasswordLength: pwInput.length,
+                            ip: clientIpAddress,
+                            userAgent: navigator.userAgent
+                        })
+                    });
+
+                    const registerData = await registerResponse.json();
+                    if (!registerData.success) {
+                        alert("❌ " + (registerData.message || "새 비밀번호 설정에 실패했습니다."));
+                        return;
                     }
 
-                    alert(`👋 반갑습니다, ${data.name} 님!`);
-                    closePageLoginModal();
-                    checkAndApplyStudentAuth();
-                } else {
-                    alert("❌ " + (data.message || "로그인에 실패했습니다."));
+                    data = registerData;
+                    alert(
+                        "🔐 새 비밀번호가 설정되었습니다.\n" +
+                        "다음 로그인부터 지금 입력한 비밀번호를 사용하세요."
+                    );
                 }
+
+                const isAdminUser = data.isAdmin === true;
+                const studentToken = String(data.studentSessionToken || "").trim();
+                const adminToken = String(data.adminSessionToken || "").trim();
+
+                if (!isAdminUser && !studentToken.startsWith("stu_")) {
+                    sessionStorage.removeItem("current_student");
+                    sessionStorage.removeItem("current_admin_key");
+                    checkAndApplyStudentAuth();
+                    alert("❌ 학생 로그인 세션을 발급받지 못했습니다. 다시 로그인해 주세요.");
+                    return;
+                }
+
+                if (isAdminUser && !adminToken.startsWith("adm_")) {
+                    sessionStorage.removeItem("current_student");
+                    sessionStorage.removeItem("current_admin_key");
+                    checkAndApplyStudentAuth();
+                    alert("❌ 관리자 로그인 세션을 발급받지 못했습니다. 다시 로그인해 주세요.");
+                    return;
+                }
+
+                sessionStorage.setItem("current_student", JSON.stringify({
+                    studentId: data.studentId,
+                    name: data.name,
+                    isAdmin: isAdminUser,
+                    studentSessionToken: isAdminUser ? "" : studentToken,
+                    userId: data.userId || "",
+                    schoolYear: data.schoolYear || "",
+                    accountType: data.accountType || (isAdminUser ? "admin" : "student"),
+                    isManager: data.isManager === true,
+                    permissions: Array.isArray(data.permissions) ? data.permissions : []
+                }));
+
+                if (isAdminUser) {
+                    sessionStorage.setItem("current_admin_key", adminToken);
+                } else {
+                    sessionStorage.removeItem("current_admin_key");
+                }
+
+                alert(`👋 반갑습니다, ${data.name} 님!`);
+                closePageLoginModal();
+                checkAndApplyStudentAuth();
             } catch (err) {
                 console.error("로그인 오류:", err);
                 alert("통신 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
