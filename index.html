@@ -2083,8 +2083,29 @@
         .danger-action-btn{background:#7f1d1d;color:#fecaca;border:none;border-radius:8px;padding:8px 11px;font-weight:900;cursor:pointer;}
         .admin-tool-launcher{background:rgba(15,23,42,.35)!important;border:1px solid rgba(255,255,255,.72)!important;}
         .admin-tools-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
-        .admin-tools-grid button{border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:12px;padding:14px 12px;font-weight:900;cursor:pointer;text-align:left;}
+        .admin-tools-grid button{border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:12px;padding:14px 12px;font-weight:900;cursor:pointer;text-align:left;position:relative;}
         .admin-tools-grid button:hover{border-color:#38bdf8;background:#172033;}
+        .admin-tool-item-badge{
+            position:absolute;
+            top:7px;
+            right:8px;
+            display:none;
+            min-width:22px;
+            height:22px;
+            padding:0 6px;
+            align-items:center;
+            justify-content:center;
+            border-radius:999px;
+            background:#ef4444;
+            color:#fff;
+            border:2px solid #0f172a;
+            box-shadow:0 3px 10px rgba(239,68,68,.38);
+            font-size:.72rem;
+            font-weight:950;
+            line-height:1;
+            z-index:2;
+        }
+        .admin-tools-grid button:hover .admin-tool-item-badge{border-color:#172033;}
         .announcement-login-box{max-width:780px!important;width:min(94vw,780px)!important;border-color:#f59e0b!important;box-shadow:0 20px 60px rgba(0,0,0,.8),0 0 32px rgba(245,158,11,.22)!important;}
         .announcement-login-box h3{font-size:1.55rem!important;color:#fde68a!important;}
         .announcement-card .compact-details .announcement-content{margin-top:8px;}
@@ -2622,11 +2643,11 @@
             <h3>🧰 관리자 도구</h3>
             <p class="modal-desc-sub">자주 쓰는 공지·질문·포인트·평가관은 상단에 유지하고, 운영·설정 기능은 이곳에 모았습니다.</p>
             <div class="admin-tools-grid">
-                <button id="toolRewardBtn" onclick="launchAdminTool('reward')">🎁 <b>상품</b><br><small>상품 신청 처리·경품 추첨</small></button>
+                <button id="toolRewardBtn" onclick="launchAdminTool('reward')">🎁 <b>상품</b><span id="toolRewardBadge" class="admin-tool-item-badge" title="처리가 필요한 상품 신청·경품 추첨">0</span><br><small>상품 신청 처리·경품 추첨</small></button>
                 <button id="toolShopEditorBtn" class="tool-primary" onclick="launchAdminTool('shopEditor')">🛒 <b>상품 추가·수정</b><br><small>가격·재고·활성화·경품 일정</small></button>
                 <button id="toolRoleBtn" onclick="launchAdminTool('roles')">🛡️ <b>중간관리자</b><br><small>계정 유형 및 권한 설정</small></button>
                 <button id="toolAcademicBtn" onclick="launchAdminTool('academic')">📅 <b>학년도</b><br><small>다음 학년도 준비·전환</small></button>
-                <button id="toolSignupBtn" onclick="launchAdminTool('signup')">👥 <b>회원가입</b><br><small>외부 회원가입 승인·거절</small></button>
+                <button id="toolSignupBtn" onclick="launchAdminTool('signup')">👥 <b>회원가입</b><span id="toolSignupBadge" class="admin-tool-item-badge" title="승인이 필요한 외부 회원가입 신청">0</span><br><small>외부 회원가입 승인·거절</small></button>
                 <button id="toolPasswordResetBtn" class="tool-danger" onclick="launchAdminTool('passwordReset')">🔑 <b>비밀번호 초기화</b><br><small>학생을 최초 비밀번호 설정 상태로 전환</small></button>
                 <button id="toolStudentEditBtn" onclick="launchAdminTool('studentEdit')">✏️ <b>학생 계정 수정</b><br><small>학생 이름 수정·계정 정보 확인</small></button>
             </div>
@@ -3908,11 +3929,15 @@
         }
 
         function updatePendingSignupBadge(count) {
-            const badge = document.getElementById('pendingSignupBadge');
-            if (!badge) return;
-            const n = Number(count) || 0;
-            badge.textContent = String(n);
-            badge.style.display = n > 0 ? 'inline-flex' : 'none';
+            const n = Math.max(0, Number(count) || 0);
+            [
+                document.getElementById('pendingSignupBadge'),
+                document.getElementById('toolSignupBadge')
+            ].forEach(badge => {
+                if (!badge) return;
+                badge.textContent = String(n);
+                badge.style.display = n > 0 ? 'inline-flex' : 'none';
+            });
         }
 
         function refreshPendingSignupBadge() {
@@ -4700,11 +4725,15 @@
             }
         }
         function updatePendingRewardBadge(count) {
-            const badge = document.getElementById('pendingRewardBadge');
-            if (!badge) return;
-            const n = Number(count) || 0;
-            badge.textContent = String(n);
-            badge.style.display = n > 0 ? 'inline-flex' : 'none';
+            const n = Math.max(0, Number(count) || 0);
+            [
+                document.getElementById('pendingRewardBadge'),
+                document.getElementById('toolRewardBadge')
+            ].forEach(badge => {
+                if (!badge) return;
+                badge.textContent = String(n);
+                badge.style.display = n > 0 ? 'inline-flex' : 'none';
+            });
         }
 
         function refreshPendingRewardBadge() {
@@ -6269,10 +6298,17 @@
         function openAdminToolsModal(){
             const m=document.getElementById('adminToolsModal'); if(!m)return;
             const full=isFullAdminMode();
+            const canReward=canUseAdminFeature('rewards_manage')||canUseAdminFeature('draw_manage');
+            const canSignup=canUseAdminFeature('signup_manage');
             const show=(id,on)=>{const el=document.getElementById(id);if(el)el.style.display=on?'':'none';};
-            show('toolRewardBtn',canUseAdminFeature('rewards_manage')||canUseAdminFeature('draw_manage'));
-            show('toolSignupBtn',canUseAdminFeature('signup_manage'));
+            show('toolRewardBtn',canReward);
+            show('toolSignupBtn',canSignup);
             ['toolShopEditorBtn','toolRoleBtn','toolAcademicBtn','toolPasswordResetBtn','toolStudentEditBtn'].forEach(id=>show(id,full));
+
+            // 관리 도구를 여는 순간 각 항목의 최신 대기 건수를 다시 확인
+            if(canReward) refreshPendingRewardBadge(); else updatePendingRewardBadge(0);
+            if(canSignup) refreshPendingSignupBadge(); else updatePendingSignupBadge(0);
+
             m.style.display='flex';
         }
         function closeAdminToolsModal(){const m=document.getElementById('adminToolsModal');if(m)m.style.display='none';}
