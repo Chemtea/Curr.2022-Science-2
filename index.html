@@ -1778,6 +1778,44 @@
             color: #7dd3fc;
             border: 1px solid rgba(56, 189, 248, 0.3);
         }
+        .reward-request-product-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 5px;
+        }
+        .reward-request-product-name {
+            color: #f8fafc;
+            font-size: 1.04rem;
+            font-weight: 950;
+            line-height: 1.4;
+        }
+        .reward-quantity-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 4px 10px;
+            background: rgba(250, 204, 21, 0.14);
+            color: #fde047;
+            border: 1px solid rgba(250, 204, 21, 0.45);
+            font-size: 0.82rem;
+            font-weight: 950;
+            white-space: nowrap;
+        }
+        .reward-request-cost {
+            margin-top: 6px;
+            color: #cbd5e1;
+            font-size: 0.82rem;
+            font-weight: 800;
+            line-height: 1.45;
+        }
+        .reward-request-cost strong {
+            color: #fde68a;
+            font-size: 0.94rem;
+        }
+        .reward-request-time { margin-top: 4px; }
         @media (max-width: 650px) {
             .point-modal-box { width: 96%; padding: 20px 16px; }
             .admin-point-grid { grid-template-columns: 1fr; }
@@ -4642,14 +4680,19 @@
                                 <div style="display:flex; gap:10px; align-items:flex-start;">
                                     <input class="reward-select-check" type="checkbox" value="${escapeHtml(item.requestId)}"
                                         onchange="updateRewardSelectedCount()"
-                                        aria-label="${escapeHtml(item.studentId)} ${escapeHtml(item.itemName)} 처리 선택">
+                                        aria-label="${escapeHtml(item.studentId)} ${escapeHtml(item.itemName)}${isDraw ? '' : ` ${quantity}개`} 처리 선택">
                                     <div>
                                         <div class="approval-id">${escapeHtml(item.studentId)} · ${escapeHtml(item.name)}</div>
-                                        <div class="approval-name">${isDraw ? '🏆' : '🎁'} ${escapeHtml(item.itemName)}</div>
-                                        <div class="approval-meta">
-                                            ${escapeHtml(item.requestedAt || '')}
-                                            · ${isDraw ? `${totalCost}P 최종 사용` : `${unitCost}P × ${quantity} = ${totalCost}P`}
+                                        <div class="reward-request-product-row">
+                                            <span class="reward-request-product-name">${isDraw ? '🏆' : '🎁'} ${escapeHtml(item.itemName)}</span>
+                                            ${isDraw ? '' : `<span class="reward-quantity-badge">수량 ${quantity}개</span>`}
                                         </div>
+                                        <div class="reward-request-cost">
+                                            ${isDraw
+                                                ? `총 <strong>${totalCost}P</strong> 최종 사용`
+                                                : `개당 ${unitCost}P × ${quantity}개 · 총 <strong>${totalCost}P</strong> 사용`}
+                                        </div>
+                                        <div class="approval-meta reward-request-time">신청: ${escapeHtml(item.requestedAt || '-')}</div>
                                     </div>
                                 </div>
                                 <span class="reward-status">${isDraw ? '당첨' : '신청'}</span>
