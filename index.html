@@ -1352,6 +1352,15 @@
             background: linear-gradient(135deg, #0284c7, #6366f1);
             color: #fff;
         }
+        /* ===== 경품 응모 확인 팝업 ===== */
+        .draw-confirm-box{max-width:520px;text-align:center;}
+        .draw-confirm-icon{font-size:3rem;margin-bottom:8px;}
+        .draw-confirm-title{font-size:1.25rem;font-weight:950;color:#f8fafc;margin-bottom:8px;}
+        .draw-confirm-detail{background:#0f172a;border:1px solid #334155;border-radius:12px;padding:14px 16px;color:#cbd5e1;line-height:1.7;margin:14px 0 16px;text-align:left;}
+        .draw-confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+        .draw-confirm-yes,.draw-confirm-no{border:0;border-radius:11px;padding:13px 10px;font-weight:950;cursor:pointer;font-size:.95rem;}
+        .draw-confirm-yes{background:#16a34a;color:#fff}.draw-confirm-yes:hover{background:#15803d}
+        .draw-confirm-no{background:#dc2626;color:#fff}.draw-confirm-no:hover{background:#b91c1c}
         .modal-btn-cancel {
             background: #334155;
             color: #cbd5e1;
@@ -2083,29 +2092,8 @@
         .danger-action-btn{background:#7f1d1d;color:#fecaca;border:none;border-radius:8px;padding:8px 11px;font-weight:900;cursor:pointer;}
         .admin-tool-launcher{background:rgba(15,23,42,.35)!important;border:1px solid rgba(255,255,255,.72)!important;}
         .admin-tools-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
-        .admin-tools-grid button{border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:12px;padding:14px 12px;font-weight:900;cursor:pointer;text-align:left;position:relative;}
+        .admin-tools-grid button{border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:12px;padding:14px 12px;font-weight:900;cursor:pointer;text-align:left;}
         .admin-tools-grid button:hover{border-color:#38bdf8;background:#172033;}
-        .admin-tool-item-badge{
-            position:absolute;
-            top:7px;
-            right:8px;
-            display:none;
-            min-width:22px;
-            height:22px;
-            padding:0 6px;
-            align-items:center;
-            justify-content:center;
-            border-radius:999px;
-            background:#ef4444;
-            color:#fff;
-            border:2px solid #0f172a;
-            box-shadow:0 3px 10px rgba(239,68,68,.38);
-            font-size:.72rem;
-            font-weight:950;
-            line-height:1;
-            z-index:2;
-        }
-        .admin-tools-grid button:hover .admin-tool-item-badge{border-color:#172033;}
         .announcement-login-box{max-width:780px!important;width:min(94vw,780px)!important;border-color:#f59e0b!important;box-shadow:0 20px 60px rgba(0,0,0,.8),0 0 32px rgba(245,158,11,.22)!important;}
         .announcement-login-box h3{font-size:1.55rem!important;color:#fde68a!important;}
         .announcement-card .compact-details .announcement-content{margin-top:8px;}
@@ -2330,7 +2318,7 @@
                     <div class="section-header-box">
                         <span class="section-label-tag tag-eval">🏆 IB MYP ASSESSMENT</span>
                         <h2>탐구 수행평가 전용 평가관</h2>
-                        <p>기준 B·C를 적용한 모의/실전 탐구 수행평가 및 보고서 제출 공간입니다.</p>
+                        <p>관리자가 공개한 평가 자료만 이용할 수 있습니다.</p>
                     </div>
                     <div class="unit-select-grid" id="evalUnitGrid"></div>
                 </div>
@@ -2443,15 +2431,15 @@
             <div class="modal-form-group">
                 <div class="modal-form-row">
                     <label>학번 (예: 2314) 또는 관리자 ID</label>
-                    <input type="text" id="loginStudentId" class="modal-input" placeholder="학번(4자리) 또는 ID 입력" maxlength="10" autocomplete="username">
+                    <input type="text" id="loginStudentId" class="modal-input" placeholder="학번(4자리) 또는 ID 입력" maxlength="20" autocomplete="username">
                 </div>
                 <div class="modal-form-row" id="loginPwRow">
                     <label>비밀번호 (8자리 이상)</label>
-                    <input type="password" id="loginStudentPw" class="modal-input" placeholder="비밀번호 입력 (8자리 이상)" autocomplete="current-password">
+                    <input type="password" id="loginStudentPw" class="modal-input" placeholder="비밀번호 입력 (8자리 이상)" maxlength="64" autocomplete="current-password">
                 </div>
                 <div class="modal-form-row" id="loginPwConfirmRow" style="display:none;">
                     <label>비밀번호 확인</label>
-                    <input type="password" id="loginStudentPwConfirm" class="modal-input" placeholder="비밀번호 한 번 더 입력" autocomplete="new-password">
+                    <input type="password" id="loginStudentPwConfirm" class="modal-input" placeholder="비밀번호 한 번 더 입력" maxlength="64" autocomplete="new-password">
                 </div>
             </div>
 
@@ -2478,15 +2466,15 @@
                 </div>
                 <div class="modal-form-row">
                     <label>이름</label>
-                    <input type="text" id="signupName" class="modal-input" maxlength="30" placeholder="이름 입력" autocomplete="name">
+                    <input type="text" id="signupName" class="modal-input" maxlength="40" placeholder="이름 입력" autocomplete="name">
                 </div>
                 <div class="modal-form-row">
                     <label>비밀번호 (8자리 이상)</label>
-                    <input type="password" id="signupPw" class="modal-input" placeholder="비밀번호 입력 (8자리 이상)" autocomplete="new-password">
+                    <input type="password" id="signupPw" class="modal-input" placeholder="비밀번호 입력 (8자리 이상)" maxlength="64" autocomplete="new-password">
                 </div>
                 <div class="modal-form-row">
                     <label>비밀번호 확인</label>
-                    <input type="password" id="signupPwConfirm" class="modal-input" placeholder="비밀번호 다시 입력" autocomplete="new-password">
+                    <input type="password" id="signupPwConfirm" class="modal-input" placeholder="비밀번호 다시 입력" maxlength="64" autocomplete="new-password">
                 </div>
             </div>
             <div class="modal-btn-group">
@@ -2613,6 +2601,19 @@
         </div>
     </div>
 
+    <!-- 경품 응모 최종 확인 -->
+    <div id="drawConfirmModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box draw-confirm-box" onclick="event.stopPropagation()">
+            <div class="draw-confirm-icon">🎟️</div>
+            <div class="draw-confirm-title">경품에 응모하시겠습니까?</div>
+            <div id="drawConfirmDetail" class="draw-confirm-detail"></div>
+            <div class="draw-confirm-actions">
+                <button type="button" class="draw-confirm-yes" onclick="resolveDrawConfirm(true)">✅ 응모하기</button>
+                <button type="button" class="draw-confirm-no" onclick="resolveDrawConfirm(false)">✖ 응모하지 않기</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 최고관리자 학년도 전환 -->
     <div id="academicYearModal" class="modal-overlay">
         <div class="modal-box point-modal-box" style="max-width:760px;">
@@ -2643,13 +2644,14 @@
             <h3>🧰 관리자 도구</h3>
             <p class="modal-desc-sub">자주 쓰는 공지·질문·포인트·평가관은 상단에 유지하고, 운영·설정 기능은 이곳에 모았습니다.</p>
             <div class="admin-tools-grid">
-                <button id="toolRewardBtn" onclick="launchAdminTool('reward')">🎁 <b>상품</b><span id="toolRewardBadge" class="admin-tool-item-badge" title="처리가 필요한 상품 신청·경품 추첨">0</span><br><small>상품 신청 처리·경품 추첨</small></button>
+                <button id="toolRewardBtn" onclick="launchAdminTool('reward')">🎁 <b>상품</b><br><small>상품 신청 처리·경품 추첨</small></button>
                 <button id="toolShopEditorBtn" class="tool-primary" onclick="launchAdminTool('shopEditor')">🛒 <b>상품 추가·수정</b><br><small>가격·재고·활성화·경품 일정</small></button>
                 <button id="toolRoleBtn" onclick="launchAdminTool('roles')">🛡️ <b>중간관리자</b><br><small>계정 유형 및 권한 설정</small></button>
                 <button id="toolAcademicBtn" onclick="launchAdminTool('academic')">📅 <b>학년도</b><br><small>다음 학년도 준비·전환</small></button>
-                <button id="toolSignupBtn" onclick="launchAdminTool('signup')">👥 <b>회원가입</b><span id="toolSignupBadge" class="admin-tool-item-badge" title="승인이 필요한 외부 회원가입 신청">0</span><br><small>외부 회원가입 승인·거절</small></button>
+                <button id="toolSignupBtn" onclick="launchAdminTool('signup')">👥 <b>회원가입</b><br><small>외부 회원가입 승인·거절</small></button>
                 <button id="toolPasswordResetBtn" class="tool-danger" onclick="launchAdminTool('passwordReset')">🔑 <b>비밀번호 초기화</b><br><small>학생을 최초 비밀번호 설정 상태로 전환</small></button>
                 <button id="toolStudentEditBtn" onclick="launchAdminTool('studentEdit')">✏️ <b>학생 계정 수정</b><br><small>학생 이름 수정·계정 정보 확인</small></button>
+                <button id="toolCreateStudentBtn" class="tool-primary" onclick="launchAdminTool('createStudent')">➕ <b>학생 계정 추가</b><br><small>전학생 학번·이름으로 즉시 계정 생성</small></button>
             </div>
             <div class="modal-btn-group" style="margin-top:18px;">
                 <button type="button" class="modal-btn-cancel" onclick="closeAdminToolsModal()">닫기</button>
@@ -2688,6 +2690,22 @@
                 </div>
             </div>
             <div class="modal-btn-group" style="margin-top:16px;"><button type="button" class="modal-btn-cancel" onclick="closeShopEditorModal()">닫기</button></div>
+        </div>
+    </div>
+
+    <div id="studentAccountCreateModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box point-modal-box" style="max-width:560px;">
+            <h3>➕ 학생 계정 추가</h3>
+            <p class="modal-desc-sub">현재 학년도 전학생 등 새 학생 계정을 생성합니다. 학생은 로그인 화면에서 최초 비밀번호를 직접 설정합니다.</p>
+            <div class="modal-form-group">
+                <div class="modal-form-row"><label>학번</label><input id="createStudentIdInput" class="modal-input" inputmode="numeric" maxlength="4" placeholder="예: 2315"></div>
+                <div class="modal-form-row"><label>이름</label><input id="createStudentNameInput" class="modal-input" maxlength="40" placeholder="학생 이름"></div>
+            </div>
+            <div id="createStudentResult" class="admin-info-note" style="display:none;"></div>
+            <div class="modal-btn-group" style="margin-top:16px;">
+                <button type="button" class="modal-btn-cancel" onclick="closeStudentAccountCreateModal()">닫기</button>
+                <button type="button" class="modal-btn-confirm" id="createStudentAccountBtn" onclick="submitStudentAccountCreate()">계정 생성</button>
+            </div>
         </div>
     </div>
 
@@ -2990,6 +3008,7 @@
         const SUBMISSION_API_URL = window.PLATFORM_CONFIG.SUBMISSION_API;
         const LOCK_API_URL = window.PLATFORM_CONFIG.LOCK_API || window.PLATFORM_CONFIG.PLATFORM_API;
         const ADMIN_TOOLS_API_URL = `${window.PLATFORM_CONFIG.baseUrl}/functions/v1/admin-tools-api`;
+        const ADMIN_ACCOUNT_API_URL = `${window.PLATFORM_CONFIG.baseUrl}/functions/v1/admin-account-api`;
         const ADMIN_DASHBOARD_API_URL = `${window.PLATFORM_CONFIG.baseUrl}/functions/v1/admin-dashboard-api`;
 
         async function checkProductionBackend() {
@@ -3191,6 +3210,8 @@
                 'adminRewardModal',
                 'roleManagerModal',
                 'adminToolsModal',
+                'studentAccountCreateModal',
+                'drawConfirmModal',
                 'shopEditorModal',
                 'passwordResetAdminModal',
                 'studentAccountEditModal',
@@ -3929,15 +3950,11 @@
         }
 
         function updatePendingSignupBadge(count) {
-            const n = Math.max(0, Number(count) || 0);
-            [
-                document.getElementById('pendingSignupBadge'),
-                document.getElementById('toolSignupBadge')
-            ].forEach(badge => {
-                if (!badge) return;
-                badge.textContent = String(n);
-                badge.style.display = n > 0 ? 'inline-flex' : 'none';
-            });
+            const badge = document.getElementById('pendingSignupBadge');
+            if (!badge) return;
+            const n = Number(count) || 0;
+            badge.textContent = String(n);
+            badge.style.display = n > 0 ? 'inline-flex' : 'none';
         }
 
         function refreshPendingSignupBadge() {
@@ -4297,6 +4314,21 @@
                 grid.innerHTML = `<div class="point-empty" style="grid-column:1/-1;">⚠️ ${escapeHtml(err.message)}</div>`;
             }
         }
+        let drawConfirmResolver = null;
+        function openDrawConfirmModal(itemName, unitCost) {
+            const modal=document.getElementById('drawConfirmModal');
+            const detail=document.getElementById('drawConfirmDetail');
+            if(!modal||!detail) return Promise.resolve(false);
+            if(drawConfirmResolver){try{drawConfirmResolver(false);}catch(_){} drawConfirmResolver=null;}
+            detail.innerHTML=`<b style="color:#f8fafc;">${escapeHtml(itemName)}</b><br>응모 포인트: <b style="color:#fde68a;">${Number(unitCost)||0}P</b><br><br>응모하면 포인트가 추첨일까지 보류됩니다.<br>당첨 시 최종 사용되며, 미당첨 시 자동 환불됩니다.`;
+            modal.style.display='flex';
+            return new Promise(resolve=>{drawConfirmResolver=resolve;});
+        }
+        function resolveDrawConfirm(confirmed){
+            const modal=document.getElementById('drawConfirmModal'); if(modal) modal.style.display='none';
+            const resolve=drawConfirmResolver; drawConfirmResolver=null; if(resolve) resolve(confirmed===true);
+        }
+
         async function requestShopItem(encodedItemId, quantityInputId, isDraw) {
             const itemId = decodeURIComponent(String(encodedItemId || ''));
             const item = shopItemsCache.find(x => String(x.itemId) === itemId);
@@ -4315,15 +4347,13 @@
             }
 
             const totalCost = unitCost * quantity;
-            const confirmText = isDraw
-                ? `${itemName}\n응모 포인트: ${unitCost}P\n\n` +
-                  `이 경품은 1인 1회만 응모할 수 있습니다.\n` +
-                  `응모 시 ${unitCost}P가 추첨일까지 보류됩니다.\n` +
-                  `당첨되면 해당 포인트가 최종 사용되고, 미당첨이면 전액 자동 환불됩니다.\n\n응모하시겠습니까?`
-                : `${itemName}\n수량: ${quantity}개\n사용 포인트: ${totalCost}P (${unitCost}P × ${quantity})\n\n` +
-                  `신청 즉시 포인트가 차감되며, 교사가 거절하면 자동 환불됩니다.`;
-
-            if (!confirm(confirmText)) return;
+            if (isDraw) {
+                const confirmed = await openDrawConfirmModal(itemName, unitCost);
+                if (!confirmed) return;
+            } else {
+                const confirmText = `${itemName}\n수량: ${quantity}개\n사용 포인트: ${totalCost}P (${unitCost}P × ${quantity})\n\n신청 즉시 포인트가 차감되며, 교사가 거절하면 자동 환불됩니다.`;
+                if (!confirm(confirmText)) return;
+            }
 
             try {
                 const data = await callPointApi("request_reward", { itemId, quantity });
@@ -4725,15 +4755,11 @@
             }
         }
         function updatePendingRewardBadge(count) {
-            const n = Math.max(0, Number(count) || 0);
-            [
-                document.getElementById('pendingRewardBadge'),
-                document.getElementById('toolRewardBadge')
-            ].forEach(badge => {
-                if (!badge) return;
-                badge.textContent = String(n);
-                badge.style.display = n > 0 ? 'inline-flex' : 'none';
-            });
+            const badge = document.getElementById('pendingRewardBadge');
+            if (!badge) return;
+            const n = Number(count) || 0;
+            badge.textContent = String(n);
+            badge.style.display = n > 0 ? 'inline-flex' : 'none';
         }
 
         function refreshPendingRewardBadge() {
@@ -5358,7 +5384,7 @@
             unit3_eval: {
                 id: "unit3_eval",
                 category: "eval",
-                title: "Unit 3 수행평가. 빛 합성 전기 회로",
+                title: "Unit 3 수행평가",
                 icon: "🏆",
                 isLocked: true,
                 themeClass: "theme-unit3-eval",
@@ -5368,43 +5394,43 @@
                 badgeClass: "badge-unit3-eval",
                 cardClass: "unit-3-eval-card",
                 btnClass: "btn-unit3-eval",
-                desc: "IB MYP 기준 B·C를 적용한 '빛 합성 전기 회로' 형성평가 및 총괄평가 탐구 평가관입니다.",
+                desc: "관리자가 공개한 평가 자료입니다.",
                 lessons: [
                     {
                         id: "u3e_l1",
-                        chasi: "형성평가",
-                        title: "빛 합성 회로 형성평가 가상실험실",
-                        desc: "스위치 및 저항 조작, 탭별 결과 기록, 학생 자가진단 그래프(비번 255) 및 구글 시트 연동 제출을 실습합니다.",
+                        chasi: "평가 1",
+                        title: "형성평가",
+                        desc: "",
                         file: "01_formative_circuit_lab.html",
                         isLocked: false,
-                        tags: ["형성평가", "자가진단 그래프", "구글 시트 연동", "채점기"]
+                        tags: []
                     },
                     {
                         id: "u3e_l2",
-                        chasi: "보고서 양식",
-                        title: "IB 탐구 실험보고서 양식 (출력용)",
-                        desc: "Criterion B(가설·변수·설계) 및 Criterion C(데이터·대형 모눈 자율 작도·결론·평가) 인쇄/작성용 보고서 양식입니다.",
+                        chasi: "평가 2",
+                        title: "평가 보고서 양식",
+                        desc: "",
                         file: "02_assessment_report_form.html",
                         isLocked: false,
-                        tags: ["A4 2쪽 규격", "Criterion B·C", "자율 모눈 그래프", "PDF 저장"]
+                        tags: []
                     },
                     {
                         id: "u3e_l3",
-                        chasi: "총괄평가",
-                        title: "빛 합성 회로 총괄평가 가상실험실",
-                        desc: "학생 정보 고정, 실시간 데이터 측정 및 기록, 구글 시트 최종 데이터 제출 및 교사용 채점기 모드를 제공합니다.",
+                        chasi: "평가 3",
+                        title: "총괄평가",
+                        desc: "",
                         file: "03_summative_circuit_lab.html",
                         isLocked: true,
-                        tags: ["총괄평가", "1회 최종 제출", "구글 시트 연동", "교사용 채점기"]
+                        tags: []
                     },
                     {
                         id: "u3e_l4",
-                        chasi: "교사용 답안",
-                        title: "탐구 실험보고서 모범 답안",
-                        desc: "Criterion B 및 C 전 문항에 대한 정량적 수치 근거, 옴의 법칙 결론 및 정밀 곡선 피팅 작도 모범 답안입니다.",
+                        chasi: "교사용",
+                        title: "교사용 자료",
+                        desc: "",
                         file: "04_assessment_report_answer.html",
                         isLocked: true,
-                        tags: ["모범 답안", "정밀 반비례선", "채점 기준표", "교사용"]
+                        tags: []
                     }
                 ]
             }
@@ -6298,17 +6324,10 @@
         function openAdminToolsModal(){
             const m=document.getElementById('adminToolsModal'); if(!m)return;
             const full=isFullAdminMode();
-            const canReward=canUseAdminFeature('rewards_manage')||canUseAdminFeature('draw_manage');
-            const canSignup=canUseAdminFeature('signup_manage');
             const show=(id,on)=>{const el=document.getElementById(id);if(el)el.style.display=on?'':'none';};
-            show('toolRewardBtn',canReward);
-            show('toolSignupBtn',canSignup);
-            ['toolShopEditorBtn','toolRoleBtn','toolAcademicBtn','toolPasswordResetBtn','toolStudentEditBtn'].forEach(id=>show(id,full));
-
-            // 관리 도구를 여는 순간 각 항목의 최신 대기 건수를 다시 확인
-            if(canReward) refreshPendingRewardBadge(); else updatePendingRewardBadge(0);
-            if(canSignup) refreshPendingSignupBadge(); else updatePendingSignupBadge(0);
-
+            show('toolRewardBtn',canUseAdminFeature('rewards_manage')||canUseAdminFeature('draw_manage'));
+            show('toolSignupBtn',canUseAdminFeature('signup_manage'));
+            ['toolShopEditorBtn','toolRoleBtn','toolAcademicBtn','toolPasswordResetBtn','toolStudentEditBtn','toolCreateStudentBtn'].forEach(id=>show(id,full));
             m.style.display='flex';
         }
         function closeAdminToolsModal(){const m=document.getElementById('adminToolsModal');if(m)m.style.display='none';}
@@ -6321,6 +6340,38 @@
             if(tool==='signup')return openSignupApprovalModal();
             if(tool==='passwordReset')return openPasswordResetAdminModal();
             if(tool==='studentEdit')return openStudentAccountEditModal();
+            if(tool==='createStudent')return openStudentAccountCreateModal();
+        }
+
+        async function callAdminAccountApi(action,payload={}) {
+            const adminKey=getAdminSessionToken();
+            if(!adminKey) throw new Error('최고관리자 인증이 필요합니다.');
+            const data=await fetchJsonWithTimeout(ADMIN_ACCOUNT_API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,adminKey,...payload})},15000);
+            if(!data||!data.success) throw new Error(data?.message||'학생 계정 추가 요청에 실패했습니다.');
+            return data;
+        }
+        function openStudentAccountCreateModal(){
+            if(!isFullAdminMode()){alert('최고관리자만 학생 계정을 추가할 수 있습니다.');return;}
+            const m=document.getElementById('studentAccountCreateModal');if(!m)return;
+            document.getElementById('createStudentIdInput').value='';
+            document.getElementById('createStudentNameInput').value='';
+            const r=document.getElementById('createStudentResult');if(r){r.style.display='none';r.textContent='';}
+            m.style.display='flex'; setTimeout(()=>document.getElementById('createStudentIdInput')?.focus(),50);
+        }
+        function closeStudentAccountCreateModal(){const m=document.getElementById('studentAccountCreateModal');if(m)m.style.display='none';}
+        async function submitStudentAccountCreate(){
+            const studentId=String(document.getElementById('createStudentIdInput')?.value||'').trim();
+            const name=String(document.getElementById('createStudentNameInput')?.value||'').trim();
+            if(!/^\d{4}$/.test(studentId)){alert('학번은 숫자 4자리로 입력해 주세요.');return;}
+            if(!name){alert('학생 이름을 입력해 주세요.');return;}
+            const btn=document.getElementById('createStudentAccountBtn');if(btn){btn.disabled=true;btn.textContent='생성 중...';}
+            try{
+                const data=await callAdminAccountApi('admin_create_student_account',{studentId,name});
+                const r=document.getElementById('createStudentResult');
+                if(r){r.style.display='block';r.innerHTML=`✅ <b>${escapeHtml(studentId)} ${escapeHtml(name)}</b> 계정을 생성했습니다.<br>학생은 로그인 화면에서 최초 비밀번호를 설정하면 됩니다.`;}
+                document.getElementById('createStudentIdInput').value='';document.getElementById('createStudentNameInput').value='';adminAccountsCache=[];
+            }catch(e){alert('❌ 계정 생성 실패: '+e.message);}
+            finally{if(btn){btn.disabled=false;btn.textContent='계정 생성';}}
         }
 
         function closeShopEditorModal(){const m=document.getElementById('shopEditorModal');if(m)m.style.display='none';}
@@ -7163,24 +7214,6 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-
-        // ============================================================
-        // 차시 활동 페이지에서 같은 탭으로 돌아왔을 때 단원 화면 자동 열기
-        // 예: index.html?unit=unit7 / index.html?unit=unit3
-        // ============================================================
-        function openRequestedUnitFromUrl() {
-            const params = new URLSearchParams(window.location.search);
-            const requestedUnit = String(params.get('unit') || '').trim();
-            if (!requestedUnit) return false;
-
-            const unit = defaultCurriculum[requestedUnit];
-            if (!unit) return false;
-
-            // 기존 enterUnit()을 그대로 사용하므로 잠금/평가관 접근 규칙도 그대로 유지됩니다.
-            enterUnit(requestedUnit);
-            return currentUnitKey === requestedUnit;
-        }
-
         function backToHub() {
             currentUnitKey = null;
             document.getElementById('unitHubView').style.display = 'block';
@@ -7254,6 +7287,9 @@
                 if (event.target === event.currentTarget) closeClassDashboardModal();
             });
         }
+
+        const drawConfirmModalEl=document.getElementById('drawConfirmModal');
+        if(drawConfirmModalEl){drawConfirmModalEl.addEventListener('click',(e)=>{if(e.target===drawConfirmModalEl)resolveDrawConfirm(false);});}
 
         ['pointCenterModal', 'shopModal', 'changePasswordModal'].forEach((id) => {
             const overlay = document.getElementById(id);
@@ -7483,9 +7519,6 @@
             }
             updateEvalHallAdminControls();
             renderUnitHub();
-
-            // 차시의 [← 단원 선택]에서 돌아온 경우 해당 단원 목록을 같은 탭에서 바로 엽니다.
-            openRequestedUnitFromUrl();
         });
     
         document.addEventListener('keydown', function(e){
