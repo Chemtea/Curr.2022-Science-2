@@ -2094,6 +2094,8 @@
         .admin-tools-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
         .admin-tools-grid button{border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:12px;padding:14px 12px;font-weight:900;cursor:pointer;text-align:left;}
         .admin-tools-grid button:hover{border-color:#38bdf8;background:#172033;}
+        .admin-tool-title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+        .admin-tool-title-row .pending-badge{margin-left:auto;flex:0 0 auto;}
         .announcement-login-box{max-width:780px!important;width:min(94vw,780px)!important;border-color:#f59e0b!important;box-shadow:0 20px 60px rgba(0,0,0,.8),0 0 32px rgba(245,158,11,.22)!important;}
         .announcement-login-box h3{font-size:1.55rem!important;color:#fde68a!important;}
         .announcement-card .compact-details .announcement-content{margin-top:8px;}
@@ -2644,11 +2646,11 @@
             <h3>🧰 관리자 도구</h3>
             <p class="modal-desc-sub">자주 쓰는 공지·질문·포인트·평가관은 상단에 유지하고, 운영·설정 기능은 이곳에 모았습니다.</p>
             <div class="admin-tools-grid">
-                <button id="toolRewardBtn" onclick="launchAdminTool('reward')">🎁 <b>상품</b><br><small>상품 신청 처리·경품 추첨</small></button>
+                <button id="toolRewardBtn" onclick="launchAdminTool('reward')"><span class="admin-tool-title-row"><span>🎁 <b>상품</b></span><span id="toolRewardBadge" class="pending-badge" style="display:none;" title="상품·경품 처리 대기">0</span></span><small>상품 신청 처리·경품 추첨</small></button>
                 <button id="toolShopEditorBtn" class="tool-primary" onclick="launchAdminTool('shopEditor')">🛒 <b>상품 추가·수정</b><br><small>가격·재고·활성화·경품 일정</small></button>
                 <button id="toolRoleBtn" onclick="launchAdminTool('roles')">🛡️ <b>중간관리자</b><br><small>계정 유형 및 권한 설정</small></button>
                 <button id="toolAcademicBtn" onclick="launchAdminTool('academic')">📅 <b>학년도</b><br><small>다음 학년도 준비·전환</small></button>
-                <button id="toolSignupBtn" onclick="launchAdminTool('signup')">👥 <b>회원가입</b><br><small>외부 회원가입 승인·거절</small></button>
+                <button id="toolSignupBtn" onclick="launchAdminTool('signup')"><span class="admin-tool-title-row"><span>👥 <b>회원가입</b></span><span id="toolSignupBadge" class="pending-badge" style="display:none;" title="회원가입 승인 대기">0</span></span><small>외부 회원가입 승인·거절</small></button>
                 <button id="toolPasswordResetBtn" class="tool-danger" onclick="launchAdminTool('passwordReset')">🔑 <b>비밀번호 초기화</b><br><small>학생을 최초 비밀번호 설정 상태로 전환</small></button>
                 <button id="toolStudentEditBtn" onclick="launchAdminTool('studentEdit')">✏️ <b>학생 계정 수정</b><br><small>학생 이름 수정·계정 정보 확인</small></button>
                 <button id="toolCreateStudentBtn" class="tool-primary" onclick="launchAdminTool('createStudent')">➕ <b>학생 계정 추가</b><br><small>전학생 학번·이름으로 즉시 계정 생성</small></button>
@@ -3950,11 +3952,13 @@
         }
 
         function updatePendingSignupBadge(count) {
-            const badge = document.getElementById('pendingSignupBadge');
-            if (!badge) return;
             const n = Number(count) || 0;
-            badge.textContent = String(n);
-            badge.style.display = n > 0 ? 'inline-flex' : 'none';
+            ['pendingSignupBadge', 'toolSignupBadge'].forEach(id => {
+                const badge = document.getElementById(id);
+                if (!badge) return;
+                badge.textContent = String(n);
+                badge.style.display = n > 0 ? 'inline-flex' : 'none';
+            });
         }
 
         function refreshPendingSignupBadge() {
@@ -4755,11 +4759,13 @@
             }
         }
         function updatePendingRewardBadge(count) {
-            const badge = document.getElementById('pendingRewardBadge');
-            if (!badge) return;
             const n = Number(count) || 0;
-            badge.textContent = String(n);
-            badge.style.display = n > 0 ? 'inline-flex' : 'none';
+            ['pendingRewardBadge', 'toolRewardBadge'].forEach(id => {
+                const badge = document.getElementById(id);
+                if (!badge) return;
+                badge.textContent = String(n);
+                badge.style.display = n > 0 ? 'inline-flex' : 'none';
+            });
         }
 
         function refreshPendingRewardBadge() {
