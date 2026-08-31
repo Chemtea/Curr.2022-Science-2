@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- 기존 수행평가 플랫폼의 공통 설정·실시간 잠금 클라이언트 사용 -->
+  <script src="./platform-config.js"></script>
+  <script src="./lock-realtime-client.js"></script>
+  <script>
+    const ASSESSMENT_CONFIG = Object.freeze({
+      UNIT_KEY: "unit3_eval",
+      LESSON_ID: "u3e_l3",
+      MODE: "summative",
+      FALLBACK_SCHOOL_YEAR: 2026
+    });
+
+    (function () {
+      function blockingPage(title, message, tone = "lock") {
+        const accent = tone === "warn" ? "#fbbf24" : "#f87171";
+        document.documentElement.innerHTML = `
+          <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>${title}</title><style>
+          body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#070b14;color:#e2e8f0;font-family:'Malgun Gothic',sans-serif;padding:20px;text-align:center}
+          .box{width:min(460px,94vw);background:#111827;border:1px solid #334155;border-radius:16px;padding:28px 24px;box-shadow:0 18px 50px #0008}
+          h2{color:${accent};font-size:1.28rem;margin:0 0 10px}p{color:#cbd5e1;line-height:1.65;margin:0 0 18px}button{border:0;border-radius:8px;padding:10px 18px;background:#0284c7;color:white;font-weight:800;cursor:pointer}
+          </style></head><body><div class="box"><h2>${title}</h2><p>${message}</p><button onclick="location.href='index.html'">홈 포털로 이동</button></div></body>`;
+      }
+
+      const cfg = window.PLATFORM_CONFIG || {};
+      const lockApi = cfg.LOCK_API || cfg.PLATFORM_API || "";
+      if (location.protocol === "file:" || !lockApi) return;
+
+      let requestInFlight = null;
+      async function readLock() {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 4500);
+        try {
+          const res = await fetch(lockApi, {
+            method: "POST",
+            headers: {"Content-Type":"text/plain;charset=utf-8"},
+            body: JSON.stringify({action:"get_locks"}),
+            cache: "no-store",
+            signal: controller.signal
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return await res.json();
+        } finally { clearTimeout(timer); }
+      }
+
+      window.verifyAssessmentLockStatus = function () {
+        if (requestInFlight) return requestInFlight;
+        requestInFlight = (async () => {
+          let data = null;
+          let lastError = null;
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            try { data = await readLock(); lastError = null; break; }
+            catch (error) { lastError = error; if (attempt < 3) await new Promise(r => setTimeout(r, 450 * attempt)); }
+          }
+          if (lastError || !data || typeof data !== "object") {
+            blockingPage("⚠️ 수행평가 공개 상태 확인 실패", "잠금 상태를 확인할 수 없어 우회 접속 방지를 위해 페이지를 제한했습니다.", "warn");
+            return;
+          }
+          const unit = data[ASSESSMENT_CONFIG.UNIT_KEY];
+          if (unit && (unit.isLocked === true || unit.lessons?.[ASSESSMENT_CONFIG.LESSON_ID] === true)) {
+            blockingPage("🔒 수행평가 접근 제한", "선생님이 현재 수행평가를 잠가 두었습니다. 안내를 받은 뒤 다시 접속해 주세요.");
+          }
+        })().finally(() => { requestInFlight = null; });
+        return requestInFlight;
+      };
+
+      verifyAssessmentLockStatus();
+      if (typeof window.createLockRealtimeClient === "function") {
+        const rtc = window.createLockRealtimeClient(() => verifyAssessmentLockStatus());
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") { rtc.reconnect(); verifyAssessmentLockStatus(); }
+        });
+        window.addEventListener("focus", () => { rtc.reconnect(); verifyAssessmentLockStatus(); });
+        window.addEventListener("online", () => { rtc.reconnect(); verifyAssessmentLockStatus(); });
+      }
+    })();
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unit 3 총괄 수행평가 · 파장 실험실</title>
+  <style>
+    :root{
+      --bg:#07101e;--panel:#111c2f;--panel2:#0b1526;--border:#30415c;--text:#f8fafc;--muted:#9ca9bd;
+      --electric:#f59e0b;--wave:#38bdf8;--green:#22c55e;--red:#f87171;--purple:#a78bfa;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:radial-gradient(circle at 20% 0%,#102649 0,#07101e 42%,#050a12 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic","Apple SD Gothic Neo",Arial,sans-serif;line-height:1.45}
+    body{padding:14px}
+    button,input,select{font:inherit}
+    .container{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:13px}
+    header{background:linear-gradient(135deg,#111c2f,#0b1526);border:1px solid var(--border);border-radius:13px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px;box-shadow:0 12px 30px #0005}
+    .badge{display:inline-block;background:#075985;color:#e0f2fe;border:1px solid #0ea5e9;border-radius:999px;padding:3px 9px;font-size:.73rem;font-weight:800;margin-bottom:4px}
+    h1{font-size:1.28rem;margin:0;color:#7dd3fc}.subtitle{font-size:.78rem;color:var(--muted);margin-top:3px}
+    .header-tools{display:flex;gap:7px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+    .auth-status,.audit-chip{border:1px solid #42516a;border-radius:999px;padding:5px 9px;background:#07101e;color:#cbd5e1;font-size:.76rem;font-weight:800}
+    .btn{border:1px solid #ffffff24;border-radius:7px;padding:7px 11px;color:#fff;font-weight:800;cursor:pointer;background:#0369a1;transition:.16s}
+    .btn:hover{filter:brightness(1.1)}.btn.secondary{background:#334155}.btn.danger{background:#b91c1c}.btn.success{background:#15803d}.btn:disabled{opacity:.5;cursor:not-allowed;filter:none}
+    .student-bar{background:#081525;border:1px solid #0369a1;border-radius:11px;padding:9px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .student-inputs{display:flex;gap:7px;align-items:center;font-size:.86rem}.student-inputs input{width:118px;background:#111827;border:1px solid #334155;color:#7dd3fc;border-radius:6px;padding:5px 8px;font-weight:800}.student-inputs input[readonly]{cursor:default}
+    .mission{background:#0a2036;border:1px solid #155e75;border-left:5px solid #38bdf8;border-radius:11px;padding:11px 14px;font-size:.84rem;color:#dbeafe}
+    .mission b{color:#7dd3fc}.model-note{margin-top:7px;padding:7px 9px;background:#071523;border:1px dashed #475569;border-radius:7px;color:#cbd5e1;font-size:.77rem}
+    .main-grid{display:grid;grid-template-columns:410px 1fr;gap:13px}@media(max-width:930px){.main-grid{grid-template-columns:1fr}}
+    .card{background:linear-gradient(180deg,#111c2f,#0c1729);border:1px solid var(--border);border-radius:12px;padding:14px;box-shadow:0 8px 22px #0003}
+    .card-title{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.95rem;font-weight:900;border-bottom:1px solid #334155;padding-bottom:7px;margin-bottom:10px}
+    .control-box{background:#081423;border:1px solid #334155;border-radius:9px;padding:10px 11px;margin-bottom:9px}.control-box.electric{border-left:5px solid var(--electric)}.control-box.wave{border-left:5px solid var(--wave)}
+    .box-title{font-size:.87rem;font-weight:900;margin-bottom:7px}.electric .box-title{color:#fbbf24}.wave .box-title{color:#7dd3fc}
+    .value-row{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:.79rem;margin-bottom:3px}.value{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#fff;font-weight:900}
+    input[type=range]{width:100%;height:6px;accent-color:#38bdf8;cursor:pointer;margin:4px 0 8px}.electric input[type=range]{accent-color:#f59e0b}
+    .status-note{border-radius:7px;padding:6px 8px;font-size:.76rem;font-weight:800;margin-top:3px}.status-note.ok{background:#052e23;border:1px solid #166534;color:#86efac}.status-note.warn{background:#3b160a;border:1px solid #b45309;color:#fde68a}
+    .wave-canvas{display:block;width:100%;height:330px;background:#020617;border:1px solid #334155;border-radius:9px}
+    .metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px}@media(max-width:620px){.metric-grid{grid-template-columns:1fr 1fr}}
+    .metric{background:#081423;border:1px solid #293a54;border-radius:7px;padding:7px 8px}.metric-label{font-size:.68rem;color:var(--muted)}.metric-value{font-family:ui-monospace,Consolas,monospace;font-weight:900;font-size:.89rem;color:#7dd3fc;margin-top:2px}
+    .audio-note{font-size:.72rem;color:#cbd5e1;margin-top:7px}
+    .record-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.record-btn{border:0;border-radius:8px;padding:10px 12px;color:#fff;font-weight:900;cursor:pointer}.record-btn.electric{background:#b45309}.record-btn.wave{background:#0369a1}.record-btn:disabled{opacity:.5;cursor:not-allowed}
+    .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}.tab{border:1px solid #42516a;background:#111827;color:#cbd5e1;border-radius:7px;padding:5px 10px;font-size:.78rem;font-weight:800;cursor:pointer}.tab.active{background:#075985;color:white;border-color:#38bdf8}.tab.electric.active{background:#92400e;border-color:#f59e0b}.tab.wave.active{background:#075985;border-color:#38bdf8}
+    .table-wrap{overflow:auto;max-height:285px;border:1px solid #334155;border-radius:8px}table{width:100%;border-collapse:collapse;font-size:.76rem;text-align:center;min-width:860px}th,td{border:1px solid #293a54;padding:6px 5px}th{position:sticky;top:0;background:#07101e;color:#7dd3fc;z-index:1}td.type-electric{color:#fbbf24;font-weight:900}td.type-wave{color:#7dd3fc;font-weight:900}.mini-delete{border:0;border-radius:5px;background:#7f1d1d;color:white;padding:3px 7px;cursor:pointer;font-size:.7rem}
+    .submit-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid #334155;margin-top:10px;padding-top:9px}.readiness{font-size:.77rem;color:#fde68a;line-height:1.55}.readiness.ok{color:#86efac}
+    .teacher-panel{display:none;border:2px solid #38bdf8}.teacher-controls{display:grid;grid-template-columns:1.1fr 1fr;gap:8px;background:#081423;border:1px solid #334155;border-radius:8px;padding:9px;margin-bottom:9px}@media(max-width:700px){.teacher-controls{grid-template-columns:1fr}}.teacher-controls input,.teacher-controls select{width:100%;background:#07101e;color:#fff;border:1px solid #42516a;border-radius:6px;padding:6px 8px}.teacher-graph{display:block;width:100%;height:300px;background:#020617;border:1px solid #334155;border-radius:8px}
+    .modal{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:4000;padding:18px}.modal-box{width:min(500px,94vw);background:#111c2f;border:1.5px solid #38bdf8;border-radius:13px;padding:20px;box-shadow:0 18px 55px #000b}.modal-title{font-size:1.1rem;font-weight:900;color:#7dd3fc;margin-bottom:9px}.modal-content{color:#cbd5e1;font-size:.87rem;line-height:1.6}.modal-content input{width:100%;margin-top:8px;background:#07101e;border:1px solid #42516a;color:#fff;border-radius:6px;padding:8px}.modal-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:13px}
+    .assessment-gate{position:fixed;inset:0;z-index:5000;background:rgba(2,6,23,.96);display:flex;align-items:center;justify-content:center;padding:20px}.gate-card{width:min(470px,94vw);background:#111827;border:1px solid #334155;border-radius:16px;padding:27px;text-align:center;box-shadow:0 20px 55px #000a}.gate-card h2{margin:0 0 10px;color:#f8fafc}.gate-card p{color:#cbd5e1;line-height:1.65;font-size:.9rem}
+    .local-warning{display:none;background:#422006;color:#fde68a;border:1px solid #d97706;border-radius:8px;padding:8px 10px;font-size:.78rem}
+  </style>
+</head>
+<body>
+  <div class="assessment-gate" id="assessmentGate">
+    <div class="gate-card">
+      <h2>🔐 수행평가 로그인 필요</h2>
+      <p>본인 계정으로 로그인하면 학번과 이름이 자동 입력됩니다.<br>평가 중 계정 정보는 학생이 직접 바꿀 수 없습니다.</p>
+      <button class="btn" onclick="openPageLoginModal()">로그인하고 시작하기</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="local-warning" id="localWarning">로컬 파일에서는 플랫폼 로그인·제출·잠금 기능을 확인할 수 없습니다. GitHub 평가관에 배포한 뒤 최종 점검하세요.</div>
+    <header>
+      <div>
+        <span class="badge">중학교 2학년 과학 · IB MYP 기준 B·C 총괄 수행평가</span>
+        <h1>🌊 파장 실험실 — 전기 신호가 소리 파동으로 바뀌는 관계 탐구</h1>
+        <div class="subtitle">Unit 3 · 디지털 세상을 켜는 신호</div>
+      </div>
+      <div class="header-tools">
+        <span id="headerLoginStatus" class="auth-status">👤 미로그인</span>
+        <span id="auditCount" class="audit-chip">화면 이탈(5초 이상) 0회</span>
+        <button id="headerLoginBtn" class="btn" onclick="openPageLoginModal()">🔑 로그인</button>
+        <button id="headerLogoutBtn" class="btn secondary" style="display:none" onclick="requestProtectedLogout()">로그아웃</button>
+        <button class="btn secondary" onclick="openTeacherAuthModal()">교사용 조회</button>
+      </div>
+    </header>
+
+    <div class="student-bar">
+      <div class="student-inputs"><b>학번</b><input id="stuId" readonly placeholder="로그인 시 자동 입력"><b>이름</b><input id="stuName" readonly placeholder="로그인 시 자동 입력"></div>
+      <div style="font-size:.76rem;color:#9ca9bd">평가 자료는 자동 임시저장되며, 최종 제출 뒤에는 수정할 수 없습니다.</div>
+    </div>
+
+    <div class="mission">
+      <b>탐구 과제</b><br>
+      ① <b>전원 전압 또는 회로의 저항 중 하나</b>를 조작 변인으로 선택하고, 나머지 전기 조건과 신호 진동수를 통제하여 전류와 소리 파동의 상대 진폭 변화를 탐구합니다.<br>
+      ② 전원 전압과 회로의 저항을 일정하게 유지하면서 <b>신호 진동수</b>를 변화시켜 공기 중 파장의 변화를 탐구합니다.<br>
+      <span style="color:#bae6fd">※ 탐구 1에서는 전압을 바꾸는 방법과 저항을 바꾸는 방법 중 하나를 선택하세요. 조작 범위와 간격은 활동지에서 직접 설계합니다.</span>
+      <div class="model-note"><b>가상 모델의 범위:</b> 같은 스피커와 같은 진동수에서는 전류가 증가할수록 진동판의 상대 진폭이 증가한다고 단순화했습니다. 공기 중 소리의 속력은 340 m/s로 고정하며, 실제 스피커의 주파수 응답·주변 소음·공기 온도에 따른 차이는 포함하지 않습니다.</div>
+    </div>
+
+    <div class="main-grid">
+      <section class="card">
+        <div class="card-title"><span>⚙️ 전기 회로·신호 발생기</span><button id="powerBtn" class="btn success" onclick="togglePower()">전원 켜짐</button></div>
+        <div class="control-box electric">
+          <div class="box-title">⚡ 전기 입력 조건</div>
+          <div class="value-row"><span>전원 전압</span><span id="dispV" class="value">6.0 V</span></div>
+          <input id="sliderV" type="range" min="2" max="10" step="2" value="6">
+          <div class="value-row"><span>회로의 저항</span><span id="dispR" class="value">10.0 Ω</span></div>
+          <input id="sliderR" type="range" min="10" max="30" step="5" value="10">
+          <div id="electricStatus" class="status-note ok">설정값이 실험 모델의 조작 범위 안에 있습니다.</div>
+        </div>
+        <div class="control-box wave">
+          <div class="box-title">🌊 소리 신호 조건</div>
+          <div class="value-row"><span>신호 진동수</span><span id="dispF" class="value">500 Hz</span></div>
+          <input id="sliderF" type="range" min="200" max="1000" step="100" value="500">
+          <div class="value-row"><span>실제 소리</span><span id="audioState" class="value">꺼짐</span></div>
+          <button id="audioBtn" class="btn secondary" style="width:100%" onclick="toggleAudio()">🔊 실제 소리 재생</button>
+          <div class="audio-note">교사의 지시에 따라 짧게 재생하세요. 화면의 파동 이동 속도는 관찰을 위해 실제보다 느리게 표현됩니다.</div>
+        </div>
+        <div class="record-grid">
+          <button id="recordElectricBtn" class="record-btn electric" onclick="recordData('electric')">탐구 1 데이터로 기록</button>
+          <button id="recordWaveBtn" class="record-btn wave" onclick="recordData('wave')">탐구 2 데이터로 기록</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title"><span>📈 스피커 진동과 공기 중 소리 파동 모델</span><span style="font-size:.72rem;color:#9ca9bd">표시 구간 3.4 m</span></div>
+        <canvas id="waveCanvas" class="wave-canvas"></canvas>
+        <div class="metric-grid">
+          <div class="metric"><div class="metric-label">회로 전류</div><div id="metricI" class="metric-value">0.60 A</div></div>
+          <div class="metric"><div class="metric-label">전기 전력</div><div id="metricP" class="metric-value">3.60 W</div></div>
+          <div class="metric"><div class="metric-label">상대 진폭</div><div id="metricAmp" class="metric-value">60.0 %</div></div>
+          <div class="metric"><div class="metric-label">진동수</div><div id="metricF" class="metric-value">500 Hz</div></div>
+          <div class="metric"><div class="metric-label">파장</div><div id="metricLambda" class="metric-value">0.680 m</div></div>
+          <div class="metric"><div class="metric-label">주기</div><div id="metricPeriod" class="metric-value">2.00 ms</div></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="card-title"><span>🧾 실험 데이터 기록장</span><button id="clearBtn" class="btn secondary" onclick="clearLogs()">기록 초기화</button></div>
+      <div class="tabs">
+        <button id="tabAll" class="tab active" onclick="setTableTab('all')">전체 기록</button>
+        <button id="tabElectric" class="tab electric" onclick="setTableTab('electric')">탐구 1 · 전기→진폭</button>
+        <button id="tabWave" class="tab wave" onclick="setTableTab('wave')">탐구 2 · 진동수→파장</button>
+      </div>
+      <div class="table-wrap"><table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table></div>
+      <div class="submit-row">
+        <div id="readinessStatus" class="readiness">탐구별로 통제 변인을 일정하게 유지한 데이터 5개 이상이 필요합니다.</div>
+        <button id="submitBtn" class="btn success" onclick="openSubmitModal()">🚀 최종 실험 데이터 제출</button>
+      </div>
+    </section>
+
+    <section id="teacherPanel" class="card teacher-panel">
+      <div class="card-title"><span>🧑‍🏫 교사용 학생 데이터 조회·그래프</span><button class="btn danger" onclick="closeTeacherMode()">닫기</button></div>
+      <div class="teacher-controls">
+        <div><label style="font-size:.75rem;color:#9ca9bd">제출 저장소 URL</label><input id="gasUrlInput"></div>
+        <div><label style="font-size:.75rem;color:#9ca9bd">학생 조회</label><div style="display:flex;gap:5px"><input id="searchStuId" placeholder="학번"><input id="searchStuName" placeholder="이름"><button class="btn" onclick="fetchStudentData()">조회</button></div></div>
+        <div><label style="font-size:.75rem;color:#9ca9bd">그래프 관계</label><select id="teacherGraphType" onchange="renderTeacherGraph()"><option value="v_amp">전원 전압 - 상대 진폭</option><option value="r_amp">저항 - 상대 진폭</option><option value="v_i">전원 전압 - 전류</option><option value="r_i">저항 - 전류</option><option value="i_amp">전류 - 상대 진폭</option><option value="f_lambda">진동수 - 파장</option></select></div>
+        <div style="display:flex;align-items:end;gap:6px"><button id="teacherLineBtn" class="btn secondary" onclick="toggleTeacherLine()">데이터 선 연결: 꺼짐</button></div>
+      </div>
+      <div id="gradingInfo" style="font-size:.8rem;color:#7dd3fc;margin-bottom:7px">조회할 학생을 선택하세요.</div>
+      <canvas id="teacherCanvas" class="teacher-graph"></canvas>
+    </section>
+  </div>
+
+  <!-- 로그인 -->
+  <div id="pageLoginModal" class="modal"><div class="modal-box"><div class="modal-title">🔑 수행평가 로그인</div><div class="modal-content">학생 학번 또는 관리자 ID와 비밀번호를 입력하세요.<input id="pageLoginId" placeholder="학번 또는 ID(admin)" autocomplete="username"><input id="pageLoginPw" type="password" placeholder="비밀번호" autocomplete="current-password"><div id="pageLoginMsg" style="color:#f87171;font-size:.78rem;margin-top:5px"></div></div><div class="modal-actions"><button class="btn secondary" onclick="closeModal('pageLoginModal')">닫기</button><button id="pageLoginSubmit" class="btn" onclick="submitPageLogin()">로그인</button></div></div></div>
+  <!-- 보호 로그아웃 -->
+  <div id="logoutAuthModal" class="modal"><div class="modal-box"><div class="modal-title">🔒 로그아웃 교사 인증</div><div class="modal-content">수행평가 중 임의 계정 변경을 막기 위해 관리자 비밀번호가 필요합니다.<input id="logoutAuthPw" type="password" placeholder="관리자 비밀번호"><div id="logoutAuthMsg" style="color:#f87171;font-size:.78rem;margin-top:5px"></div></div><div class="modal-actions"><button class="btn secondary" onclick="closeModal('logoutAuthModal')">취소</button><button id="logoutAuthBtn" class="btn" onclick="verifyProtectedLogout()">인증 후 로그아웃</button></div></div></div>
+  <!-- 제출 -->
+  <div id="submitModal" class="modal"><div class="modal-box"><div class="modal-title">📤 실험 데이터 최종 제출</div><div class="modal-content"><div style="background:#081423;border-radius:7px;padding:9px;margin-bottom:8px">학번: <b id="confirmId" style="color:#7dd3fc"></b><br>이름: <b id="confirmName" style="color:#7dd3fc"></b><br>기록 수: <b id="confirmCount" style="color:#86efac"></b></div>제출 후에는 실험 기록을 추가하거나 수정할 수 없습니다. 활동지의 데이터와 일치하는지 확인하세요.</div><div class="modal-actions"><button class="btn secondary" onclick="closeModal('submitModal')">취소</button><button id="confirmSubmitBtn" class="btn success" onclick="executeSubmit()">확인 및 제출</button></div></div></div>
+  <!-- 교사 인증 -->
+  <div id="teacherAuthModal" class="modal"><div class="modal-box"><div class="modal-title">🧑‍🏫 교사용 조회 인증</div><div class="modal-content">관리자 비밀번호를 입력하세요.<input id="teacherAuthPw" type="password" placeholder="관리자 비밀번호"><div id="teacherAuthMsg" style="color:#f87171;font-size:.78rem;margin-top:5px"></div></div><div class="modal-actions"><button class="btn secondary" onclick="closeModal('teacherAuthModal')">취소</button><button id="teacherAuthBtn" class="btn" onclick="verifyTeacherAuth()">인증</button></div></div></div>
+
+  <script>
+    "use strict";
+
+    const SOUND_SPEED = 340.0;
+    const AMP_REFERENCE_CURRENT = 1.0;
+    const TARGET_GAS_URL = "https://script.google.com/macros/s/AKfycbxcQx5yTSayzaekf6QZHdmm0KP73AjfqOLER59M6XnwISn5u0XwL6yYhvV-7NTBuBRq/exec";
+    const cfg = window.PLATFORM_CONFIG || {};
+    const PLATFORM_API_URL = cfg.PLATFORM_API || "";
+    const ACADEMIC_YEAR_API_URL = cfg.ACADEMIC_YEAR_API || PLATFORM_API_URL;
+
+    let CURRENT_SCHOOL_YEAR = ASSESSMENT_CONFIG.FALLBACK_SCHOOL_YEAR;
+    let currentSchoolYearPromise = null;
+    let clientIpAddress = "알 수 없음";
+    if (location.protocol !== "file:") {
+      fetch("https://api.ipify.org?format=json").then(r => r.json()).then(d => { clientIpAddress = d.ip; }).catch(() => { clientIpAddress = "내부망/미확인"; });
+    } else {
+      clientIpAddress = "로컬파일/미확인";
+      document.getElementById("localWarning").style.display = "block";
+    }
+
+    const state = { power:true, V:6, R:10, f:500, I:0, P:0, amp:0, lambda:0, periodMs:0, audio:false };
+    let logs = [];
+    let currentTab = "all";
+    let isSubmitted = false;
+    let isStudentLocked = false;
+    let awayCount = 0;
+    let auditEvents = [];
+    let awayTimer = null;
+    let awayStartedAt = null;
+    let pendingAwayWarning = false;
+    let audioContext = null;
+    let oscillator = null;
+    let gainNode = null;
+    let wavePhase = 0;
+    let teacherLogs = [];
+    let teacherConnectLine = false;
+
+    const $ = id => document.getElementById(id);
+    const sliderV = $("sliderV"), sliderR = $("sliderR"), sliderF = $("sliderF");
+    const waveCanvas = $("waveCanvas"), waveCtx = waveCanvas.getContext("2d");
+    const teacherCanvas = $("teacherCanvas"), teacherCtx = teacherCanvas.getContext("2d");
+
+    function getStoredUser(){ try { return JSON.parse(sessionStorage.getItem("current_student") || "null"); } catch { return null; } }
+    function draftKey(){ const u = getStoredUser(); return `assessment_draft_${ASSESSMENT_CONFIG.LESSON_ID}_${u?.studentId || "guest"}`; }
+
+    async function sha256(text){
+      const bytes = new TextEncoder().encode(text);
+      const hash = await crypto.subtle.digest("SHA-256", bytes);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,"0")).join("");
+    }
+
+    async function ensureCurrentSchoolYear(){
+      if (currentSchoolYearPromise) return currentSchoolYearPromise;
+      currentSchoolYearPromise = (async () => {
+        if (!ACADEMIC_YEAR_API_URL) return CURRENT_SCHOOL_YEAR;
+        try {
+          const res = await fetch(ACADEMIC_YEAR_API_URL, {method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"get_public_config"}),cache:"no-store"});
+          const data = await res.json();
+          const year = Number(data?.currentSchoolYear);
+          if (res.ok && data?.success === true && Number.isInteger(year) && year >= 2000 && year <= 2100) CURRENT_SCHOOL_YEAR = year;
+        } catch (error) { console.warn("학년도 확인 실패", error); }
+        return CURRENT_SCHOOL_YEAR;
+      })();
+      return currentSchoolYearPromise;
+    }
+
+    function persistDraft(){
+      const user = getStoredUser();
+      if (!user || user.isAdmin === true) return;
+      try { sessionStorage.setItem(draftKey(), JSON.stringify({logs,isSubmitted,awayCount,auditEvents,state:{V:state.V,R:state.R,f:state.f,power:state.power},updatedAt:new Date().toISOString()})); } catch {}
+    }
+
+    function restoreDraft(){
+      const user = getStoredUser();
+      if (!user || user.isAdmin === true) return;
+      try {
+        const saved = JSON.parse(sessionStorage.getItem(draftKey()) || "null");
+        if (!saved) return;
+        if (Array.isArray(saved.logs)) logs = saved.logs;
+        isSubmitted = saved.isSubmitted === true;
+        awayCount = Number(saved.awayCount) || 0;
+        auditEvents = Array.isArray(saved.auditEvents) ? saved.auditEvents : [];
+        if (saved.state) {
+          sliderV.value = String(saved.state.V ?? 6);
+          sliderR.value = String(saved.state.R ?? 10);
+          sliderF.value = String(saved.state.f ?? 500);
+          state.power = saved.state.power !== false;
+        }
+        renderTable(); updateAuditStatus(); updateReadiness(); updateAll();
+        if (isSubmitted) lockWorkspaceAfterSubmission();
+      } catch (error) { console.warn("임시 저장 복구 실패", error); }
+    }
+
+    function resetWorkspace(removeDraft = true){
+      if (removeDraft) { try { sessionStorage.removeItem(draftKey()); } catch {} }
+      logs = []; isSubmitted = false; awayCount = 0; auditEvents = [];
+      renderTable(); updateAuditStatus(); updateReadiness();
+      $("submitBtn").disabled = false; $("submitBtn").textContent = "🚀 최종 실험 데이터 제출";
+      setControlsDisabled(false);
+    }
+
+    function applyAssessmentAuth(){
+      const user = getStoredUser();
+      const gate = $("assessmentGate"), status = $("headerLoginStatus"), loginBtn = $("headerLoginBtn"), logoutBtn = $("headerLogoutBtn");
+      if (location.protocol === "file:") {
+        gate.style.display = "none";
+        status.textContent = "🧪 로컬 미리보기";
+        loginBtn.style.display = "none";
+        logoutBtn.style.display = "none";
+        $("stuId").value = "PREVIEW"; $("stuName").value = "미리보기";
+        isStudentLocked = true;
+        return;
+      }
+      if (user) {
+        const isAdmin = user.isAdmin === true;
+        const stuToken = String(user.studentSessionToken || "");
+        const admToken = String(sessionStorage.getItem("current_admin_key") || "");
+        if ((!isAdmin && !stuToken.startsWith("stu_")) || (isAdmin && !admToken.startsWith("adm_"))) {
+          sessionStorage.removeItem("current_student"); if (isAdmin) sessionStorage.removeItem("current_admin_key"); return applyAssessmentAuth();
+        }
+        $("stuId").value = user.studentId || ""; $("stuName").value = user.name || "";
+        isStudentLocked = !isAdmin;
+        status.textContent = isAdmin ? `🧑‍🏫 ${user.name || "관리자"}` : `✅ ${user.name || user.studentId} 로그인`;
+        status.style.color = "#86efac"; loginBtn.style.display = "none"; logoutBtn.style.display = "inline-block"; gate.style.display = "none";
+        if (!isAdmin) restoreDraft();
+      } else {
+        $("stuId").value = ""; $("stuName").value = ""; isStudentLocked = false;
+        status.textContent = "👤 미로그인"; loginBtn.style.display = "inline-block"; logoutBtn.style.display = "none"; gate.style.display = "flex";
+      }
+    }
+
+    function openPageLoginModal(){
+      $("pageLoginId").value = ""; $("pageLoginPw").value = ""; $("pageLoginMsg").textContent = ""; $("pageLoginModal").style.display = "flex";
+      setTimeout(() => $("pageLoginId").focus(), 30);
+    }
+
+    async function submitPageLogin(){
+      const id = $("pageLoginId").value.trim(), pw = $("pageLoginPw").value.trim(), msg = $("pageLoginMsg"), btn = $("pageLoginSubmit");
+      if (!id || !pw) { msg.textContent = "학번/ID와 비밀번호를 모두 입력해 주세요."; return; }
+      if (!PLATFORM_API_URL) { msg.textContent = "플랫폼 API 설정을 찾을 수 없습니다."; return; }
+      btn.disabled = true; btn.textContent = "로그인 중..."; msg.textContent = "";
+      try {
+        await ensureCurrentSchoolYear();
+        const res = await fetch(PLATFORM_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"student_login",studentId:id,schoolYear:CURRENT_SCHOOL_YEAR,passwordHash:await sha256(pw),ip:clientIpAddress,userAgent:navigator.userAgent})});
+        let data = await res.json();
+        if (!data.success) { msg.textContent = data.message || "로그인에 실패했습니다."; return; }
+        if (data.isFirstLogin === true && data.isAdmin !== true) {
+          const rr = await fetch(PLATFORM_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"register_initial_password",studentId:id,schoolYear:CURRENT_SCHOOL_YEAR,newPasswordHash:await sha256(pw),newPasswordLength:pw.length,ip:clientIpAddress,userAgent:navigator.userAgent})});
+          data = await rr.json();
+          if (!data.success) { msg.textContent = data.message || "새 비밀번호 설정에 실패했습니다."; return; }
+          alert("새 비밀번호가 설정되었습니다.");
+        }
+        const isAdmin = data.isAdmin === true;
+        const stuToken = String(data.studentSessionToken || ""), admToken = String(data.adminSessionToken || "");
+        if (!isAdmin && !stuToken.startsWith("stu_")) throw new Error("학생 세션 토큰 없음");
+        if (isAdmin && !admToken.startsWith("adm_")) throw new Error("관리자 세션 토큰 없음");
+        sessionStorage.setItem("current_student",JSON.stringify({studentId:data.studentId,name:data.name,isAdmin,studentSessionToken:isAdmin?"":stuToken,userId:data.userId||"",schoolYear:data.schoolYear||"",accountType:data.accountType||(isAdmin?"admin":"student"),permissions:Array.isArray(data.permissions)?data.permissions:[]}));
+        if (isAdmin) sessionStorage.setItem("current_admin_key",admToken); else sessionStorage.removeItem("current_admin_key");
+        closeModal("pageLoginModal"); applyAssessmentAuth();
+      } catch (error) { console.error(error); msg.textContent = "로그인 통신 오류가 발생했습니다."; }
+      finally { btn.disabled = false; btn.textContent = "로그인"; }
+    }
+
+    function requestProtectedLogout(){
+      if (!getStoredUser()) return;
+      $("logoutAuthPw").value = ""; $("logoutAuthMsg").textContent = ""; $("logoutAuthModal").style.display = "flex"; setTimeout(() => $("logoutAuthPw").focus(),30);
+    }
+
+    async function verifyProtectedLogout(){
+      const pw = $("logoutAuthPw").value.trim(), msg = $("logoutAuthMsg"), btn = $("logoutAuthBtn");
+      if (!pw) { msg.textContent = "관리자 비밀번호를 입력해 주세요."; return; }
+      btn.disabled = true; btn.textContent = "인증 중...";
+      try {
+        const res = await fetch(PLATFORM_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"verifyAuth",passwordHash:await sha256(pw)})});
+        const data = await res.json();
+        if (!(data?.success === true || data?.ok === true)) { msg.textContent = "관리자 비밀번호가 일치하지 않습니다."; return; }
+        resetWorkspace(true); sessionStorage.removeItem("current_student"); sessionStorage.removeItem("current_admin_key"); closeModal("logoutAuthModal"); applyAssessmentAuth();
+      } catch (error) { console.error(error); msg.textContent = "관리자 인증 통신 오류가 발생했습니다."; }
+      finally { btn.disabled = false; btn.textContent = "인증 후 로그아웃"; }
+    }
+
+    function updateAuditStatus(){ $("auditCount").textContent = `화면 이탈(5초 이상) ${awayCount}회`; }
+    document.addEventListener("visibilitychange", () => {
+      const user = getStoredUser();
+      if (location.protocol === "file:" || !user || user.isAdmin === true || isSubmitted) return;
+      if (document.visibilityState === "hidden") {
+        awayStartedAt = Date.now(); pendingAwayWarning = false; clearTimeout(awayTimer);
+        awayTimer = setTimeout(() => {
+          if (document.visibilityState === "hidden" && awayStartedAt) {
+            awayCount++; pendingAwayWarning = true; auditEvents.push({type:"away_5s",startedAt:new Date(awayStartedAt).toISOString(),detectedAt:new Date().toISOString()}); persistDraft();
+          }
+        },5000);
+      } else {
+        clearTimeout(awayTimer); awayTimer = null; awayStartedAt = null; updateAuditStatus();
+        if (pendingAwayWarning) { pendingAwayWarning = false; alert("수행평가 화면을 5초 이상 벗어난 기록이 저장되었습니다."); }
+      }
+    });
+    window.addEventListener("beforeunload", event => {
+      const user = getStoredUser();
+      if (user && user.isAdmin !== true && logs.length && !isSubmitted) { persistDraft(); event.preventDefault(); event.returnValue = ""; }
+    });
+
+    function initAudio(){
+      if (audioContext) return;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      audioContext = new AudioContext(); oscillator = audioContext.createOscillator(); gainNode = audioContext.createGain();
+      oscillator.type = "sine"; gainNode.gain.value = 0; oscillator.connect(gainNode); gainNode.connect(audioContext.destination); oscillator.start();
+    }
+    function toggleAudio(){
+      initAudio(); if (audioContext.state === "suspended") audioContext.resume(); state.audio = !state.audio; $("audioState").textContent = state.audio ? "켜짐" : "꺼짐"; $("audioBtn").textContent = state.audio ? "🔇 실제 소리 끄기" : "🔊 실제 소리 재생"; updateAudio();
+    }
+    function updateAudio(){
+      if (!audioContext || !gainNode || !oscillator) return;
+      oscillator.frequency.setTargetAtTime(state.f,audioContext.currentTime,.02);
+      const volume = state.power && state.audio ? Math.min(.10,(state.amp/100)*.08) : 0;
+      gainNode.gain.setTargetAtTime(volume,audioContext.currentTime,.03);
+    }
+
+    function togglePower(){ state.power = !state.power; $("powerBtn").textContent = state.power ? "전원 켜짐" : "전원 꺼짐"; $("powerBtn").className = state.power ? "btn success" : "btn secondary"; updateAll(); }
+
+    function updateAll(){
+      state.V = Number(sliderV.value); state.R = Number(sliderR.value); state.f = Number(sliderF.value);
+      if (state.power) {
+        state.I = state.V / state.R; state.P = state.V * state.I; state.amp = Math.min(100,(state.I/AMP_REFERENCE_CURRENT)*100); state.lambda = SOUND_SPEED/state.f; state.periodMs = 1000/state.f;
+      } else { state.I=0;state.P=0;state.amp=0;state.lambda=0;state.periodMs=0; }
+      $("dispV").textContent = `${state.V.toFixed(1)} V`; $("dispR").textContent = `${state.R.toFixed(1)} Ω`; $("dispF").textContent = `${state.f} Hz`;
+      $("metricI").textContent = `${state.I.toFixed(2)} A`; $("metricP").textContent = `${state.P.toFixed(2)} W`; $("metricAmp").textContent = `${state.amp.toFixed(1)} %`; $("metricF").textContent = `${state.f} Hz`; $("metricLambda").textContent = state.power ? `${state.lambda.toFixed(3)} m` : "-"; $("metricPeriod").textContent = state.power ? `${state.periodMs.toFixed(2)} ms` : "-";
+      const note = $("electricStatus"); note.className = "status-note ok"; note.textContent = `현재 전류 ${state.I.toFixed(2)} A · 조작 범위 안에서 작동 중입니다.`;
+      updateAudio();
+    }
+
+    function drawArrow(ctx,x1,x2,y,color,label){
+      if (x2-x1 < 34) return;
+      ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);ctx.stroke();
+      [[x1,1],[x2,-1]].forEach(([x,d])=>{ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+6*d,y-4);ctx.lineTo(x+6*d,y+4);ctx.closePath();ctx.fill();});
+      ctx.font="bold 12px sans-serif";ctx.textAlign="center";ctx.fillText(label,(x1+x2)/2,y-7);
+    }
+
+    function animateWave(){
+      const dpr = window.devicePixelRatio || 1; const rect = waveCanvas.getBoundingClientRect();
+      const w = Math.max(320,Math.floor(rect.width*dpr)), h = Math.max(260,Math.floor(rect.height*dpr));
+      if (waveCanvas.width !== w || waveCanvas.height !== h) { waveCanvas.width=w;waveCanvas.height=h; }
+      const ctx=waveCtx; ctx.setTransform(dpr,0,0,dpr,0,0); const cw=rect.width,ch=rect.height; ctx.clearRect(0,0,cw,ch); ctx.fillStyle="#020617";ctx.fillRect(0,0,cw,ch);
+      const left=62,right=20,top=30,bottom=44,plotW=cw-left-right,plotH=ch-top-bottom,cy=top+plotH/2;
+      ctx.strokeStyle="#17233a";ctx.lineWidth=1;
+      for(let i=0;i<=10;i++){const x=left+plotW*i/10;ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,ch-bottom);ctx.stroke();}
+      for(let i=0;i<=6;i++){const y=top+plotH*i/6;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(cw-right,y);ctx.stroke();}
+      ctx.strokeStyle="#475569";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(left,cy);ctx.lineTo(cw-right,cy);ctx.stroke();
+      ctx.fillStyle="#94a3b8";ctx.font="11px sans-serif";ctx.textAlign="center";
+      for(let m=0;m<=3.4;m+=.5){const x=left+(m/3.4)*plotW;ctx.fillText(m.toFixed(1),x,ch-17);ctx.beginPath();ctx.moveTo(x,ch-bottom);ctx.lineTo(x,ch-bottom+5);ctx.stroke();}
+      ctx.fillText("거리 (m)",left+plotW/2,ch-3);
+      ctx.save();ctx.translate(14,cy);ctx.rotate(-Math.PI/2);ctx.fillText("상대 진폭",0,0);ctx.restore();
+      // speaker
+      ctx.fillStyle="#334155";ctx.fillRect(8,cy-42,22,84);ctx.fillStyle="#38bdf8";const diaphragm=state.power?Math.sin(wavePhase)*Math.min(10,state.amp*.09):0;ctx.beginPath();ctx.moveTo(30,cy-35);ctx.lineTo(48+diaphragm,cy-18);ctx.lineTo(48+diaphragm,cy+18);ctx.lineTo(30,cy+35);ctx.closePath();ctx.fill();
+      if (state.power) {
+        const ampPx=Math.max(3,(state.amp/100)*(plotH*.40)); const lambdaPx=(state.lambda/3.4)*plotW; const k=2*Math.PI/Math.max(10,lambdaPx);
+        ctx.strokeStyle="#38bdf8";ctx.lineWidth=2.5;ctx.shadowBlur=7;ctx.shadowColor="#0ea5e9";ctx.beginPath();
+        for(let x=left;x<=cw-right;x++){const y=cy-Math.sin((x-left)*k-wavePhase)*ampPx;if(x===left)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();ctx.shadowBlur=0;
+        if (lambdaPx <= plotW*.92) drawArrow(ctx,left,left+lambdaPx,top+15,"#fbbf24",`파장 ${state.lambda.toFixed(2)} m`);
+        ctx.strokeStyle="#22c55e";ctx.beginPath();ctx.moveTo(cw-right-18,cy);ctx.lineTo(cw-right-18,cy-ampPx);ctx.stroke();ctx.fillStyle="#22c55e";ctx.font="bold 11px sans-serif";ctx.textAlign="right";ctx.fillText("진폭",cw-right-23,cy-ampPx/2);
+        wavePhase += .09;
+      } else {ctx.fillStyle="#64748b";ctx.font="13px sans-serif";ctx.textAlign="center";ctx.fillText("전원이 꺼져 있어 파동이 발생하지 않습니다.",left+plotW/2,cy);}
+      requestAnimationFrame(animateWave);
+    }
+
+    function recordData(type){
+      if (!isStudentLocked && location.protocol !== "file:") { alert("학생 본인 계정으로 로그인해야 기록할 수 있습니다."); openPageLoginModal(); return; }
+      if (isSubmitted) { alert("이미 제출되어 추가 기록할 수 없습니다."); return; }
+      if (!state.power) { alert("전원을 켠 상태에서 측정값을 기록하세요."); return; }
+      logs.push({no:logs.length+1,type,V:state.V,R:state.R,I:Number(state.I.toFixed(4)),P:Number(state.P.toFixed(4)),f:state.f,lambda:Number(state.lambda.toFixed(5)),periodMs:Number(state.periodMs.toFixed(5)),amp:Number(state.amp.toFixed(2)),recordedAt:new Date().toISOString()});
+      renderTable(); updateReadiness(); persistDraft();
+    }
+
+    function setTableTab(tab){ currentTab=tab; ["All","Electric","Wave"].forEach(n=>$("tab"+n).classList.remove("active")); $(tab==="all"?"tabAll":tab==="electric"?"tabElectric":"tabWave").classList.add("active"); renderTable(); }
+
+    function renderTable(){
+      const head=$("tableHead"),body=$("tableBody"); head.innerHTML=`<tr><th>유형</th><th>번호</th><th>전압(V)</th><th>저항(Ω)</th><th>전류(A)</th><th>전력(W)</th><th>진동수(Hz)</th><th>파장(m)</th><th>주기(ms)</th><th>상대 진폭(%)</th><th>삭제</th></tr>`; body.innerHTML="";
+      const items=logs.filter(x=>currentTab==="all"||x.type===currentTab);
+      items.forEach(row=>{const tr=document.createElement("tr");tr.innerHTML=`<td class="${row.type==='electric'?'type-electric':'type-wave'}">${row.type==='electric'?'탐구 1':'탐구 2'}</td><td>${row.no}</td><td>${row.V.toFixed(1)}</td><td>${row.R.toFixed(1)}</td><td>${row.I.toFixed(2)}</td><td>${row.P.toFixed(2)}</td><td>${row.f}</td><td>${row.lambda.toFixed(3)}</td><td>${row.periodMs.toFixed(2)}</td><td>${row.amp.toFixed(1)}</td><td><button class="mini-delete" ${isSubmitted?'disabled':''} onclick="deleteLog('${row.recordedAt}')">삭제</button></td>`;body.appendChild(tr);});
+    }
+    function deleteLog(key){ if(isSubmitted)return; logs=logs.filter(x=>x.recordedAt!==key);logs.forEach((x,i)=>x.no=i+1);renderTable();updateReadiness();persistDraft(); }
+    function clearLogs(){ if(isSubmitted){alert("제출 후에는 초기화할 수 없습니다.");return;} if(confirm("모든 실험 기록을 지울까요?")){logs=[];renderTable();updateReadiness();persistDraft();} }
+
+    function findValidElectricSeries(source=logs){
+      const electric=source.filter(x=>x.type==="electric");
+      const voltageGroups=new Map();
+      const resistanceGroups=new Map();
+      electric.forEach(x=>{
+        const vKey=`${x.R.toFixed(2)}|${x.f}`;
+        if(!voltageGroups.has(vKey))voltageGroups.set(vKey,[]);
+        voltageGroups.get(vKey).push(x);
+        const rKey=`${x.V.toFixed(2)}|${x.f}`;
+        if(!resistanceGroups.has(rKey))resistanceGroups.set(rKey,[]);
+        resistanceGroups.get(rKey).push(x);
+      });
+      let bestV=null,bestR=null;
+      for(const [key,rows] of voltageGroups){const count=new Set(rows.map(x=>x.V)).size;if(!bestV||count>bestV.count)bestV={key,rows,count,mode:"전압"};}
+      for(const [key,rows] of resistanceGroups){const count=new Set(rows.map(x=>x.R)).size;if(!bestR||count>bestR.count)bestR={key,rows,count,mode:"저항"};}
+      if(!bestV)return bestR;
+      if(!bestR)return bestV;
+      return bestV.count>=bestR.count?bestV:bestR;
+    }
+    function findValidWaveSeries(source=logs){
+      const groups=new Map(); source.filter(x=>x.type==="wave").forEach(x=>{const key=`${x.V.toFixed(2)}|${x.R.toFixed(2)}`;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(x);});
+      let best=null; for(const [key,rows] of groups){const count=new Set(rows.map(x=>x.f)).size;if(!best||count>best.count)best={key,rows,count};} return best;
+    }
+    function readiness(){const e=findValidElectricSeries(),w=findValidWaveSeries();return{electric:e?.count||0,electricMode:e?.mode||"미선택",wave:w?.count||0,ok:(e?.count||0)>=5&&(w?.count||0)>=5};}
+    function updateReadiness(){const r=readiness(),el=$("readinessStatus");el.className=r.ok?"readiness ok":"readiness";el.innerHTML=r.ok?`✅ 제출 준비 완료 · 탐구 1 조작 변인: ${r.electricMode} (${r.electric}개) · 탐구 2 진동수값 ${r.wave}개`:`탐구 1: 전압 또는 저항 중 하나를 바꾸고 다른 조건을 통제한 값 ${r.electric}/5개<br>탐구 2: 일정한 전압·저항에서 서로 다른 진동수 ${r.wave}/5개`;}
+
+    function openSubmitModal(){
+      if(isSubmitted){alert("이미 제출했습니다.");return;} const r=readiness(); if(!r.ok){alert("통제 변인을 일정하게 유지한 탐구별 데이터가 5개 이상 필요합니다.");return;}
+      const user=getStoredUser(); if(location.protocol!=="file:"&&(!user||user.isAdmin===true||!isStudentLocked)){alert("학생 본인 계정으로 로그인한 상태에서만 제출할 수 있습니다.");return;}
+      $("confirmId").textContent=$("stuId").value;$("confirmName").textContent=$("stuName").value;$("confirmCount").textContent=`${logs.length}개`;$("submitModal").style.display="flex";
+    }
+
+    async function executeSubmit(){
+      if(location.protocol==="file:"){alert("로컬 미리보기에서는 서버 제출을 실행하지 않습니다.");closeModal("submitModal");return;}
+      const user=getStoredUser(); if(!user||user.isAdmin===true||!isStudentLocked){alert("로그인 상태가 변경되었습니다.");closeModal("submitModal");applyAssessmentAuth();return;}
+      const btn=$("confirmSubmitBtn");btn.disabled=true;btn.textContent="전송 중...";
+      const r=readiness();
+      const payload={action:"submit",studentId:$("stuId").value.trim(),studentName:$("stuName").value.trim(),logs,assessmentMode:ASSESSMENT_CONFIG.MODE,lessonId:ASSESSMENT_CONFIG.LESSON_ID,studentSessionToken:String(user.studentSessionToken||""),assessmentMeta:{title:"파장 실험실",electricIndependentVariable:r.electricMode,electricUniqueValues:r.electric,waveUniqueValues:r.wave},assessmentAudit:{awayCount,auditEvents,submittedAt:new Date().toISOString(),userAgent:navigator.userAgent}};
+      try{
+        const res=await fetch(TARGET_GAS_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});const data=await res.json();if(data?.success===false)throw new Error(data.message||"제출 실패");
+        isSubmitted=true;persistDraft();closeModal("submitModal");lockWorkspaceAfterSubmission();alert("실험 데이터가 제출되었습니다. 활동지의 Criterion C를 마무리하세요.");
+      }catch(error){console.error(error);alert("제출 중 오류가 발생했습니다. 현재 기록은 화면에 유지됩니다.");}
+      finally{btn.disabled=false;btn.textContent="확인 및 제출";}
+    }
+
+    function setControlsDisabled(disabled){[sliderV,sliderR,sliderF,$("powerBtn"),$("audioBtn"),$("recordElectricBtn"),$("recordWaveBtn"),$("clearBtn")].forEach(el=>{if(el)el.disabled=disabled;});}
+    function lockWorkspaceAfterSubmission(){isSubmitted=true;setControlsDisabled(true);$("submitBtn").disabled=true;$("submitBtn").textContent="🔒 제출 완료 (재제출 불가)";renderTable();}
+
+    function openTeacherAuthModal(){$("teacherAuthPw").value="";$("teacherAuthMsg").textContent="";$("teacherAuthModal").style.display="flex";setTimeout(()=>$("teacherAuthPw").focus(),30);}
+    async function verifyTeacherAuth(){
+      if(location.protocol==="file:"){$("teacherAuthModal").style.display="none";$("teacherPanel").style.display="block";$("teacherPanel").scrollIntoView({behavior:"smooth"});renderTeacherGraph();return;}
+      const pw=$("teacherAuthPw").value.trim(),msg=$("teacherAuthMsg"),btn=$("teacherAuthBtn");if(!pw){msg.textContent="비밀번호를 입력하세요.";return;}btn.disabled=true;btn.textContent="인증 중...";
+      try{const res=await fetch(PLATFORM_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"verifyAuth",passwordHash:await sha256(pw)})});const data=await res.json();if(!(data?.success===true||data?.ok===true)){msg.textContent="관리자 비밀번호가 일치하지 않습니다.";return;}closeModal("teacherAuthModal");$("teacherPanel").style.display="block";$("teacherPanel").scrollIntoView({behavior:"smooth"});renderTeacherGraph();}
+      catch(error){console.error(error);msg.textContent="인증 통신 오류가 발생했습니다.";}finally{btn.disabled=false;btn.textContent="인증";}
+    }
+    function closeTeacherMode(){$("teacherPanel").style.display="none";}
+
+    async function fetchStudentData(){
+      const id=$("searchStuId").value.trim(),name=$("searchStuName").value.trim(),url=$("gasUrlInput").value.trim()||TARGET_GAS_URL;if(!id){alert("학번을 입력하세요.");return;}$("gradingInfo").textContent="조회 중...";
+      try{const res=await fetch(`${url}?studentId=${encodeURIComponent(id)}&t=${Date.now()}`);const data=await res.json();if(!Array.isArray(data)||!data.length){teacherLogs=[];$("gradingInfo").textContent="제출 자료를 찾을 수 없습니다.";renderTeacherGraph();return;}let matched=name?data.filter(x=>String(x.studentName).trim()===name):data;if(!matched.length){teacherLogs=[];$("gradingInfo").textContent="이름이 일치하는 자료가 없습니다.";renderTeacherGraph();return;}const latest=matched[matched.length-1];teacherLogs=typeof latest.logs==="string"?JSON.parse(latest.logs):latest.logs;if(!Array.isArray(teacherLogs))teacherLogs=[];$("gradingInfo").textContent=`[${latest.studentId}] ${latest.studentName} · 기록 ${teacherLogs.length}개 · 제출 ${latest.timestamp||"확인됨"}`;renderTeacherGraph();}
+      catch(error){console.error(error);teacherLogs=[];$("gradingInfo").textContent="조회 오류가 발생했습니다.";renderTeacherGraph();}
+    }
+    function toggleTeacherLine(){teacherConnectLine=!teacherConnectLine;$("teacherLineBtn").textContent=`데이터 선 연결: ${teacherConnectLine?"켜짐":"꺼짐"}`;renderTeacherGraph();}
+
+    function renderTeacherGraph(){
+      const rect=teacherCanvas.getBoundingClientRect(),dpr=window.devicePixelRatio||1,w=Math.max(400,Math.floor(rect.width*dpr)),h=Math.max(260,Math.floor(rect.height*dpr));teacherCanvas.width=w;teacherCanvas.height=h;teacherCtx.setTransform(dpr,0,0,dpr,0,0);const cw=rect.width,ch=rect.height,ctx=teacherCtx;ctx.clearRect(0,0,cw,ch);ctx.fillStyle="#020617";ctx.fillRect(0,0,cw,ch);
+      const type=$("teacherGraphType").value;let rows=teacherLogs.filter(x=>x&&typeof x.V==="number");let xKey,yKey,xLabel,yLabel;
+      if(type==="v_amp"){rows=rows.filter(x=>x.type==="electric");xKey="V";yKey="amp";xLabel="전원 전압 (V)";yLabel="상대 진폭 (%)";}
+      else if(type==="r_amp"){rows=rows.filter(x=>x.type==="electric");xKey="R";yKey="amp";xLabel="저항 (Ω)";yLabel="상대 진폭 (%)";}
+      else if(type==="v_i"){rows=rows.filter(x=>x.type==="electric");xKey="V";yKey="I";xLabel="전원 전압 (V)";yLabel="전류 (A)";}
+      else if(type==="r_i"){rows=rows.filter(x=>x.type==="electric");xKey="R";yKey="I";xLabel="저항 (Ω)";yLabel="전류 (A)";}
+      else if(type==="i_amp"){rows=rows.filter(x=>x.type==="electric");xKey="I";yKey="amp";xLabel="전류 (A)";yLabel="상대 진폭 (%)";}
+      else{rows=rows.filter(x=>x.type==="wave");xKey="f";yKey="lambda";xLabel="진동수 (Hz)";yLabel="파장 (m)";}
+      const left=62,right=22,top=24,bottom=47,pw=cw-left-right,ph=ch-top-bottom;ctx.strokeStyle="#27364f";ctx.lineWidth=1;for(let i=0;i<=10;i++){let x=left+pw*i/10;ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,ch-bottom);ctx.stroke();}for(let i=0;i<=6;i++){let y=top+ph*i/6;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(cw-right,y);ctx.stroke();}
+      ctx.strokeStyle="#64748b";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,ch-bottom);ctx.lineTo(cw-right,ch-bottom);ctx.stroke();ctx.fillStyle="#cbd5e1";ctx.font="bold 12px sans-serif";ctx.textAlign="center";ctx.fillText(xLabel,left+pw/2,ch-8);ctx.save();ctx.translate(16,top+ph/2);ctx.rotate(-Math.PI/2);ctx.fillText(yLabel,0,0);ctx.restore();
+      if(!rows.length){ctx.fillStyle="#fbbf24";ctx.font="13px sans-serif";ctx.fillText("학생 데이터를 조회하면 이곳에 그래프가 표시됩니다.",left+pw/2,top+ph/2);return;}
+      const points=rows.map(r=>({x:Number(r[xKey]),y:Number(r[yKey])})).filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y));points.sort((a,b)=>a.x-b.x);const xMin=Math.min(...points.map(p=>p.x)),xMax=Math.max(...points.map(p=>p.x)),yMin=Math.min(0,...points.map(p=>p.y)),yMax=Math.max(...points.map(p=>p.y));const xr=Math.max(.0001,xMax-xMin),yr=Math.max(.0001,yMax-yMin);const mapped=points.map(p=>({...p,px:left+((p.x-xMin)/xr)*pw,py:ch-bottom-((p.y-yMin)/yr)*ph}));
+      if(teacherConnectLine&&mapped.length>1){ctx.strokeStyle="#38bdf8";ctx.lineWidth=2.2;ctx.beginPath();mapped.forEach((p,i)=>i?ctx.lineTo(p.px,p.py):ctx.moveTo(p.px,p.py));ctx.stroke();}
+      mapped.forEach(p=>{ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(p.px,p.py,6,0,Math.PI*2);ctx.fill();ctx.fillStyle="#0284c7";ctx.beginPath();ctx.arc(p.px,p.py,4,0,Math.PI*2);ctx.fill();ctx.fillStyle="#f8fafc";ctx.font="10px sans-serif";ctx.textAlign="center";ctx.fillText(`(${p.x.toFixed(type==='f_lambda'?0:2)}, ${p.y.toFixed(2)})`,p.px,p.py-9);});
+    }
+
+    function closeModal(id){$(id).style.display="none";}
+
+    [sliderV,sliderR,sliderF].forEach(el=>el.addEventListener("input",updateAll));
+    window.addEventListener("resize",()=>{renderTeacherGraph();});
+    $("pageLoginId").addEventListener("keydown",e=>{if(e.key==="Enter")submitPageLogin();if(e.key==="Escape")closeModal("pageLoginModal");});
+    $("pageLoginPw").addEventListener("keydown",e=>{if(e.key==="Enter")submitPageLogin();if(e.key==="Escape")closeModal("pageLoginModal");});
+    $("logoutAuthPw").addEventListener("keydown",e=>{if(e.key==="Enter")verifyProtectedLogout();if(e.key==="Escape")closeModal("logoutAuthModal");});
+    $("teacherAuthPw").addEventListener("keydown",e=>{if(e.key==="Enter")verifyTeacherAuth();if(e.key==="Escape")closeModal("teacherAuthModal");});
+
+    $("gasUrlInput").value=TARGET_GAS_URL;
+    updateAll();renderTable();updateAuditStatus();updateReadiness();ensureCurrentSchoolYear();applyAssessmentAuth();requestAnimationFrame(animateWave);
+  </script>
+</body>
+</html>
