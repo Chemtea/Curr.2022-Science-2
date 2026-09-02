@@ -43,6 +43,9 @@
               if(unit && (unit.isLocked === true || unit.lessons?.[ASSESSMENT_CONFIG.LESSON_ID] === true)){
                 blockPage("🔒 수행평가 접근 제한","선생님이 현재 수행평가를 잠가 두었습니다. 안내를 받은 뒤 다시 접속하세요.");
               }
+              if(typeof window.onAssessmentRealtimeResync==="function"){
+                Promise.resolve(window.onAssessmentRealtimeResync("lock_changed")).catch(error=>console.warn("수행평가 실시간 상태 동기화 실패",error));
+              }
               lastError = null;
               break;
             }catch(error){
@@ -110,8 +113,11 @@
     .table-wrap{overflow:auto;max-height:350px;border:1px solid #334155;border-radius:8px;margin-top:9px}table{width:100%;border-collapse:collapse;text-align:center;font-size:.73rem;min-width:690px}th,td{border:1px solid #293a54;padding:6px 5px}th{position:sticky;top:0;background:#07101e;color:#7dd3fc;z-index:1}.delete-btn{border:0;border-radius:5px;background:#7f1d1d;color:#fff;padding:3px 7px;cursor:pointer}.progress{border:1px solid #854d0e;background:#3b1a07;color:#fde68a;border-radius:8px;padding:8px;font-size:.76rem;margin-top:8px}.progress.ok{border-color:#166534;background:#052e23;color:#86efac}
     .submit-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.readiness{font-size:.78rem;color:#fde68a;line-height:1.55}.readiness.ok{color:#86efac}.submitted{display:none;border:1px solid #166534;background:#052e23;color:#bbf7d0;border-radius:9px;padding:10px;font-weight:900;text-align:center}
     .planned-value-panel{margin-top:8px;border:1px solid #36506f;background:#081a2d;border-radius:9px;padding:9px}.planned-title{font-size:.78rem;font-weight:950;color:#fde68a}.planned-title span{float:right;color:#93c5fd}.planned-help{font-size:.68rem;color:#94a3b8;margin:3px 0 7px}.planned-values{display:flex;gap:5px;flex-wrap:wrap}.planned-value-btn{border:1px solid #475569;background:#111827;color:#cbd5e1;border-radius:7px;padding:6px 8px;font-size:.72rem;font-weight:850;cursor:pointer}.planned-value-btn.selected{background:#075985;border-color:#38bdf8;color:#fff}.planned-value-btn:disabled{opacity:.5;cursor:not-allowed}.planned-buttons{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}.planned-jump-btn{border:1px solid #475569;background:#111827;color:#cbd5e1;border-radius:7px;padding:6px 7px;font-size:.68rem;font-weight:850;cursor:pointer}.planned-jump-btn.active{border-color:#f59e0b;background:#451a03;color:#fde68a}.planned-jump-btn.complete{box-shadow:inset 0 0 0 1px #22c55e;color:#bbf7d0}.planned-jump-btn:disabled{opacity:.5;cursor:not-allowed}.resubmit-banner{display:none;border:1px solid #f59e0b;background:#422006;color:#fde68a;border-radius:10px;padding:9px 11px;font-size:.78rem;line-height:1.5}.resubmit-banner span{color:#fdba74}.status-note{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.72rem;color:#94a3b8}
-    .modal{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:4000;padding:18px}.modal-box{width:min(500px,94vw);background:#111c2f;border:1.5px solid #38bdf8;border-radius:13px;padding:20px;box-shadow:0 18px 55px #000b}.modal-title{font-size:1.1rem;font-weight:900;color:#7dd3fc;margin-bottom:9px}.modal-content{color:#cbd5e1;font-size:.87rem;line-height:1.6}.modal-content input{width:100%;margin-top:8px;background:#07101e;border:1px solid #42516a;color:#fff;border-radius:6px;padding:8px}.modal-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:13px}
+    .modal{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:7000;padding:18px}.modal-box{width:min(500px,94vw);background:#111c2f;border:1.5px solid #38bdf8;border-radius:13px;padding:20px;box-shadow:0 18px 55px #000b}.modal-title{font-size:1.1rem;font-weight:900;color:#7dd3fc;margin-bottom:9px}.modal-content{color:#cbd5e1;font-size:.87rem;line-height:1.6}.modal-content input{width:100%;margin-top:8px;background:#07101e;border:1px solid #42516a;color:#fff;border-radius:6px;padding:8px}.modal-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:13px}
     .assessment-gate{position:fixed;inset:0;z-index:5000;background:rgba(2,6,23,.96);display:flex;align-items:center;justify-content:center;padding:20px}.gate-card{width:min(470px,94vw);background:#111827;border:1px solid #334155;border-radius:16px;padding:27px;text-align:center;box-shadow:0 20px 55px #000a}.gate-card h2{margin:0 0 10px;color:#f8fafc}.gate-card p{color:#cbd5e1;line-height:1.65;font-size:.9rem}
+    .chip.sound-muted{border-color:#b91c1c;background:#3f0c12;color:#fecaca}.chip.sound-open{border-color:#166534;background:#052e23;color:#bbf7d0}
+    .warning-panel{border:1px solid #f59e0b;background:#422006;color:#fde68a;border-radius:9px;padding:10px 11px;margin-top:8px;font-size:.8rem;line-height:1.55}.warning-panel strong{color:#fff7ed}.warning-list{margin:7px 0 0;padding-left:20px;max-height:180px;overflow:auto}.warning-list li{margin:3px 0}.responsibility-note{margin-top:9px;border-top:1px solid #92400e;padding-top:8px;color:#fed7aa;font-weight:800}
+    .admin-mode-box{width:min(760px,96vw)}.admin-auth-row{display:grid;grid-template-columns:1fr auto;gap:7px;align-items:end}.admin-auth-row input{margin:0!important}.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}@media(max-width:720px){.admin-grid{grid-template-columns:1fr}}.admin-panel{border:1px solid #334155;background:#081423;border-radius:9px;padding:10px}.admin-panel h3{margin:0 0 7px;color:#7dd3fc;font-size:.88rem}.admin-panel input{width:100%;border:1px solid #42516a;background:#07101d;color:#fff;border-radius:7px;padding:8px}.admin-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}.admin-status{border:1px solid #334155;background:#07101d;border-radius:7px;padding:8px;color:#cbd5e1;font-size:.75rem;line-height:1.5;min-height:48px}.admin-small{font-size:.7rem;color:#94a3b8;line-height:1.45}.admin-divider{height:1px;background:#334155;margin:9px 0}
   </style>
 </head>
 <body>
@@ -121,7 +127,7 @@
     <div id="localWarning" class="local-warning">로컬 파일에서는 로그인·서버 제출·실시간 잠금 기능을 확인할 수 없습니다. GitHub 평가관에 배포한 뒤 최종 점검하세요.</div>
     <header>
       <div><span class="badge">중학교 2학년 과학 · IB MYP 기준 B·C 총괄 수행평가</span><h1>🔊 소리 신호 탐구 설계실</h1><div class="subtitle">Unit 3 · 디지털 세상을 켜는 신호</div></div>
-      <div class="head-tools"><span id="loginStatus" class="chip">👤 미로그인</span><span id="awayStatus" class="chip">화면 이탈 0회</span><span id="draftStatus" class="chip">서버 확인 중</span><button id="loginBtn" class="btn" onclick="openLoginModal()">🔑 로그인</button><button id="logoutBtn" class="btn secondary" style="display:none" onclick="requestProtectedLogout()">로그아웃</button></div>
+      <div class="head-tools"><span id="loginStatus" class="chip">👤 미로그인</span><span id="awayStatus" class="chip">화면 이탈 0회</span><span id="draftStatus" class="chip">서버 확인 중</span><span id="soundStatus" class="chip sound-muted">🔇 전체 음소거 확인 중</span><button id="adminModeBtn" class="btn secondary" style="display:none" onclick="openAdminMode()">🛠 관리자 모드</button><button id="loginBtn" class="btn" onclick="openLoginModal()">🔑 로그인</button><button id="logoutBtn" class="btn secondary" style="display:none" onclick="requestProtectedLogout()">로그아웃</button></div>
     </header>
 
     <section class="scenario-hero">
@@ -152,10 +158,10 @@
           <div id="plannedValuePanel" class="planned-value-panel"></div>
         </div>
 
-        <div class="field full"><label>B.i 과학적 연구로 검증할 질문</label><textarea id="researchQuestion" maxlength="220" placeholder="선택한 조작 변인과 종속 변인이 모두 드러나도록 질문형 문장으로 작성하세요."></textarea><span class="hint">예측이나 정답을 쓰는 칸이 아니라, 실제 측정으로 확인할 관계를 질문으로 씁니다.</span></div>
+        <div class="field full"><label>B.i 과학적 연구로 검증할 문제 또는 관계</label><textarea id="researchQuestion" maxlength="220" placeholder="선택한 조작 변인과 종속 변인의 관계가 드러나도록 평서문으로 서술하세요."></textarea><span class="hint">평서문을 권장합니다. 다만 이번 평가에서는 ‘어떻게 달라지는가?’와 같은 질문형 문장도 허용합니다.</span></div>
         <div class="field"><label>B.ii 검증 가능한 가설</label><textarea id="hypothesis" maxlength="220" placeholder="조작 변인이 달라질 때 종속 변인이 어떻게 달라질지 예측하세요."></textarea></div>
         <div class="field"><label>B.ii 과학적 추론</label><textarea id="reasoning" maxlength="320" placeholder="전기 회로, 코일과 자석, 진동판, 소리 파동에서 배운 내용을 이용해 가설의 이유를 설명하세요."></textarea></div>
-        <div class="field"><label>Unit 3 공통 개념 설명</label><textarea id="speakerEnergyExplanation" maxlength="380" placeholder="전자석 스피커에서 전기적 신호가 소리 파동으로 바뀌는 과정을 전류, 자기장 또는 자기력, 진동판, 에너지 전환을 사용하여 설명하세요."></textarea><span class="hint">선택한 탐구 경로와 관계없이 모든 학생이 작성합니다.</span></div>
+        <div class="field"><label>전자석 스피커가 소리를 만드는 과정</label><textarea id="speakerEnergyExplanation" maxlength="380" placeholder="전기적 신호가 코일에 전달된 뒤 진동판이 떨리고 소리가 만들어지는 과정을 순서대로 설명하세요."></textarea><span class="hint">전류, 자기장 또는 자기력, 진동판, 소리 파동을 서로 연결해 쓰세요.</span></div>
         <div class="field"><label>B.iii 통제 방법</label><textarea id="controlMethod" class="short" maxlength="240" placeholder="선택한 통제 변인을 어떤 값으로, 어떻게 같게 유지할지 설명하세요."></textarea></div>
         <div class="field"><label>B.iii 데이터 수집 방법</label><textarea id="collectionMethod" class="short" maxlength="260" placeholder="조작 변인을 어떻게 바꾸고, 종속 변인을 몇 번 측정해 무엇을 기록할지 설명하세요."></textarea></div>
         <div class="field"><label>같은 조건의 반복 횟수</label><select id="repeatCount" style="width:100%;background:#07101d;color:#fff;border:1px solid #42516a;border-radius:7px;padding:8px"><option value="2">각 조건 2회 반복</option><option value="3">각 조건 3회 반복</option></select><span class="hint">측정값에는 작은 차이가 있으므로 2차시에 평균을 계산합니다.</span></div>
@@ -179,7 +185,7 @@
           <div id="groupF" class="control-group frequency"><div class="control-row"><span>입력 신호의 진동수</span><span><span id="badgeF" class="control-badge">선택 전</span> <span id="dispF" class="control-value">500 Hz</span></span></div><input id="sliderF" type="range" min="200" max="1000" step="100" value="500"></div>
           <div class="measurement-panel"><div class="measurement-card"><div class="measurement-label">선택한 종속 변인</div><div id="dependentName" class="measurement-value">미선택</div></div><div class="measurement-card"><div class="measurement-label">최근 측정값</div><div id="latestMeasurement" class="measurement-value pending">측정 전</div></div></div>
           <div id="observationNote" class="observation-note">소리를 듣고 파동 모형을 관찰할 수 있지만, 정확한 종속 변인 값은 「현재 조건 측정하기」를 눌러 기록합니다.</div>
-          <button id="soundBtn" class="sound-btn" onclick="toggleSound()" aria-pressed="false">🔊 소리 계속 듣기</button><div class="sound-note">기기 음량을 낮게 설정하세요. 다시 누를 때까지 계속 재생되며, 조작 변인을 바꾸면 소리도 함께 달라집니다.</div>
+          <button id="soundBtn" class="sound-btn" onclick="toggleSound()" aria-pressed="false">🔇 교사 전체 음소거 중</button><div id="soundNote" class="sound-note">실제 수행평가에서는 교사가 전체 소리를 끌 수 있습니다. 소리 상태를 확인하는 중입니다.</div>
           <button id="measureBtn" class="measure-btn" onclick="measureCurrentCondition()">📏 현재 조건 측정하기</button>
         </div>
         <div><canvas id="waveCanvas" class="wave-canvas"></canvas><div class="wave-note">화면은 전자석 스피커의 진동판과 소리 파동을 단순화한 모형입니다.</div></div>
@@ -198,7 +204,9 @@
 
   <div id="loginModal" class="modal"><div class="modal-box"><div class="modal-title">🔑 수행평가 로그인</div><div class="modal-content">학생 학번 또는 관리자 ID와 비밀번호를 입력하세요.<input id="loginId" placeholder="학번 또는 ID(admin)" autocomplete="username"><input id="loginPw" type="password" placeholder="비밀번호" autocomplete="current-password"><div id="loginMsg" style="color:#f87171;font-size:.76rem;margin-top:5px"></div></div><div class="modal-actions"><button class="btn secondary" onclick="closeModal('loginModal')">닫기</button><button id="loginSubmitBtn" class="btn" onclick="submitLogin()">로그인</button></div></div></div>
   <div id="logoutModal" class="modal"><div class="modal-box"><div class="modal-title">🔒 로그아웃 교사 인증</div><div class="modal-content">수행평가 중 계정 전환을 막기 위해 관리자 비밀번호가 필요합니다.<input id="logoutPw" type="password" placeholder="관리자 비밀번호"><div id="logoutMsg" style="color:#f87171;font-size:.76rem;margin-top:5px"></div></div><div class="modal-actions"><button class="btn secondary" onclick="closeModal('logoutModal')">취소</button><button id="logoutConfirmBtn" class="btn" onclick="verifyProtectedLogout()">인증 후 로그아웃</button></div></div></div>
-  <div id="submitModal" class="modal"><div class="modal-box"><div class="modal-title">📤 최종 자료 제출</div><div class="modal-content"><div style="background:#081423;border-radius:8px;padding:9px;margin-bottom:8px">학번: <b id="confirmId" style="color:#7dd3fc"></b><br>이름: <b id="confirmName" style="color:#7dd3fc"></b><br>제출 회차: <b id="confirmAttempt" style="color:#fde68a"></b><br>선택한 관계: <b id="confirmVariables" style="color:#86efac"></b><br>조건 수 / 원자료: <b id="confirmRows" style="color:#86efac"></b></div><span id="submitModalNote"></span></div><div class="modal-actions"><button class="btn secondary" onclick="closeModal('submitModal')">취소</button><button id="submitConfirmBtn" class="btn success" onclick="executeSubmit()">확인 및 제출</button></div></div></div>
+  <div id="planWarningModal" class="modal"><div class="modal-box"><div class="modal-title">⚠️ 빈칸 또는 미선택 항목 확인</div><div class="modal-content">다음 항목이 비어 있거나 선택되지 않았습니다.<div id="planWarningList" class="warning-panel"></div><div class="responsibility-note">그대로 진행하면 측정값이 나오지 않거나 실험·평균·그래프를 정상적으로 수행하지 못할 수 있습니다. 이 상태로 진행한 결과는 학생 본인의 제출 내용으로 저장되며, 그에 따른 책임은 본인에게 있습니다.</div></div><div class="modal-actions"><button class="btn secondary" onclick="closeModal('planWarningModal')">취소</button><button class="btn danger" onclick="proceedIncompletePlan()">빈칸 그대로 진행</button></div></div></div>
+  <div id="submitModal" class="modal"><div class="modal-box"><div class="modal-title">📤 최종 자료 제출</div><div class="modal-content"><div style="background:#081423;border-radius:8px;padding:9px;margin-bottom:8px">학번: <b id="confirmId" style="color:#7dd3fc"></b><br>이름: <b id="confirmName" style="color:#7dd3fc"></b><br>제출 회차: <b id="confirmAttempt" style="color:#fde68a"></b><br>선택한 관계: <b id="confirmVariables" style="color:#86efac"></b><br>조건 수 / 원자료: <b id="confirmRows" style="color:#86efac"></b></div><div id="submitWarningBox" style="display:none" class="warning-panel"></div><span id="submitModalNote"></span></div><div class="modal-actions"><button class="btn secondary" onclick="closeModal('submitModal')">취소</button><button id="submitConfirmBtn" class="btn success" onclick="executeSubmit()">확인 및 제출</button></div></div></div>
+  <div id="adminModeModal" class="modal"><div class="modal-box admin-mode-box"><div class="modal-title">🛠 수행평가 관리자 모드</div><div id="inlineAdminAuthStage" class="modal-content"><p style="margin-top:0">학생 로그인과 작성 내용은 그대로 유지됩니다. 관리자 비밀번호를 확인한 뒤 재제출 허용과 전체 음소거를 조정할 수 있습니다.</p><div class="admin-auth-row"><input id="inlineAdminPw" type="password" placeholder="관리자 비밀번호"><button id="inlineAdminAuthBtn" class="btn" onclick="authenticateInlineAdmin()">관리자 인증</button></div><div id="inlineAdminAuthMsg" style="color:#f87171;font-size:.76rem;margin-top:6px"></div></div><div id="inlineAdminToolsStage" style="display:none"><div class="admin-grid"><div class="admin-panel"><h3>학생 재제출 관리</h3><label class="admin-small" for="adminTargetStudentId">학번 또는 학생 아이디</label><input id="adminTargetStudentId" placeholder="현재 학생 학번"><div class="admin-row"><button class="btn secondary" onclick="loadInlineAdminStudent()">제출 상태 조회</button><button id="inlineResubmitBtn" class="btn success" onclick="toggleInlineResubmission()" disabled>재제출 허용</button></div><div id="inlineStudentStatus" class="admin-status" style="margin-top:8px">조회할 학생을 입력하세요.</div></div><div class="admin-panel"><h3>수행평가 전체 소리</h3><div id="inlineSoundStatus" class="admin-status">현재 소리 상태를 확인하는 중입니다.</div><div class="admin-row"><button id="inlineSoundToggleBtn" class="btn danger" onclick="toggleInlineGlobalMute()">전체 음소거</button></div><div class="admin-small" style="margin-top:7px">음소거 변경은 Realtime으로 열린 학생 화면에 전달됩니다. 실제 수행평가에서는 음소거 상태를 권장합니다.</div></div></div></div><div class="modal-actions"><button class="btn secondary" onclick="closeAdminMode()">관리자 모드 닫기</button></div></div></div>
 
   <script>
 "use strict";
@@ -207,7 +215,7 @@ const PLATFORM_API_URL = cfg.PLATFORM_API || "";
 const ACADEMIC_YEAR_API_URL = cfg.ACADEMIC_YEAR_API || PLATFORM_API_URL;
 const API_BASE_URL = cfg.baseUrl || (()=>{try{return PLATFORM_API_URL?new URL(PLATFORM_API_URL).origin:"";}catch{return "";}})();
 const ASSESSMENT_API_URL = cfg.ASSESSMENT_API || (API_BASE_URL?`${API_BASE_URL}/functions/v1/assessment-api`:"");
-const DATA_VERSION = 6;
+const DATA_VERSION = 7;
 const $ = id => document.getElementById(id);
 
 const INPUT_OPTIONS = [
@@ -267,6 +275,12 @@ let draftSaveTimer = null;
 let draftSaveInFlight = false;
 let lastServerSaveAt = 0;
 let stateRefreshInFlight = false;
+let teacherSoundMuted = true;
+let runtimeStateLoaded = false;
+let inlineAdminKey = "";
+let inlineAdminStudent = null;
+let pendingPlanWarnings = [];
+let pendingSubmitWarnings = [];
 
 if(location.protocol === "file:"){
   clientIpAddress = "로컬파일/미확인";
@@ -276,8 +290,9 @@ if(location.protocol === "file:"){
 }
 
 function getStoredUser(){try{return JSON.parse(sessionStorage.getItem("current_student")||"null");}catch{return null;}}
-function draftKey(){const u=getStoredUser();return `assessment_draft_${ASSESSMENT_CONFIG.LESSON_ID}_${u?.studentId||"guest"}_sound_v6`;}
-function legacyDraftKey(){const u=getStoredUser();return `assessment_draft_${ASSESSMENT_CONFIG.LESSON_ID}_${u?.studentId||"guest"}_sound_v5`;}
+function draftKey(){const u=getStoredUser();return `assessment_draft_${ASSESSMENT_CONFIG.LESSON_ID}_${u?.studentId||"guest"}_sound_v7`;}
+function legacyDraftKey(){const u=getStoredUser();return `assessment_draft_${ASSESSMENT_CONFIG.LESSON_ID}_${u?.studentId||"guest"}_sound_v6`;}
+function olderLegacyDraftKey(){const u=getStoredUser();return `assessment_draft_${ASSESSMENT_CONFIG.LESSON_ID}_${u?.studentId||"guest"}_sound_v5`;}
 async function sha256(text){const bytes=new TextEncoder().encode(text);const hash=await crypto.subtle.digest("SHA-256",bytes);return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function ensureCurrentSchoolYear(){
   if(currentYearPromise)return currentYearPromise;
@@ -324,7 +339,7 @@ function persistDraft(options={}){
   if(options.server===false||location.protocol==="file:"||!remoteStateLoaded||isSubmitted)return;
   draftDirty=true;queueServerDraftSave(options.immediate?250:8000);
 }
-function clearDraft(){try{sessionStorage.removeItem(draftKey());sessionStorage.removeItem(legacyDraftKey());}catch{}}
+function clearDraft(){try{sessionStorage.removeItem(draftKey());sessionStorage.removeItem(legacyDraftKey());sessionStorage.removeItem(olderLegacyDraftKey());}catch{}}
 function migrateSnapshot(raw){
   const d=raw&&typeof raw==="object"?raw:{};
   const ind=String(d.selectedIndependent||d.plan?.variables?.independent||"");
@@ -344,8 +359,8 @@ function applySnapshot(raw){
   while(procedureSteps.length<4)procedureSteps.push("");
   planLocked=d.planLocked===true||!!d.plan;
   plan=d.plan?JSON.parse(JSON.stringify(d.plan)):null;
-  if(plan){plan.version=DATA_VERSION;plan.recordType="unit3_sound_plan_v6";plan.plannedValues=sortPlanned(plan.plannedValues?.length?plan.plannedValues:plannedValues,selectedIndependent);}
-  logs=Array.isArray(d.logs)?d.logs.map((x,i)=>({...x,no:i+1,version:DATA_VERSION,recordType:"unit3_sound_measurement_v6"})):[];
+  if(plan){plan.version=DATA_VERSION;plan.recordType="unit3_sound_plan_v7";plan.plannedValues=sortPlanned(plan.plannedValues?.length?plan.plannedValues:plannedValues,selectedIndependent);}
+  logs=Array.isArray(d.logs)?d.logs.map((x,i)=>({...x,no:i+1,version:DATA_VERSION,recordType:"unit3_sound_measurement_v7"})):[];
   settings={voltage:Number(d.settings?.voltage??4),resistance:Number(d.settings?.resistance??10),frequency:Number(d.settings?.frequency??500)};
   awayCount=Number(d.awayCount)||0;auditEvents=Array.isArray(d.auditEvents)?d.auditEvents:[];
   revisionBaseAttemptNo=Number(d.revisionBaseAttemptNo)||0;attemptStartedAt=String(d.attemptStartedAt||new Date().toISOString());
@@ -353,7 +368,7 @@ function applySnapshot(raw){
 function restoreLocalDraft(){
   const u=getStoredUser();if(!u||u.isAdmin===true)return null;
   try{
-    const raw=sessionStorage.getItem(draftKey())||sessionStorage.getItem(legacyDraftKey());if(!raw)return null;
+    const raw=sessionStorage.getItem(draftKey())||sessionStorage.getItem(legacyDraftKey())||sessionStorage.getItem(olderLegacyDraftKey());if(!raw)return null;
     const d=migrateSnapshot(JSON.parse(raw));applySnapshot(d);return d;
   }catch(e){console.warn("임시저장 복구 실패",e);return null;}
 }
@@ -424,19 +439,122 @@ async function loadStudentAssessmentState(localCandidate=null,silent=false){
   finally{stateRefreshInFlight=false;}
 }
 
+
+function renderSoundState(){
+  if(!$("soundStatus"))return;
+  $("soundStatus").className=`chip ${teacherSoundMuted?"sound-muted":"sound-open"}`;
+  $("soundStatus").textContent=teacherSoundMuted?"🔇 교사 전체 음소거":"🔊 소리 사용 가능";
+  if($("soundNote"))$("soundNote").textContent=teacherSoundMuted?"교사가 전체 소리를 음소거했습니다. 파동 화면과 측정 기능은 그대로 사용할 수 있습니다.":"교사가 소리 사용을 허용했습니다. 기기 음량을 낮게 설정하고 필요한 경우에만 들으세요.";
+  if($("inlineSoundStatus"))$("inlineSoundStatus").innerHTML=teacherSoundMuted?"<b style='color:#fca5a5'>현재 전체 음소거 중</b><br>모든 열린 학생 화면의 소리가 중지됩니다.":"<b style='color:#86efac'>현재 소리 사용 가능</b><br>학생이 소리 버튼을 눌러 들을 수 있습니다.";
+  if($("inlineSoundToggleBtn")){$("inlineSoundToggleBtn").textContent=teacherSoundMuted?"전체 음소거 해제":"전체 음소거";$("inlineSoundToggleBtn").className=teacherSoundMuted?"btn success":"btn danger";}
+  if(teacherSoundMuted)stopSound();
+  else if($("soundBtn")&&!soundOn)$("soundBtn").textContent="🔊 소리 계속 듣기";
+}
+async function loadRuntimeState(silent=false){
+  if(location.protocol==="file:"){teacherSoundMuted=true;runtimeStateLoaded=true;renderSoundState();return;}
+  if(!ASSESSMENT_API_URL){teacherSoundMuted=true;runtimeStateLoaded=false;renderSoundState();return;}
+  try{
+    const {response,data}=await apiPost({action:"get_runtime_state",lessonId:ASSESSMENT_CONFIG.LESSON_ID},8000);
+    if(!response.ok||data?.success!==true)throw new Error(data?.message||"소리 상태 확인 실패");
+    teacherSoundMuted=data.soundMuted!==false;runtimeStateLoaded=true;renderSoundState();
+    if($("soundBtn"))renderExperiment();
+  }catch(e){
+    console.warn(e);teacherSoundMuted=true;runtimeStateLoaded=false;renderSoundState();
+    if(!silent)alert("전체 소리 상태를 확인하지 못해 안전을 위해 음소거했습니다.");
+  }
+}
+window.onAssessmentRealtimeResync=()=>loadRuntimeState(true);
+
+function openAdminMode(){
+  stopSound();inlineAdminStudent=null;$("inlineStudentStatus").textContent="조회할 학생을 입력하세요.";$("inlineResubmitBtn").disabled=true;
+  const u=getStoredUser(),savedAdmin=String(sessionStorage.getItem("current_admin_key")||"");
+  $("adminTargetStudentId").value=u?.isAdmin===true?"":String(u?.studentId||$("stuId").value||"");
+  $("inlineAdminPw").value="";$("inlineAdminAuthMsg").textContent="";$("adminModeModal").style.display="flex";
+  if(u?.isAdmin===true&&savedAdmin.startsWith("adm_")){inlineAdminKey=savedAdmin;showInlineAdminTools();}
+  else{$("inlineAdminAuthStage").style.display="block";$("inlineAdminToolsStage").style.display="none";setTimeout(()=>$("inlineAdminPw").focus(),30);}
+}
+function closeAdminMode(){
+  const u=getStoredUser();if(u?.isAdmin!==true)inlineAdminKey="";
+  inlineAdminStudent=null;$("adminModeModal").style.display="none";
+}
+async function authenticateInlineAdmin(){
+  const pw=$("inlineAdminPw").value.trim(),msg=$("inlineAdminAuthMsg"),btn=$("inlineAdminAuthBtn");
+  if(!pw){msg.textContent="관리자 비밀번호를 입력하세요.";return;}
+  btn.disabled=true;btn.textContent="인증 중...";msg.textContent="";
+  try{
+    const r=await fetch(PLATFORM_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"verifyAuth",passwordHash:await sha256(pw)})});
+    const data=await r.json();if(!r.ok||!(data?.success===true||data?.ok===true))throw new Error(data?.message||"관리자 비밀번호가 일치하지 않습니다.");
+    const token=String(data.adminSessionToken||"");if(!token.startsWith("adm_"))throw new Error("관리자 세션을 발급받지 못했습니다.");
+    inlineAdminKey=token;showInlineAdminTools();
+  }catch(e){console.error(e);msg.textContent=e.message||"관리자 인증 중 오류가 발생했습니다.";}
+  finally{btn.disabled=false;btn.textContent="관리자 인증";}
+}
+async function showInlineAdminTools(){
+  $("inlineAdminAuthStage").style.display="none";$("inlineAdminToolsStage").style.display="block";
+  await loadRuntimeState(true);
+  if($("adminTargetStudentId").value.trim())await loadInlineAdminStudent();
+}
+async function loadInlineAdminStudent(){
+  const studentId=$("adminTargetStudentId").value.trim(),box=$("inlineStudentStatus"),btn=$("inlineResubmitBtn");
+  if(!studentId){box.textContent="학번 또는 학생 아이디를 입력하세요.";btn.disabled=true;return;}
+  box.textContent="제출 상태를 조회하는 중입니다...";btn.disabled=true;
+  try{
+    const {response,data}=await apiPost({action:"admin_get_student_submissions",adminKey:inlineAdminKey,studentId,schoolYear:CURRENT_SCHOOL_YEAR,lessonId:ASSESSMENT_CONFIG.LESSON_ID});
+    if(data?.permissionDenied)throw new Error(data.message||"관리자 세션이 만료되었습니다.");
+    if(!response.ok||data?.success!==true)throw new Error(data?.message||`조회 실패 (HTTP ${response.status})`);
+    const submissions=Array.isArray(data.submissions)?data.submissions:[],latest=submissions.at(-1)||null;
+    inlineAdminStudent={studentId:String(data.studentId||studentId),studentName:String(data.studentName||""),submissions,resubmissionAllowed:data.resubmissionAllowed===true,resubmission:data.resubmission||null};
+    if(!latest){box.innerHTML=`<b>${escapeText(inlineAdminStudent.studentId)} ${escapeText(inlineAdminStudent.studentName)}</b><br>아직 제출한 자료가 없습니다.`;btn.disabled=true;return;}
+    box.innerHTML=`<b>${escapeText(inlineAdminStudent.studentId)} ${escapeText(inlineAdminStudent.studentName)}</b><br>저장된 제출본 ${submissions.length}개 · 최근 제${Number(latest.attemptNo)||submissions.length}차 ${latest.isResubmission?"재제출":"제출"}<br>${inlineAdminStudent.resubmissionAllowed?"<span style='color:#86efac'>재제출 허용 중</span>":"<span style='color:#fca5a5'>재제출 잠김</span>"}`;
+    btn.disabled=false;btn.textContent=inlineAdminStudent.resubmissionAllowed?"재제출 허용 취소":"재제출 허용";btn.className=inlineAdminStudent.resubmissionAllowed?"btn danger":"btn success";
+  }catch(e){console.error(e);box.textContent=e.message||"조회 중 오류가 발생했습니다.";btn.disabled=true;if(String(e.message).includes("관리자")){$("inlineAdminAuthStage").style.display="block";$("inlineAdminToolsStage").style.display="none";inlineAdminKey="";}}
+}
+async function toggleInlineResubmission(){
+  if(!inlineAdminStudent)return;
+  const allow=!inlineAdminStudent.resubmissionAllowed;
+  let reason="";
+  if(allow){if(!confirm(`${inlineAdminStudent.studentId} ${inlineAdminStudent.studentName} 학생의 재제출을 허용할까요?\n기존 제출본은 그대로 보존되고 최신 제출 내용이 수정 화면에 복원됩니다.`))return;reason=prompt("재제출 허용 사유를 입력하세요. (선택 사항)","")??"";}
+  else if(!confirm(`${inlineAdminStudent.studentId} ${inlineAdminStudent.studentName} 학생의 재제출 허용을 취소할까요?`))return;
+  try{
+    const {response,data}=await apiPost({action:"admin_set_resubmission",adminKey:inlineAdminKey,studentId:inlineAdminStudent.studentId,schoolYear:CURRENT_SCHOOL_YEAR,lessonId:ASSESSMENT_CONFIG.LESSON_ID,allow,reason});
+    if(!response.ok||data?.success!==true)throw new Error(data?.message||`처리 실패 (HTTP ${response.status})`);
+    inlineAdminStudent.resubmissionAllowed=data.resubmissionAllowed===true;inlineAdminStudent.resubmission=data.resubmission||null;
+    await loadInlineAdminStudent();
+    const current=getStoredUser();if(current?.isAdmin!==true&&String(current?.studentId||"")===inlineAdminStudent.studentId)await loadStudentAssessmentState(null,false);
+    alert(data.message||"재제출 상태를 변경했습니다.");
+  }catch(e){console.error(e);alert(e.message||"재제출 설정 중 오류가 발생했습니다.");}
+}
+async function toggleInlineGlobalMute(){
+  if(!inlineAdminKey){alert("관리자 인증이 필요합니다.");return;}
+  const desired=!teacherSoundMuted,btn=$("inlineSoundToggleBtn");btn.disabled=true;
+  try{
+    const {response,data}=await apiPost({action:"admin_set_sound_muted",adminKey:inlineAdminKey,lessonId:ASSESSMENT_CONFIG.LESSON_ID,soundMuted:desired});
+    if(!response.ok||data?.success!==true)throw new Error(data?.message||`음소거 변경 실패 (HTTP ${response.status})`);
+    teacherSoundMuted=data.soundMuted!==false;runtimeStateLoaded=true;renderSoundState();renderExperiment();
+  }catch(e){console.error(e);alert(e.message||"전체 음소거 변경 중 오류가 발생했습니다.");}
+  finally{btn.disabled=false;}
+}
+
 async function applyAuth(){
   const u=getStoredUser();
   if(location.protocol==="file:"){
-    $("assessmentGate").style.display="none";$("loginStatus").textContent="🧪 로컬 미리보기";$("loginBtn").style.display="none";$("logoutBtn").style.display="none";$("stuId").value="PREVIEW";$("stuName").value="미리보기";isStudentSession=true;remoteStateLoaded=true;serverAvailable=false;setDraftStatus("로컬 미리보기");return;
+    $("assessmentGate").style.display="none";$("loginStatus").textContent="🧪 로컬 미리보기";$("loginBtn").style.display="none";$("logoutBtn").style.display="none";$("adminModeBtn").style.display="inline-block";$("stuId").value="PREVIEW";$("stuName").value="미리보기";isStudentSession=true;remoteStateLoaded=true;serverAvailable=false;setDraftStatus("로컬 미리보기");await loadRuntimeState(true);return;
   }
   if(u){
     const isAdmin=u.isAdmin===true,stuToken=String(u.studentSessionToken||""),admToken=String(sessionStorage.getItem("current_admin_key")||"");
     if((!isAdmin&&!stuToken.startsWith("stu_"))||(isAdmin&&!admToken.startsWith("adm_"))){sessionStorage.removeItem("current_student");if(isAdmin)sessionStorage.removeItem("current_admin_key");return applyAuth();}
-    $("stuId").value=u.studentId||"";$("stuName").value=u.name||"";$("loginStatus").textContent=isAdmin?`🧑‍🏫 ${u.name||"관리자"}`:`✅ ${u.name||u.studentId}`;$("loginStatus").style.color="#86efac";$("loginBtn").style.display="none";$("logoutBtn").style.display="inline-block";$("assessmentGate").style.display="none";isStudentSession=!isAdmin;
+    $("stuId").value=u.studentId||"";$("stuName").value=u.name||"";$("loginStatus").textContent=isAdmin?`🧑‍🏫 ${u.name||"관리자"}`:`✅ ${u.name||u.studentId}`;$("loginStatus").style.color="#86efac";$("loginBtn").style.display="none";$("logoutBtn").style.display="inline-block";$("adminModeBtn").style.display="inline-block";$("assessmentGate").style.display="none";isStudentSession=!isAdmin;
     if(!isAdmin){localDraftCandidate=restoreLocalDraft();renderAll();await loadStudentAssessmentState(localDraftCandidate,false);}else{remoteStateLoaded=true;setDraftStatus("관리자 미리보기");}
-  }else{$("stuId").value="";$("stuName").value="";$("loginStatus").textContent="👤 미로그인";$("loginBtn").style.display="inline-block";$("logoutBtn").style.display="none";$("assessmentGate").style.display="flex";isStudentSession=false;remoteStateLoaded=false;setDraftStatus("로그인 필요","warn");}
+    await loadRuntimeState(true);
+  }else{
+    $("stuId").value="";$("stuName").value="";$("loginStatus").textContent="👤 미로그인";$("loginBtn").style.display="inline-block";$("logoutBtn").style.display="none";$("adminModeBtn").style.display="none";$("assessmentGate").style.display="flex";isStudentSession=false;remoteStateLoaded=false;setDraftStatus("로그인 필요","warn");await loadRuntimeState(true);
+  }
 }
-function openLoginModal(){$("loginId").value="";$("loginPw").value="";$("loginMsg").textContent="";$("loginModal").style.display="flex";setTimeout(()=>$("loginId").focus(),30);}
+function openLoginModal(){
+  $("loginId").value="";$("loginPw").value="";$("loginMsg").textContent="";
+  $("loginModal").style.display="flex";$("loginModal").style.zIndex="8000";
+  setTimeout(()=>$("loginId").focus(),30);
+}
 async function submitLogin(){
   const id=$("loginId").value.trim(),pw=$("loginPw").value.trim(),msg=$("loginMsg"),btn=$("loginSubmitBtn");if(!id||!pw){msg.textContent="학번/ID와 비밀번호를 모두 입력하세요.";return;}if(!PLATFORM_API_URL){msg.textContent="플랫폼 API 설정을 찾을 수 없습니다.";return;}btn.disabled=true;btn.textContent="로그인 중...";msg.textContent="";
   try{await ensureCurrentSchoolYear();let r=await fetch(PLATFORM_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"student_login",studentId:id,schoolYear:CURRENT_SCHOOL_YEAR,passwordHash:await sha256(pw),passwordLength:pw.length,ip:clientIpAddress,userAgent:navigator.userAgent})});let d=await r.json();if(!d.success){msg.textContent=d.message||"로그인에 실패했습니다.";return;}if(d.isFirstLogin===true&&d.isAdmin!==true){btn.textContent="새 비밀번호 설정 중...";r=await fetch(PLATFORM_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"register_initial_password",studentId:id,schoolYear:CURRENT_SCHOOL_YEAR,newPasswordHash:await sha256(pw),newPasswordLength:pw.length,ip:clientIpAddress,userAgent:navigator.userAgent})});d=await r.json();if(!d.success){msg.textContent=d.message||"새 비밀번호 설정에 실패했습니다.";return;}alert("새 비밀번호가 설정되었습니다.");}
@@ -488,20 +606,72 @@ function removeProcedureStep(index){if(!procedureEditable()||procedureSteps.leng
 
 function planCompleteness(){
   const t=planTextValues(),missing=[];
-  if(!selectedIndependent)missing.push("조작 변인 선택");if(!selectedDependent)missing.push("종속 변인 선택");if(selectedDependent&&!availableDependentKeys().includes(selectedDependent))missing.push("조작 변인과 종속 변인의 조합 확인");
-  const required=requiredInputControls(),missingControls=required.filter(k=>!selectedControls.has(k));if(missingControls.length)missing.push(`통제 변인 선택: ${missingControls.map(labelOf).join(", ")}`);
-  if(plannedValues.length<5)missing.push("서로 다른 조작 변인 값 5개 이상 선택");
-  if(t.researchQuestion.length<12)missing.push("탐구 질문");if(t.hypothesis.length<10)missing.push("가설");if(t.reasoning.length<18)missing.push("과학적 추론");if(t.speakerEnergyExplanation.length<25)missing.push("전자석 스피커의 신호·에너지 전환 설명");if(t.controlMethod.length<10)missing.push("통제 방법");if(t.collectionMethod.length<10)missing.push("데이터 수집 방법");if(nonEmptyProcedures().length<4)missing.push("연구 방법 4단계 이상");
-  return{ok:missing.length===0,missing,texts:t};
+  if(!selectedIndependent)missing.push("조작 변인");
+  if(!selectedDependent)missing.push("종속 변인");
+  if(selectedIndependent&&selectedDependent&&!availableDependentKeys().includes(selectedDependent))missing.push("조작 변인과 종속 변인의 조합");
+  const required=requiredInputControls(),missingControls=required.filter(k=>!selectedControls.has(k));
+  if(missingControls.length)missing.push(`통제 변인: ${missingControls.map(labelOf).join(", ")}`);
+  if(plannedValues.length<5)missing.push("서로 다른 조작 변인 값 5개 이상");
+  if(!t.researchQuestion)missing.push("B.i 과학적 연구로 검증할 문제 또는 관계");
+  if(!t.hypothesis)missing.push("B.ii 가설");
+  if(!t.reasoning)missing.push("B.ii 과학적 추론");
+  if(!t.speakerEnergyExplanation)missing.push("전자석 스피커가 소리를 만드는 과정");
+  if(!t.controlMethod)missing.push("B.iii 통제 방법");
+  if(!t.collectionMethod)missing.push("B.iii 데이터 수집 방법");
+  procedureSteps.forEach((step,index)=>{if(!String(step).trim())missing.push(`B.iv 연구 방법 ${index+1}단계`);});
+  return{ok:missing.length===0,missing:[...new Set(missing)],texts:t};
 }
 function setPlanInputsDisabled(){const textDisabled=isSubmitted||(planLocked&&!revisionMode);textIds.forEach(id=>$(id).disabled=textDisabled);$("repeatCount").disabled=planLocked||isSubmitted;renderVariableButtons();renderProcedureSteps();}
 function controlsSummary(){if(!selectedIndependent)return"미선택";return [...selectedControls].map(k=>inputByKey(k)?`${labelOf(k)} ${formatValue(controlValues[k],k)} ${unitOf(k)}`:labelOf(k)).join(", ")||"미선택";}
 function updatePlanSummary(){const rep=Number($("repeatCount").value),steps=nonEmptyProcedures().length,vals=plannedValues.length?plannedValues.map(v=>`${formatValue(v,selectedIndependent)}${unitOf(selectedIndependent)}`).join(" · "):"미선택";$("planSummary").textContent=`조작 변인: ${selectedIndependent?labelOf(selectedIndependent):"미선택"} · 종속 변인: ${selectedDependent?labelOf(selectedDependent):"미선택"} · 통제 조건: ${controlsSummary()} · 계획값: ${vals} · 각 ${rep}회 · 연구 방법 ${steps}단계`;}
 function initializeSettingsForPlan(){INPUT_OPTIONS.forEach(m=>{if(m.key===selectedIndependent)settings[m.key]=plannedValues[0]??m.defaultValue;else settings[m.key]=Number(controlValues[m.key]??m.defaultValue);});}
 function confirmPlan(){
-  if(isSubmitted)return;const c=planCompleteness();if(!c.ok){alert(`계획에서 아직 확인할 부분이 있습니다.\n- ${c.missing.join("\n- ")}`);return;}
-  const required=requiredInputControls();plannedValues=sortPlanned();plan={recordType:"unit3_sound_plan_v6",version:DATA_VERSION,...c.texts,variables:{independent:selectedIndependent,dependent:selectedDependent,controlled:[...selectedControls]},requiredControls:required,controlValues:{...controlValues},plannedValues:[...plannedValues],independentVariable:labelOf(selectedIndependent),dependentVariable:labelOf(selectedDependent),controlledVariables:[...selectedControls].map(labelOf).join(", "),repeatCount:Number($("repeatCount").value),procedureSteps:nonEmptyProcedures(),confirmedAt:new Date().toISOString(),revisionBaseAttemptNo:revisionMode?existingAttemptNo:0};
-  initializeSettingsForPlan();planLocked=true;renderAll();persistDraft({immediate:true});setTimeout(()=>$("experimentCard").scrollIntoView({behavior:"smooth",block:"start"}),80);
+  if(isSubmitted)return;
+  const c=planCompleteness();
+  if(!c.ok){
+    pendingPlanWarnings=[...c.missing];
+    $("planWarningList").innerHTML=`<strong>확인할 항목</strong><ul class="warning-list">${pendingPlanWarnings.map(x=>`<li>${escapeText(x)}</li>`).join("")}</ul>`;
+    $("planWarningModal").style.display="flex";
+    return;
+  }
+  finalizePlan(false,c);
+}
+function proceedIncompletePlan(){
+  const c=planCompleteness();
+  closeModal("planWarningModal");
+  finalizePlan(true,c);
+}
+function finalizePlan(incompleteOverride=false,checkResult=null){
+  if(isSubmitted)return;
+  const c=checkResult||planCompleteness();
+  const required=requiredInputControls();
+  plannedValues=sortPlanned();
+  plan={
+    recordType:"unit3_sound_plan_v7",
+    version:DATA_VERSION,
+    ...c.texts,
+    variables:{independent:selectedIndependent,dependent:selectedDependent,controlled:[...selectedControls]},
+    requiredControls:required,
+    controlValues:{...controlValues},
+    plannedValues:[...plannedValues],
+    independentVariable:selectedIndependent?labelOf(selectedIndependent):"",
+    dependentVariable:selectedDependent?labelOf(selectedDependent):"",
+    controlledVariables:[...selectedControls].map(labelOf).join(", "),
+    repeatCount:Number($("repeatCount").value),
+    procedureSteps:nonEmptyProcedures(),
+    incompleteOverride:incompleteOverride===true,
+    missingAtConfirmation:incompleteOverride?[...c.missing]:[],
+    confirmedAt:new Date().toISOString(),
+    revisionBaseAttemptNo:revisionMode?existingAttemptNo:0
+  };
+  if(incompleteOverride) {
+    auditEvents.push({type:"incomplete_plan_override",missing:[...c.missing],confirmedAt:new Date().toISOString()});
+  }
+  initializeSettingsForPlan();
+  planLocked=true;
+  renderAll();
+  persistDraft({immediate:true});
+  setTimeout(()=>$("experimentCard").scrollIntoView({behavior:"smooth",block:"start"}),80);
 }
 function editPlan(){
   if(isSubmitted)return;
@@ -513,6 +683,8 @@ function editPlan(){
   planLocked=false;plan=null;stopSound();renderAll();persistDraft({immediate:true});
 }
 
+function validPlannedRelation(){const ind=String(plan?.variables?.independent||""),dep=String(plan?.variables?.dependent||"");return !!ind&&!!dep&&(DEPENDENT_BY_INDEPENDENT[ind]||[]).includes(dep);}
+function experimentRunnable(){return planLocked&&!!plan&&validPlannedRelation()&&Array.isArray(plan.plannedValues)&&plan.plannedValues.length>0;}
 function independentValue(){const key=plan?.variables?.independent||selectedIndependent;return Number(settings[key]);}
 function conditionKeyForValue(value,key=plan?.variables?.independent||selectedIndependent){return `${key}:${formatValue(value,key)}`;}
 function currentConditionKey(){return conditionKeyForValue(independentValue());}
@@ -531,16 +703,28 @@ function updateSettingsFromSliders(event){if(!planLocked||isSubmitted)return;con
 function setPlannedExperimentValue(value){if(!planLocked||isSubmitted||!isPlannedValue(value,plan.plannedValues))return;settings[plan.variables.independent]=Number(value);renderExperiment();persistDraft();}
 function nextRepeatNumber(rows,target){const used=new Set(rows.map(r=>Math.trunc(Number(r.repeat))).filter(n=>n>=1&&n<=target));for(let n=1;n<=target;n++)if(!used.has(n))return n;return null;}
 function measureCurrentCondition(){
-  if(!planLocked||isSubmitted)return;const current=independentValue();if(!isPlannedValue(current,plan.plannedValues)){alert("계획 단계에서 선택한 조작 변인 값만 측정할 수 있습니다. 위의 계획값 버튼을 선택하세요.");return;}
+  if(!experimentRunnable()||isSubmitted){alert("현재 계획으로는 측정을 실행할 수 없습니다. 변인과 조작값을 확인하거나 원자료 없이 제출할 수 있습니다.");return;}
+  const current=independentValue();if(!isPlannedValue(current,plan.plannedValues)){alert("계획 단계에서 선택한 조작 변인 값만 측정할 수 있습니다. 위의 계획값 버튼을 선택하세요.");return;}
   const groups=conditionGroups(),key=currentConditionKey(),rows=groups.get(key)||[],target=Number(plan.repeatCount||2),repeat=nextRepeatNumber(rows,target);if(repeat==null){alert("이 조건은 계획한 반복 측정을 모두 마쳤습니다. 다른 계획값을 선택하세요.");return;}
   const metrics=measureMetrics(repeat),depValue=dependentValueFromMetrics(metrics),indKey=plan.variables.independent;
-  logs.push({recordType:"unit3_sound_measurement_v6",type:"measurement",version:DATA_VERSION,no:logs.length+1,conditionKey:key,independentKey:indKey,independentValue:Number(settings[indKey]),dependentKey:plan.variables.dependent,dependentValue:Number(depValue),voltage:Number(settings.voltage),resistance:Number(settings.resistance),frequency:Number(settings.frequency),current:metrics.current,relativeAmplitude:metrics.relativeAmplitude,wavelength:metrics.wavelength,pitch:pitchText(settings.frequency),repeat,measuredAt:new Date().toISOString()});
+  logs.push({recordType:"unit3_sound_measurement_v7",type:"measurement",version:DATA_VERSION,no:logs.length+1,conditionKey:key,independentKey:indKey,independentValue:Number(settings[indKey]),dependentKey:plan.variables.dependent,dependentValue:Number(depValue),voltage:Number(settings.voltage),resistance:Number(settings.resistance),frequency:Number(settings.frequency),current:metrics.current,relativeAmplitude:metrics.relativeAmplitude,wavelength:metrics.wavelength,pitch:pitchText(settings.frequency),repeat,measuredAt:new Date().toISOString()});
   renderAll();persistDraft({immediate:true});
 }
 function deleteRow(key){if(isSubmitted)return;logs=logs.filter(x=>x.measuredAt!==key);logs.forEach((x,i)=>x.no=i+1);renderAll();persistDraft({immediate:true});}
 function clearLogs(){if(isSubmitted){alert("제출 후에는 삭제할 수 없습니다.");return;}if(!logs.length)return;if(confirm(revisionMode?"현재 재제출 수정본의 원자료를 모두 삭제할까요? 기존 제출본은 서버에 보존됩니다.":"수집한 모든 원자료를 삭제할까요?")){logs=[];renderAll();persistDraft({immediate:true});}}
 function measurementComplete(){if(!planLocked||!plan)return false;const target=Number(plan.repeatCount||2),groups=conditionGroups();return (plan.plannedValues||[]).length>=5&&(plan.plannedValues||[]).every(v=>{const rows=groups.get(conditionKeyForValue(v,plan.variables.independent))||[],repeats=new Set(rows.map(r=>Number(r.repeat)));return repeats.size===target&&[...Array(target)].every((_,i)=>repeats.has(i+1));})&&logs.every(r=>isPlannedValue(r.independentValue,plan.plannedValues));}
-function readiness(){const c=planCompleteness(),missing=[];if(!planLocked)missing.push("탐구 계획 확정");if(planLocked&&!measurementComplete())missing.push("계획한 모든 조작값과 반복 측정");if(!serverAvailable&&location.protocol!=="file:")missing.push("수행평가 서버 연결 확인");return{ok:planLocked&&measurementComplete()&&c.ok&&(serverAvailable||location.protocol==="file:"),missing};}
+function readiness(){
+  const missing=[];
+  if(!planLocked)missing.push("탐구 계획 확정");
+  if(planLocked){
+    const c=planCompleteness();missing.push(...c.missing);
+    if(!measurementComplete())missing.push("계획한 모든 조작값과 반복 측정");
+  }
+  if(!serverAvailable&&location.protocol!=="file:")missing.push("수행평가 서버 연결 확인");
+  const unique=[...new Set(missing)];
+  const canSubmit=planLocked&&(serverAvailable||location.protocol==="file:");
+  return{ok:canSubmit,complete:canSubmit&&unique.length===0,missing:unique};
+}
 
 function renderPlan(){
   renderVariableButtons();renderProcedureSteps();updatePlanSummary();setPlanInputsDisabled();
@@ -548,7 +732,13 @@ function renderPlan(){
   $("confirmPlanBtn").style.display=planLocked||isSubmitted?"none":"inline-block";$("editPlanBtn").style.display=planLocked&&!isSubmitted?"inline-block":"none";$("editPlanBtn").textContent=revisionMode?"계획 구조 수정 · 원자료 재측정":"계획 다시 수정";
   $("step1").classList.toggle("done",planLocked||isSubmitted);$("step1").classList.toggle("active",!planLocked&&!isSubmitted);
 }
-function setControlAppearance(key,groupId,badgeId,sliderId){const group=$(groupId),badge=$(badgeId),slider=$(sliderId),isActive=planLocked&&plan.variables.independent===key;group.classList.toggle("active-control",isActive);group.classList.toggle("fixed-control",planLocked&&!isActive);badge.className=`control-badge ${isActive?"active":planLocked?"fixed":""}`;badge.textContent=isActive?"조작":planLocked?"통제·고정":"선택 전";slider.disabled=!planLocked||isSubmitted||!isActive;}
+function setControlAppearance(key,groupId,badgeId,sliderId){
+  const group=$(groupId),badge=$(badgeId),slider=$(sliderId),ind=String(plan?.variables?.independent||""),isActive=planLocked&&ind===key,isFixed=planLocked&&!isActive;
+  group.classList.toggle("active-control",isActive);group.classList.toggle("fixed-control",isFixed);
+  badge.className=`control-badge ${isActive?"active":isFixed?"fixed":""}`;
+  badge.textContent=isActive?"조작":isFixed?"통제·고정":"선택 전";
+  slider.disabled=!experimentRunnable()||isSubmitted||!isActive;
+}
 function latestRow(){return logs.length?logs[logs.length-1]:null;}
 function extraObservationText(){if(!planLocked)return"소리를 듣고 파동 모형을 관찰할 수 있지만, 정확한 종속 변인 값은 측정 버튼을 눌러 기록합니다.";if(!isPlannedValue(independentValue(),plan.plannedValues))return"현재 값은 계획 단계에서 선택하지 않은 값입니다. 계획값 버튼을 눌러 측정할 조건을 선택하세요.";if(plan.variables.independent==="frequency")return"진동수 슬라이더를 움직이면 소리의 높낮이와 파동 간격이 변합니다. 전압과 저항은 계획한 값으로 고정됩니다.";return"전압 또는 저항을 바꾸면 소리의 크기와 파동 진폭이 달라질 수 있습니다. 진동수는 계획한 값으로 고정됩니다.";}
 function renderDataTable(){
@@ -559,49 +749,108 @@ function renderDataTable(){
   $("dataBody").innerHTML=rows.length?rows.map(row=>`<tr><td>${map.get(row.conditionKey)||"-"}</td><td>${row.repeat}</td><td>${formatValue(row.independentValue,ind)}</td><td>${formatValue(row.dependentValue,dep)}</td>${extraCell(row)}<td>${requiredInputControls(ind).map(k=>`${inputByKey(k).short} ${formatValue(row[k],k)}${unitOf(k)}`).join(" · ")}</td><td><button class="delete-btn" ${isSubmitted?"disabled":""} onclick="deleteRow('${row.measuredAt}')">삭제</button></td></tr>`).join(""):'<tr><td colspan="7" style="padding:18px;color:#94a3b8">아직 측정한 원자료가 없습니다.</td></tr>';
 }
 function renderExperiment(){
-  $("experimentCard").classList.toggle("locked",!planLocked);$("step2").classList.toggle("active",planLocked&&!measurementComplete()&&!isSubmitted);$("step2").classList.toggle("done",measurementComplete()||isSubmitted);$("experimentState").textContent=!planLocked?"계획 확정 후 시작":measurementComplete()?"측정 완료":"측정 진행 중";$("experimentState").classList.toggle("ok",measurementComplete());
-  $("sliderV").value=String(settings.voltage);$("sliderR").value=String(settings.resistance);$("sliderF").value=String(settings.frequency);$("dispV").textContent=`${settings.voltage.toFixed(1)} V`;$("dispR").textContent=`${settings.resistance.toFixed(0)} Ω`;$("dispF").textContent=`${settings.frequency} Hz`;
+  const runnable=experimentRunnable(),complete=measurementComplete(),ind=String(plan?.variables?.independent||""),dep=String(plan?.variables?.dependent||"");
+  $("experimentCard").classList.toggle("locked",!planLocked);
+  $("step2").classList.toggle("active",planLocked&&!complete&&!isSubmitted);
+  $("step2").classList.toggle("done",complete||isSubmitted);
+  $("experimentState").textContent=!planLocked?"계획 확정 후 시작":!runnable?"실험 실행 불가":complete?"측정 완료":"측정 진행 중";
+  $("experimentState").classList.toggle("ok",complete);
+  $("sliderV").value=String(settings.voltage);$("sliderR").value=String(settings.resistance);$("sliderF").value=String(settings.frequency);
+  $("dispV").textContent=`${settings.voltage.toFixed(1)} V`;$("dispR").textContent=`${settings.resistance.toFixed(0)} Ω`;$("dispF").textContent=`${settings.frequency.toFixed(0)} Hz`;
   setControlAppearance("voltage","groupV","badgeV","sliderV");setControlAppearance("resistance","groupR","badgeR","sliderR");setControlAppearance("frequency","groupF","badgeF","sliderF");
-  const currentPlanned=planLocked&&isPlannedValue(independentValue(),plan.plannedValues);$("measureBtn").disabled=!planLocked||isSubmitted||!currentPlanned;$("soundBtn").disabled=!planLocked||isSubmitted;
-  if(planLocked){$("pathBanner").innerHTML=`<b>조작</b> ${labelOf(plan.variables.independent)} → <b>측정</b> ${labelOf(plan.variables.dependent)}<br><span style="color:#bae6fd">계획값 버튼 중 하나를 선택하고, 보라색 통제 조건은 고정된 상태로 측정하세요.</span>`;$("dependentName").textContent=labelOf(plan.variables.dependent);$("plannedButtons").innerHTML=(plan.plannedValues||[]).map(v=>{const g=conditionGroups().get(conditionKeyForValue(v,plan.variables.independent))||[],target=Number(plan.repeatCount||2);return`<button type="button" class="planned-jump-btn ${sameNumber(independentValue(),v)?"active":""} ${new Set(g.map(r=>r.repeat)).size===target?"complete":""}" ${isSubmitted?"disabled":""} onclick="setPlannedExperimentValue(${v})">${formatValue(v,plan.variables.independent)} ${unitOf(plan.variables.independent)} · ${new Set(g.map(r=>r.repeat)).size}/${target}</button>`;}).join("");}else{$("pathBanner").textContent="계획을 확정하면 조작할 슬라이더 하나와 고정할 조건이 표시됩니다.";$("dependentName").textContent="미선택";$("plannedButtons").innerHTML="";}
-  const last=latestRow();$("latestMeasurement").textContent=last?`${formatValue(last.dependentValue,plan.variables.dependent)} ${unitOf(plan.variables.dependent)}`:"측정 전";$("latestMeasurement").classList.toggle("pending",!last);$("observationNote").textContent=extraObservationText();
-  const groups=orderedGroups(),target=Number(plan?.repeatCount||2);$("conditionCards").innerHTML=groups.length?groups.map(g=>{const done=new Set(g.rows.map(r=>r.repeat)).size===target;return`<div class="condition-card ${done?"complete":""}"><div class="condition-title">조건 ${g.conditionNo} · ${formatValue(g.value,plan.variables.independent)} ${unitOf(plan.variables.independent)}</div><div class="condition-meta">${g.rows.length?`${labelOf(plan.variables.dependent)} ${g.rows.map(r=>formatValue(r.dependentValue,plan.variables.dependent)).join(", ")}`:"아직 측정하지 않음"}</div><div class="condition-progress">${done?"✅":"측정"} ${new Set(g.rows.map(r=>r.repeat)).size}/${target}회</div></div>`;}).join(""):"";
-  const completed=groups.filter(g=>new Set(g.rows.map(r=>r.repeat)).size===target).length;$("measureProgress").className=measurementComplete()?"progress ok":"progress";$("measureProgress").textContent=measurementComplete()?`✅ 계획한 ${labelOf(plan.variables.independent)} 값 ${groups.length}개에서 총 ${logs.length}개의 원자료를 수집했습니다.`:`계획값 ${groups.length}개 · 반복 완료 ${completed}/${groups.length}개 · 현재 원자료 ${logs.length}개`;
-  renderDataTable();updateAudio();
+  const currentPlanned=runnable&&isPlannedValue(independentValue(),plan.plannedValues);
+  $("measureBtn").disabled=!runnable||isSubmitted||!currentPlanned;
+  $("soundBtn").disabled=!runnable||isSubmitted||teacherSoundMuted||!runtimeStateLoaded;
+  if(planLocked&&runnable){
+    $("pathBanner").innerHTML=`<b>조작</b> ${labelOf(ind)} → <b>측정</b> ${labelOf(dep)}<br><span style="color:#bae6fd">계획값 버튼 중 하나를 선택하고, 보라색 통제 조건은 고정된 상태로 측정하세요.</span>`;
+    $("dependentName").textContent=labelOf(dep);
+    $("plannedButtons").innerHTML=(plan.plannedValues||[]).map(v=>{const g=conditionGroups().get(conditionKeyForValue(v,ind))||[],target=Number(plan.repeatCount||2),done=new Set(g.map(row=>Number(row.repeat))).size===target;return`<button type="button" class="planned-jump-btn ${sameNumber(independentValue(),v)?"active":""} ${done?"complete":""}" ${isSubmitted?"disabled":""} onclick="setPlannedExperimentValue(${v})">${formatValue(v,ind)} ${unitOf(ind)} · ${new Set(g.map(row=>Number(row.repeat))).size}/${target}</button>`;}).join("");
+  }else if(planLocked){
+    $("pathBanner").innerHTML="<b>현재 계획으로는 실험을 실행할 수 없습니다.</b><br><span style='color:#fed7aa'>변인 또는 조작값이 선택되지 않았습니다. 계획을 다시 수정하거나 원자료 없이 제출할 수 있습니다.</span>";
+    $("dependentName").textContent=dep?labelOf(dep):"미선택";
+    $("plannedButtons").innerHTML="";
+  }else{
+    $("pathBanner").textContent="계획을 확정하면 조작할 슬라이더 하나와 고정할 조건이 표시됩니다.";
+    $("dependentName").textContent="미선택";$("plannedButtons").innerHTML="";
+  }
+  const last=latestRow();
+  $("latestMeasurement").textContent=last&&dep?`${formatValue(last.dependentValue,dep)} ${unitOf(dep)}`:"측정 전";
+  $("latestMeasurement").classList.toggle("pending",!last);
+  $("observationNote").textContent=runnable?extraObservationText():"변인이나 조작값이 부족하면 측정값이 기록되지 않습니다.";
+  const groups=runnable?orderedGroups():[],target=Number(plan?.repeatCount||2);
+  $("conditionCards").innerHTML=groups.length?groups.map(g=>{const done=new Set(g.rows.map(row=>Number(row.repeat))).size===target;return`<div class="condition-card ${done?"complete":""}"><div class="condition-title">조건 ${g.conditionNo} · ${formatValue(g.value,ind)} ${unitOf(ind)}</div><div class="condition-meta">${g.rows.length?`${labelOf(dep)} ${g.rows.map(row=>formatValue(row.dependentValue,dep)).join(", ")}`:"아직 측정하지 않음"}</div><div class="condition-progress">${done?"✅":"측정"} ${new Set(g.rows.map(row=>Number(row.repeat))).size}/${target}회</div></div>`;}).join(""):"";
+  if(!planLocked){$("measureProgress").className="progress";$("measureProgress").textContent="계획을 확정하면 측정을 시작할 수 있습니다.";}
+  else if(!runnable){$("measureProgress").className="progress";$("measureProgress").textContent="⚠️ 현재 계획에서는 측정할 수 없습니다. 원자료 없이 제출하면 2차시 평균·그래프 작성이 어려울 수 있습니다.";}
+  else{const completed=groups.filter(g=>new Set(g.rows.map(row=>Number(row.repeat))).size===target).length;$("measureProgress").className=complete?"progress ok":"progress";$("measureProgress").textContent=complete?`✅ 계획한 ${labelOf(ind)} 값 ${groups.length}개에서 총 ${logs.length}개의 원자료를 수집했습니다.`:`계획값 ${groups.length}개 · 반복 완료 ${completed}/${groups.length}개 · 현재 원자료 ${logs.length}개`;}
+  renderDataTable();renderSoundState();updateAudio();
 }
 function renderSubmit(){
-  const r=readiness(),groups=planLocked?orderedGroups():[];$("readinessStatus").className=r.ok?"readiness ok":"readiness";$("readinessStatus").innerHTML=r.ok?`✅ ${revisionMode?`제${existingAttemptNo+1}차 재제출`:`제1차 제출`} 준비 완료 · ${labelOf(plan.variables.independent)} → ${labelOf(plan.variables.dependent)} · 조건 ${groups.length}개 · 원자료 ${logs.length}개`:`남은 준비: ${r.missing.length?r.missing.join(" → "):"Criterion B 답안 확인"}`;$("submitBtn").disabled=!r.ok||isSubmitted;$("submitBtn").textContent=revisionMode?`🚀 제${existingAttemptNo+1}차 수정본 재제출`:"🚀 Criterion B 답안·원자료 제출";$("step3").classList.toggle("active",r.ok&&!isSubmitted);$("step3").classList.toggle("done",isSubmitted);$("awayStatus").textContent=`화면 이탈 ${awayCount}회`;
-  const banner=$("resubmitBanner");if(revisionMode&&!isSubmitted){banner.style.display="block";banner.innerHTML=`✏️ <b>재제출 수정 가능</b> · 기존 제${existingAttemptNo}차 제출은 서버에 보존됩니다. 지금 수정한 자료는 제${existingAttemptNo+1}차 제출로 추가 저장됩니다.${activeResubmission?.reason?`<br><span>교사 사유: ${escapeText(activeResubmission.reason)}</span>`:""}`;}else banner.style.display="none";
+  const r=readiness(),groups=planLocked&&plan?orderedGroups():[],attempt=revisionMode?existingAttemptNo+1:1;
+  $("readinessStatus").className=r.complete?"readiness ok":"readiness";
+  if(r.complete){
+    $("readinessStatus").innerHTML=`✅ 제${attempt}차 ${attempt>1?"재제출":"제출"} 준비 완료 · ${labelOf(plan.variables.independent)} → ${labelOf(plan.variables.dependent)} · 조건 ${groups.length}개 · 원자료 ${logs.length}개`;
+  }else if(r.ok){
+    $("readinessStatus").innerHTML=`⚠️ 미완성 항목이 있지만 제출할 수 있습니다: ${r.missing.join(" · ")}`;
+  }else{
+    $("readinessStatus").innerHTML=`남은 준비: ${r.missing.length?r.missing.join(" → "):"탐구 계획 확인"}`;
+  }
+  $("submitBtn").disabled=!r.ok||isSubmitted;
+  $("submitBtn").textContent=revisionMode?`🚀 제${attempt}차 수정본 재제출`:"🚀 Criterion B 답안·원자료 제출";
+  $("step3").classList.toggle("active",r.ok&&!isSubmitted);$("step3").classList.toggle("done",isSubmitted);$("awayStatus").textContent=`화면 이탈 ${awayCount}회`;
+  const banner=$("resubmitBanner");if(revisionMode&&!isSubmitted){banner.style.display="block";banner.innerHTML=`✏️ <b>재제출 수정 가능</b> · 기존 제${existingAttemptNo}차 제출은 서버에 보존됩니다. 지금 수정한 자료는 제${attempt}차 제출로 추가 저장됩니다.${activeResubmission?.reason?`<br><span>교사 사유: ${escapeText(activeResubmission.reason)}</span>`:""}`;}else banner.style.display="none";
   const submitted=$("submittedBanner");submitted.style.display=isSubmitted?"block":"none";if(isSubmitted)submitted.innerHTML=`✅ 제${existingAttemptNo}차 제출이 서버에 저장되었습니다.${existingAttemptNo>1?" 이전 제출본도 보존되어 있습니다.":""} 교사가 재제출을 허용하면 기존 내용을 불러온 상태에서 수정할 수 있습니다.`;
 }
 function renderAll(){renderPlan();renderExperiment();renderSubmit();}
 
 function initAudio(){if(audioContext)return;const AudioContext=window.AudioContext||window.webkitAudioContext;audioContext=new AudioContext();oscillator=audioContext.createOscillator();gainNode=audioContext.createGain();oscillator.type="sine";gainNode.gain.value=0;oscillator.connect(gainNode);gainNode.connect(audioContext.destination);oscillator.start();}
-function toggleSound(){if(isSubmitted||!planLocked)return;initAudio();if(audioContext.state==="suspended")audioContext.resume();soundOn=!soundOn;$("soundBtn").classList.toggle("playing",soundOn);$("soundBtn").textContent=soundOn?"🔇 소리 끄기":"🔊 소리 계속 듣기";$("soundBtn").setAttribute("aria-pressed",String(soundOn));updateAudio();}
-function updateAudio(){if(!audioContext||!oscillator||!gainNode)return;oscillator.frequency.setTargetAtTime(settings.frequency,audioContext.currentTime,.03);const volume=soundOn&&planLocked&&!isSubmitted?Math.min(.07,.010+(idealAmplitude()/100)*.055):0;gainNode.gain.setTargetAtTime(volume,audioContext.currentTime,.04);}
-function stopSound(){soundOn=false;if(audioContext&&gainNode)gainNode.gain.setTargetAtTime(0,audioContext.currentTime,.02);if($("soundBtn")){$("soundBtn").classList.remove("playing");$("soundBtn").textContent="🔊 소리 계속 듣기";$("soundBtn").setAttribute("aria-pressed","false");}}
+function toggleSound(){
+  if(teacherSoundMuted){alert("교사가 수행평가 전체 소리를 음소거했습니다.");return;}
+  if(isSubmitted||!experimentRunnable())return;
+  initAudio();if(audioContext.state==="suspended")audioContext.resume();soundOn=!soundOn;
+  $("soundBtn").classList.toggle("playing",soundOn);$("soundBtn").textContent=soundOn?"🔇 소리 끄기":"🔊 소리 계속 듣기";$("soundBtn").setAttribute("aria-pressed",String(soundOn));updateAudio();
+}
+function updateAudio(){if(!audioContext||!oscillator||!gainNode)return;oscillator.frequency.setTargetAtTime(settings.frequency,audioContext.currentTime,.03);const volume=soundOn&&experimentRunnable()&&!isSubmitted&&!teacherSoundMuted?Math.min(.07,.010+(idealAmplitude()/100)*.055):0;gainNode.gain.setTargetAtTime(volume,audioContext.currentTime,.04);}
+function stopSound(){soundOn=false;if(audioContext&&gainNode)gainNode.gain.setTargetAtTime(0,audioContext.currentTime,.02);if($("soundBtn")){$("soundBtn").classList.remove("playing");$("soundBtn").textContent=teacherSoundMuted?"🔇 교사 전체 음소거 중":"🔊 소리 계속 듣기";$("soundBtn").setAttribute("aria-pressed","false");}}
 
 function openSubmitModal(){
-  const r=readiness();if(!r.ok){alert(`아직 완료하지 않은 항목이 있습니다.\n- ${r.missing.join("\n- ")}`);return;}const u=getStoredUser();if(location.protocol!=="file:"&&(!u||u.isAdmin===true||!isStudentSession)){alert("학생 본인 계정으로 로그인해야 제출할 수 있습니다.");return;}
-  const groups=orderedGroups(),attempt=revisionMode?existingAttemptNo+1:1;$("confirmId").textContent=$("stuId").value;$("confirmName").textContent=$("stuName").value;$("confirmAttempt").textContent=`제${attempt}차 ${attempt>1?"재제출":"제출"}`;$("confirmVariables").textContent=`${labelOf(plan.variables.independent)} → ${labelOf(plan.variables.dependent)}`;$("confirmRows").textContent=`조건 ${groups.length}개 / 원자료 ${logs.length}개`;$("submitModalNote").textContent=attempt>1?`제${attempt}차 수정본이 새 제출본으로 추가 저장됩니다. 기존 제1차~제${attempt-1}차 제출은 삭제되지 않습니다.`:"제출하면 Criterion B 답안과 모든 원자료가 서버에 저장되며, 교사가 재제출을 허용하기 전에는 수정할 수 없습니다.";$("submitModal").style.display="flex";
+  const r=readiness();if(!r.ok){alert(`제출을 시작할 수 없습니다.\n- ${r.missing.join("\n- ")}`);return;}
+  const u=getStoredUser();if(location.protocol!=="file:"&&(!u||u.isAdmin===true||!isStudentSession)){alert("학생 본인 계정으로 로그인해야 제출할 수 있습니다.");return;}
+  pendingSubmitWarnings=[...r.missing];
+  const groups=plan?orderedGroups():[],attempt=revisionMode?existingAttemptNo+1:1,ind=String(plan?.variables?.independent||""),dep=String(plan?.variables?.dependent||"");
+  $("confirmId").textContent=$("stuId").value;$("confirmName").textContent=$("stuName").value;$("confirmAttempt").textContent=`제${attempt}차 ${attempt>1?"재제출":"제출"}`;
+  $("confirmVariables").textContent=ind||dep?`${ind?labelOf(ind):"미선택"} → ${dep?labelOf(dep):"미선택"}`:"변인 미선택";
+  $("confirmRows").textContent=`조건 ${groups.length}개 / 원자료 ${logs.length}개`;
+  const warningBox=$("submitWarningBox");
+  if(pendingSubmitWarnings.length){
+    warningBox.style.display="block";
+    warningBox.innerHTML=`<strong>미완성 상태로 제출됩니다.</strong><ul class="warning-list">${pendingSubmitWarnings.map(x=>`<li>${escapeText(x)}</li>`).join("")}</ul><div class="responsibility-note">이 상태에서는 데이터가 없거나 실험·평균·그래프가 정상적으로 성립하지 않을 수 있습니다. 확인 후 제출한 내용에 대한 책임은 학생 본인에게 있습니다.</div>`;
+    $("submitConfirmBtn").className="btn danger";$("submitConfirmBtn").textContent="미완성 상태로 제출";
+  }else{
+    warningBox.style.display="none";warningBox.innerHTML="";
+    $("submitConfirmBtn").className="btn success";$("submitConfirmBtn").textContent="확인 및 제출";
+  }
+  $("submitModalNote").textContent=attempt>1?`제${attempt}차 수정본이 새 제출본으로 추가 저장됩니다. 기존 제1차~제${attempt-1}차 제출은 삭제되지 않습니다.`:"제출 후에는 교사가 재제출을 허용하기 전까지 수정할 수 없습니다.";
+  $("submitModal").style.display="flex";
 }
 async function executeSubmit(){
-  if(location.protocol==="file:"){alert("로컬 미리보기에서는 서버 제출을 실행하지 않습니다.");closeModal("submitModal");return;}const u=getStoredUser();if(!u||u.isAdmin===true||!isStudentSession){alert("로그인 상태가 변경되었습니다.");closeModal("submitModal");await applyAuth();return;}const btn=$("submitConfirmBtn");btn.disabled=true;btn.textContent="서버 저장 확인 중...";
-  syncPlanText();const payload=snapshotForServer(),submittedAt=new Date().toISOString();
+  if(location.protocol==="file:"){alert("로컬 미리보기에서는 서버 제출을 실행하지 않습니다.");closeModal("submitModal");return;}
+  const u=getStoredUser();if(!u||u.isAdmin===true||!isStudentSession){alert("로그인 상태가 변경되었습니다.");closeModal("submitModal");await applyAuth();return;}
+  const btn=$("submitConfirmBtn");btn.disabled=true;btn.textContent="서버 저장 확인 중...";
+  syncPlanText();const payload=snapshotForServer(),submittedAt=new Date().toISOString(),allowIncomplete=pendingSubmitWarnings.length>0;
   try{
-    const {response,data}=await apiPost({action:"submit_assessment",studentSessionToken:String(u.studentSessionToken||""),lessonId:ASSESSMENT_CONFIG.LESSON_ID,assessmentMode:ASSESSMENT_CONFIG.MODE,dataVersion:DATA_VERSION,payload,meta:{title:"소리 신호 탐구 설계실",version:DATA_VERSION,baseAttemptNo:existingAttemptNo,uniqueConditionCount:orderedGroups().length,measurementCount:logs.length},audit:{awayCount,auditEvents,attemptStartedAt,clientSubmittedAt:submittedAt,userAgent:navigator.userAgent},ip:clientIpAddress,userAgent:navigator.userAgent},25000);
+    const {response,data}=await apiPost({action:"submit_assessment",studentSessionToken:String(u.studentSessionToken||""),lessonId:ASSESSMENT_CONFIG.LESSON_ID,assessmentMode:ASSESSMENT_CONFIG.MODE,dataVersion:DATA_VERSION,allowIncomplete,payload,meta:{title:"소리 신호 탐구 설계실",version:DATA_VERSION,baseAttemptNo:existingAttemptNo,uniqueConditionCount:plan?orderedGroups().length:0,measurementCount:logs.length,clientWarnings:[...pendingSubmitWarnings]},audit:{awayCount,auditEvents,attemptStartedAt,clientSubmittedAt:submittedAt,userAgent:navigator.userAgent},ip:clientIpAddress,userAgent:navigator.userAgent},25000);
     if(!response.ok||data?.success!==true)throw Object.assign(new Error(data?.message||`제출 실패 (HTTP ${response.status})`),{serverData:data});
-    existingAttemptNo=Number(data.attemptNo)||existingAttemptNo+1;latestSubmissionInfo={submissionId:data.submissionId,attemptNo:existingAttemptNo,submittedAt:data.submittedAt};activeResubmission=null;revisionMode=false;revisionBaseAttemptNo=0;isSubmitted=true;stopSound();draftDirty=false;clearTimeout(draftSaveTimer);try{sessionStorage.setItem(draftKey(),JSON.stringify(collectDraft()));}catch{}closeModal("submitModal");renderAll();setDraftStatus(`✅ 제${existingAttemptNo}차 서버 저장 확인 완료`,"ok");alert(`제${existingAttemptNo}차 제출이 서버에 정상 저장되었습니다.\n접수 시각: ${new Date(data.submittedAt).toLocaleString("ko-KR")}`);
+    existingAttemptNo=Number(data.attemptNo)||existingAttemptNo+1;latestSubmissionInfo={submissionId:data.submissionId,attemptNo:existingAttemptNo,submittedAt:data.submittedAt};activeResubmission=null;revisionMode=false;revisionBaseAttemptNo=0;isSubmitted=true;stopSound();draftDirty=false;clearTimeout(draftSaveTimer);try{sessionStorage.setItem(draftKey(),JSON.stringify(collectDraft()));}catch{}closeModal("submitModal");renderAll();setDraftStatus(`✅ 제${existingAttemptNo}차 서버 저장 확인 완료`,"ok");alert(`제${existingAttemptNo}차 제출이 서버에 정상 저장되었습니다.${allowIncomplete?"\n미완성 항목이 포함된 제출본으로 기록되었습니다.":""}\n접수 시각: ${new Date(data.submittedAt).toLocaleString("ko-KR")}`);
   }catch(e){console.error(e);const d=e.serverData;if(d?.alreadySubmitted===true){alert(`${e.message}\n현재 서버의 제출 상태를 다시 불러옵니다.`);closeModal("submitModal");await loadStudentAssessmentState(null,true);}else alert(`제출 중 오류가 발생했습니다. 현재 자료는 화면과 기기에 유지됩니다.\n${e.message||e}`);}
-  finally{btn.disabled=false;btn.textContent="확인 및 제출";}
+  finally{btn.disabled=false;btn.textContent=pendingSubmitWarnings.length?"미완성 상태로 제출":"확인 및 제출";}
 }
 
 function drawWave(){
   const canvas=$("waveCanvas"),ctx=canvas.getContext("2d"),dpr=window.devicePixelRatio||1,rect=canvas.getBoundingClientRect(),w=Math.max(320,Math.floor(rect.width*dpr)),h=Math.max(220,Math.floor(rect.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}ctx.setTransform(dpr,0,0,dpr,0,0);const cw=rect.width,ch=rect.height;ctx.clearRect(0,0,cw,ch);ctx.fillStyle="#020617";ctx.fillRect(0,0,cw,ch);const left=65,right=18,top=34,bottom=42,pw=cw-left-right,ph=ch-top-bottom,cy=top+ph/2;
   ctx.strokeStyle="#17233a";ctx.lineWidth=1;for(let i=0;i<=10;i++){const x=left+pw*i/10;ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,ch-bottom);ctx.stroke();}for(let i=0;i<=6;i++){const y=top+ph*i/6;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(cw-right,y);ctx.stroke();}ctx.strokeStyle="#475569";ctx.beginPath();ctx.moveTo(left,cy);ctx.lineTo(cw-right,cy);ctx.stroke();
   const ampPct=idealAmplitude(),amp=(ampPct/100)*(ph*.38),cycles=2.5+(settings.frequency-200)/200,k=cycles*2*Math.PI/pw;ctx.fillStyle="#64748b";ctx.fillRect(7,cy-44,24,88);ctx.fillStyle="#ef4444";ctx.fillRect(32,cy-30,10,60);ctx.fillStyle="#fbbf24";ctx.fillRect(44,cy-30,9,60);ctx.fillStyle="#38bdf8";const diaphragm=Math.sin(phase)*Math.min(10,amp*.15);ctx.beginPath();ctx.moveTo(54,cy-36);ctx.lineTo(70+diaphragm,cy-17);ctx.lineTo(70+diaphragm,cy+17);ctx.lineTo(54,cy+36);ctx.closePath();ctx.fill();
-  if(planLocked){ctx.strokeStyle="#38bdf8";ctx.lineWidth=2.4;ctx.shadowBlur=7;ctx.shadowColor="#0ea5e9";ctx.beginPath();for(let x=left;x<=cw-right;x++){const y=cy-Math.sin((x-left)*k-phase)*amp;if(x===left)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();ctx.shadowBlur=0;}
-  ctx.fillStyle="#fbbf24";ctx.font="bold 12px sans-serif";ctx.textAlign="left";ctx.fillText(planLocked?`${labelOf(plan.variables.independent)} ${formatValue(independentValue(),plan.variables.independent)} ${unitOf(plan.variables.independent)}`:"계획을 확정하면 실험이 시작됩니다.",left,20);ctx.fillStyle="#86efac";ctx.textAlign="right";ctx.fillText(planLocked?`${pitchText(settings.frequency)} · 파동 모형`:"",cw-right,20);ctx.fillStyle="#94a3b8";ctx.textAlign="center";ctx.font="10px sans-serif";ctx.fillText("코일과 자석 → 진동판 → 소리 파동",left+pw/2,ch-11);phase+=.075;requestAnimationFrame(drawWave);
+  if(experimentRunnable()){ctx.strokeStyle="#38bdf8";ctx.lineWidth=2.4;ctx.shadowBlur=7;ctx.shadowColor="#0ea5e9";ctx.beginPath();for(let x=left;x<=cw-right;x++){const y=cy-Math.sin((x-left)*k-phase)*amp;if(x===left)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();ctx.shadowBlur=0;}
+  ctx.fillStyle="#fbbf24";ctx.font="bold 12px sans-serif";ctx.textAlign="left";ctx.fillText(experimentRunnable()?`${labelOf(plan.variables.independent)} ${formatValue(independentValue(),plan.variables.independent)} ${unitOf(plan.variables.independent)}`:planLocked?"현재 계획으로 실험 실행 불가":"계획을 확정하면 실험이 시작됩니다.",left,20);ctx.fillStyle="#86efac";ctx.textAlign="right";ctx.fillText(experimentRunnable()?`${pitchText(settings.frequency)} · 파동 모형`:"",cw-right,20);ctx.fillStyle="#94a3b8";ctx.textAlign="center";ctx.font="10px sans-serif";ctx.fillText("코일과 자석 → 진동판 → 소리 파동",left+pw/2,ch-11);phase+=.075;requestAnimationFrame(drawWave);
 }
 
 function hasStudentWork(){return textIds.some(id=>$(id).value.trim())||selectedIndependent||selectedDependent||selectedControls.size||plannedValues.length||logs.length||planLocked;}
@@ -612,9 +861,9 @@ document.addEventListener("visibilitychange",()=>{const u=getStoredUser();if(loc
 window.addEventListener("focus",()=>{if((isSubmitted||revisionMode)&&!draftDirty&&!draftSaveInFlight)loadStudentAssessmentState(null,true);});
 window.addEventListener("beforeunload",e=>{const u=getStoredUser();if(u&&u.isAdmin!==true&&hasStudentWork()&&!isSubmitted){persistDraft({server:false});e.preventDefault();e.returnValue="";}});
 function closeModal(id){$(id).style.display="none";}
-document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".modal").forEach(m=>m.style.display="none");if(e.key==="Enter"&&$("loginModal").style.display==="flex")submitLogin();});
-setInterval(()=>{if((isSubmitted||revisionMode)&&document.visibilityState==="visible"&&!draftDirty&&!draftSaveInFlight)loadStudentAssessmentState(null,true);},30000);
-function init(){renderVariableButtons();renderProcedureSteps();renderAll();applyAuth();drawWave();}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){document.querySelectorAll(".modal").forEach(m=>m.style.display="none");return;}if(e.key!=="Enter")return;if($("loginModal").style.display==="flex"){e.preventDefault();submitLogin();return;}if($("logoutModal").style.display==="flex"){e.preventDefault();verifyProtectedLogout();return;}if($("adminModeModal").style.display==="flex"&&$("inlineAdminAuthStage").style.display!=="none"){e.preventDefault();authenticateInlineAdmin();}});
+setInterval(()=>{if(document.visibilityState!=="visible")return;loadRuntimeState(true);if((isSubmitted||revisionMode)&&!draftDirty&&!draftSaveInFlight)loadStudentAssessmentState(null,true);},30000);
+async function init(){renderVariableButtons();renderProcedureSteps();renderAll();drawWave();await applyAuth();await loadRuntimeState(true);}
 init();
 
   </script>

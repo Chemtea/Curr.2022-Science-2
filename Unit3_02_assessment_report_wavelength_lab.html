@@ -25,6 +25,9 @@
               if(u&&(u.isLocked===true||u.lessons?.[PRINT_CONFIG.LESSON_ID]===true)){
                 document.documentElement.innerHTML=`<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>접근 제한</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1120;color:#e2e8f0;font-family:'Malgun Gothic';text-align:center}.b{padding:28px;border:1px solid #334155;border-radius:14px;background:#111827}h2{color:#f87171}</style></head><body><div class="b"><h2>🔒 활동지 인쇄센터 접근 제한</h2><p>선생님의 안내를 기다려 주세요.</p></div></body>`;
               }
+              if(typeof window.onPrintRealtimeResync==="function"){
+                Promise.resolve(window.onPrintRealtimeResync("lock_changed")).catch(error=>console.warn("인쇄센터 실시간 상태 동기화 실패",error));
+              }
               lastError=null;break;
             }catch(e){clearTimeout(timer);lastError=e;if(attempt<3)await new Promise(r=>setTimeout(r,450*attempt));}
           }
@@ -52,6 +55,8 @@
     .student-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(315px,1fr));gap:9px}.student-card{border:1px solid #cbd5e1;border-radius:10px;padding:11px;background:#fff}.student-card.ok{border-color:#22c55e}.student-card.ok.multi{border-color:#0ea5e9;box-shadow:0 0 0 1px #bae6fd inset}.student-card.fail{border-color:#f87171;background:#fff7f7}.student-card label{display:flex;align-items:center;gap:7px;font-weight:900;flex-wrap:wrap}.student-card .meta{font-size:.74rem;color:#64748b;margin-top:6px;line-height:1.52}.attempt-badge{margin-left:auto;background:#e0f2fe;color:#075985;border:1px solid #7dd3fc;border-radius:999px;padding:2px 7px;font-size:.67rem}.grant-on{color:#15803d;font-weight:900}.grant-off{color:#64748b;font-weight:800}
     .card-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}button.mini{border:0;border-radius:6px;background:#0369a1;color:#fff;padding:6px 8px;font-size:.69rem;font-weight:900;cursor:pointer}button.mini.secondary{background:#475569}button.mini.success{background:#15803d}button.mini.danger{background:#b91c1c}
     .auth-panel{border:1px solid #38bdf8;background:#eff9ff;border-radius:9px;padding:11px;margin-bottom:10px}.auth-panel input{border:1px solid #94a3b8;border-radius:7px;padding:8px;width:230px}.auth-panel button{border:0;border-radius:7px;background:#0369a1;color:#fff;padding:8px 12px;font-weight:900;cursor:pointer}
+    .sound-control{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid #cbd5e1;background:#f8fafc;border-radius:9px;padding:9px 11px;margin-bottom:10px}.sound-state{font-size:.78rem;font-weight:900;border-radius:999px;padding:4px 9px}.sound-state.muted{color:#991b1b;background:#fee2e2;border:1px solid #fca5a5}.sound-state.open{color:#166534;background:#dcfce7;border:1px solid #86efac}.sound-control button{border:0;border-radius:7px;padding:8px 12px;color:#fff;font-weight:900;cursor:pointer}.sound-control button.mute{background:#b91c1c}.sound-control button.unmute{background:#15803d}
+    .incomplete-badge{display:inline-block;margin-left:5px;border:1px solid #f59e0b;background:#fff7ed;color:#9a3412;border-radius:999px;padding:1px 6px;font-size:.62rem;font-weight:900}.incomplete-print{border-color:#f59e0b;background:#fffbeb;color:#92400e}.empty-row{color:#94a3b8;font-style:italic;padding:2mm!important}.validation-note{font-size:5.8pt;color:#92400e;margin-top:.3mm}
     .modal{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;z-index:5000;padding:18px}.modal-box{width:min(720px,96vw);max-height:88vh;overflow:auto;background:#fff;border-radius:13px;padding:17px;box-shadow:0 18px 55px #0007;border:1px solid #94a3b8}.modal-head{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #cbd5e1;padding-bottom:9px;margin-bottom:9px}.modal-head h2{font-size:1.05rem;margin:0}.modal-close{border:0;background:#475569;color:#fff;border-radius:7px;padding:6px 10px;font-weight:900;cursor:pointer}.version-list{display:grid;gap:8px}.version-row{display:grid;grid-template-columns:24px 1fr;gap:8px;border:1px solid #cbd5e1;border-radius:9px;padding:10px;cursor:pointer;background:#fff}.version-row.selected{border-color:#0ea5e9;background:#f0f9ff;box-shadow:0 0 0 1px #bae6fd inset}.version-title{font-weight:950;color:#0f172a}.version-title span{font-size:.73rem;color:#64748b;margin-left:6px;font-weight:700}.version-meta{font-size:.74rem;color:#64748b;line-height:1.55;margin-top:3px}.modal-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:12px}.modal-actions button{border:0;border-radius:7px;padding:8px 12px;color:#fff;background:#475569;font-weight:900;cursor:pointer}.modal-actions .primary{background:#0369a1}
     #printArea{display:none}
     .print-page{width:190mm;height:277mm;margin:0 auto 10mm;background:#fff;position:relative;overflow:hidden;page-break-after:always;break-after:page}.print-page:last-child{page-break-after:auto;break-after:auto}.page-inner{height:277mm;padding:0;display:flex;flex-direction:column}
@@ -74,6 +79,7 @@
     <div class="topline"><div><h1>🧑‍🏫 Unit 3 개인별 활동지 인쇄센터</h1><p>학생의 모든 제출 이력을 보존한 상태에서 원하는 회차를 선택하여 A4 2쪽으로 인쇄하고, 특정 학생에게만 재제출을 허용할 수 있습니다.</p></div><span id="adminState">관리자 인증 필요</span></div>
     <div id="authPanel" class="auth-panel"><b>교사 인증</b><br><input id="adminPw" type="password" placeholder="관리자 비밀번호"><button id="authBtn" onclick="authenticateTeacher()">인증</button><span id="authMsg" style="font-size:.78rem;margin-left:8px;color:#b91c1c"></span></div>
     <div id="controlPanel" style="display:none">
+      <div class="sound-control"><div><b>🔊 수행평가 전체 소리</b><div style="font-size:.72rem;color:#64748b;margin-top:2px">실제 수행평가에서는 전체 음소거를 권장합니다. 변경 내용은 열린 학생 화면에 Realtime으로 전달됩니다.</div></div><div style="display:flex;align-items:center;gap:7px"><span id="globalSoundStatus" class="sound-state muted">전체 음소거 확인 중</span><button id="globalSoundBtn" class="unmute" onclick="toggleGlobalSoundMute()">음소거 해제</button></div></div>
       <label style="font-weight:900;font-size:.86rem">불러올 학번</label><textarea id="studentIds" class="ids" placeholder="학번을 줄바꿈, 쉼표 또는 공백으로 구분해 입력하세요.&#10;예: 20101 20102 20103"></textarea>
       <div class="toolbar"><button onclick="fetchAllStudents()">제출 이력 불러오기</button><button class="secondary" onclick="loadSampleStudents()">샘플 2명 보기</button><button class="success" id="printBtn" onclick="prepareAndPrint()" disabled>선택 학생 전체 인쇄</button><button class="secondary" id="csvBtn" onclick="downloadCSV()" disabled>선택 제출본 CSV</button><button class="danger" onclick="clearLoaded()">목록 초기화</button></div>
       <div id="status" class="status">학번을 입력하고 제출 이력을 불러오세요. 한 학생에게 제출본이 여러 개 있으면 최신 회차가 기본 선택됩니다.</div><div id="studentList" class="student-list"></div>
@@ -104,6 +110,7 @@ const VARIABLE_OPTIONS={
 let CURRENT_SCHOOL_YEAR=PRINT_CONFIG.FALLBACK_SCHOOL_YEAR;
 let currentYearPromise=null;
 let teacherAuthed=false,adminKey="",loaded=[],versionModalStudentIndex=-1;
+let teacherSoundMuted=true,runtimeStateLoaded=false;
 const $=id=>document.getElementById(id);
 
 async function sha256(text){const bytes=new TextEncoder().encode(text);const hash=await crypto.subtle.digest("SHA-256",bytes);return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,"0")).join("");}
@@ -114,7 +121,10 @@ async function ensureCurrentSchoolYear(){
 }
 function currentAdminToken(){return String(sessionStorage.getItem("current_admin_key")||"");}
 function currentAdminReady(){try{const u=JSON.parse(sessionStorage.getItem("current_student")||"null"),token=currentAdminToken();return u?.isAdmin===true&&token.startsWith("adm_");}catch{return false;}}
-function unlockControls(token){teacherAuthed=true;adminKey=String(token||currentAdminToken());$("authPanel").style.display="none";$("controlPanel").style.display="block";$("adminState").textContent="✅ 관리자 인증됨";}
+function unlockControls(token){
+  teacherAuthed=true;adminKey=String(token||currentAdminToken());$("authPanel").style.display="none";$("controlPanel").style.display="block";$("adminState").textContent="✅ 관리자 인증됨";
+  loadRuntimeState(true);
+}
 function lockControls(message="관리자 인증이 필요합니다."){
   teacherAuthed=false;adminKey="";$("authPanel").style.display="block";$("controlPanel").style.display="none";$("authMsg").textContent=message;
 }
@@ -138,6 +148,36 @@ async function apiPost(payload,timeoutMs=20000){
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
   try{const r=await fetch(ASSESSMENT_API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),cache:"no-store",signal:controller.signal});const d=await r.json().catch(()=>({success:false,message:`서버 응답을 읽지 못했습니다. (HTTP ${r.status})`}));return{response:r,data:d};}finally{clearTimeout(timer);}
 }
+
+function renderGlobalSoundState(){
+  const status=$("globalSoundStatus"),btn=$("globalSoundBtn");if(!status||!btn)return;
+  status.className=`sound-state ${teacherSoundMuted?"muted":"open"}`;
+  status.textContent=teacherSoundMuted?"🔇 전체 음소거 중":"🔊 소리 사용 가능";
+  btn.className=teacherSoundMuted?"unmute":"mute";
+  btn.textContent=teacherSoundMuted?"음소거 해제":"전체 음소거";
+}
+async function loadRuntimeState(silent=false){
+  if(location.protocol==="file:"){teacherSoundMuted=true;runtimeStateLoaded=true;renderGlobalSoundState();return;}
+  if(!ASSESSMENT_API_URL){teacherSoundMuted=true;runtimeStateLoaded=false;renderGlobalSoundState();return;}
+  try{
+    const {response,data}=await apiPost({action:"get_runtime_state",lessonId:DATA_LESSON_ID},8000);
+    if(!response.ok||data?.success!==true)throw new Error(data?.message||"소리 상태 확인 실패");
+    teacherSoundMuted=data.soundMuted!==false;runtimeStateLoaded=true;renderGlobalSoundState();
+  }catch(e){console.warn(e);teacherSoundMuted=true;runtimeStateLoaded=false;renderGlobalSoundState();if(!silent)alert("전체 소리 상태를 확인하지 못해 안전을 위해 음소거로 표시합니다.");}
+}
+window.onPrintRealtimeResync=()=>loadRuntimeState(true);
+async function toggleGlobalSoundMute(){
+  if(!teacherAuthed||!adminKey){alert("관리자 인증이 필요합니다.");return;}
+  const btn=$("globalSoundBtn"),desired=!teacherSoundMuted;btn.disabled=true;
+  try{
+    const {response,data}=await apiPost({action:"admin_set_sound_muted",adminKey,lessonId:DATA_LESSON_ID,soundMuted:desired});
+    if(data?.permissionDenied){lockControls("관리자 세션이 만료되었습니다. 다시 인증하세요.");throw new Error(data.message);}
+    if(!response.ok||data?.success!==true)throw new Error(data?.message||`음소거 변경 실패 (HTTP ${response.status})`);
+    teacherSoundMuted=data.soundMuted!==false;runtimeStateLoaded=true;renderGlobalSoundState();
+  }catch(e){console.error(e);alert(e.message||"전체 음소거 변경 중 오류가 발생했습니다.");}
+  finally{btn.disabled=false;}
+}
+
 function esc(v){return String(v??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));}
 function nl(v){return esc(v).replace(/\n/g,"<br>");}
 function fmtDate(v){if(!v)return"";const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString("ko-KR");}
@@ -151,12 +191,16 @@ function labelsToKeys(v){const s=String(v||"");return Object.keys(VARIABLE_OPTIO
 function legacyProcedures(p){return[p.method1,p.method2,p.method3,p.method4].filter(Boolean);}
 function normalizePlan(plan){
   const p=plan&&typeof plan==="object"?plan:{};
-  const independent=p.variables?.independent||keyFromLabel(p.independentVariable);
-  const dependent=p.variables?.dependent||keyFromLabel(p.dependentVariable);
-  if(!independent||!dependent)throw new Error("제출본의 변인 정보를 읽을 수 없습니다.");
-  const controlled=Array.isArray(p.variables?.controlled)?p.variables.controlled:labelsToKeys(p.controlledVariables);
+  const independent=String(p.variables?.independent||keyFromLabel(p.independentVariable)||"");
+  const dependent=String(p.variables?.dependent||keyFromLabel(p.dependentVariable)||"");
+  const controlled=Array.isArray(p.variables?.controlled)?p.variables.controlled.map(String):labelsToKeys(p.controlledVariables);
   const plannedValues=Array.isArray(p.plannedValues)?p.plannedValues.map(Number).filter(Number.isFinite):[];
-  return{...p,version:Number(p.version)||6,variables:{independent,dependent,controlled},controlValues:{voltage:Number(p.controlValues?.voltage)||6,resistance:Number(p.controlValues?.resistance)||10,frequency:Number(p.controlValues?.frequency)||500},plannedValues,procedureSteps:Array.isArray(p.procedureSteps)?p.procedureSteps.filter(Boolean):legacyProcedures(p)};
+  const controlValues={
+    voltage:Number.isFinite(Number(p.controlValues?.voltage))?Number(p.controlValues.voltage):6,
+    resistance:Number.isFinite(Number(p.controlValues?.resistance))?Number(p.controlValues.resistance):10,
+    frequency:Number.isFinite(Number(p.controlValues?.frequency))?Number(p.controlValues.frequency):500
+  };
+  return{...p,version:Number(p.version)||7,variables:{independent,dependent,controlled},controlValues,plannedValues,procedureSteps:Array.isArray(p.procedureSteps)?p.procedureSteps.map(String).filter(Boolean):legacyProcedures(p)};
 }
 function basicMeasurement(m){const frequency=Number(m.frequency??m.f??500);return{...m,voltage:Number(m.voltage??m.V??0),resistance:Number(m.resistance??m.R??10),current:Number(m.current??m.I??0),frequency,relativeAmplitude:Number(m.relativeAmplitude??m.amp??0),wavelength:Number(m.wavelength??(frequency?340/frequency:0)),repeat:Number(m.repeat??1),pitch:String(m.pitch||"")};}
 function valueOf(row,key){if(key==="voltage")return Number(row.voltage);if(key==="resistance")return Number(row.resistance);if(key==="current")return Number(row.current);if(key==="frequency")return Number(row.frequency);if(key==="amplitude")return Number(row.relativeAmplitude);if(key==="wavelength")return Number(row.wavelength);return NaN;}
@@ -166,11 +210,12 @@ function normalizeVersion(rec,root){
   const payload=rec?.payload&&typeof rec.payload==="object"?rec.payload:{};
   const plan=normalizePlan(payload.plan||{});
   const measurements=(Array.isArray(payload.logs)?payload.logs:[]).map(x=>enrichMeasurement(x,plan));
-  if(!measurements.length)throw new Error(`제${Number(rec?.attemptNo)||"?"}차 제출본에 원자료가 없습니다.`);
-  return{ok:true,studentId:String(rec.studentId||root.studentId||""),studentName:String(rec.studentName||root.studentName||""),schoolYear:String(rec.schoolYear||root.schoolYear||""),submissionId:String(rec.submissionId||""),attemptNo:Number(rec.attemptNo)||1,isResubmission:rec.isResubmission===true||Number(rec.attemptNo)>1,parentSubmissionId:String(rec.parentSubmissionId||""),timestamp:String(rec.submittedAt||""),submittedAt:String(rec.submittedAt||""),plan,measurements,audit:rec.audit&&typeof rec.audit==="object"?rec.audit:{},meta:rec.meta&&typeof rec.meta==="object"?rec.meta:{},raw:rec};
+  const meta=rec.meta&&typeof rec.meta==="object"?rec.meta:{};
+  const validationWarnings=Array.isArray(meta.validationWarnings)?meta.validationWarnings.map(String):Array.isArray(meta.clientWarnings)?meta.clientWarnings.map(String):[];
+  return{ok:true,studentId:String(rec.studentId||root.studentId||""),studentName:String(rec.studentName||root.studentName||""),schoolYear:String(rec.schoolYear||root.schoolYear||""),submissionId:String(rec.submissionId||""),attemptNo:Number(rec.attemptNo)||1,isResubmission:rec.isResubmission===true||Number(rec.attemptNo)>1,parentSubmissionId:String(rec.parentSubmissionId||""),timestamp:String(rec.submittedAt||""),submittedAt:String(rec.submittedAt||""),plan,measurements,audit:rec.audit&&typeof rec.audit==="object"?rec.audit:{},meta,validationWarnings,raw:rec};
 }
 function selectedVersion(s){return s?.versions?.find(v=>v.attemptNo===s.selectedAttemptNo)||s?.versions?.[s.versions.length-1]||null;}
-function groupMeasurementsVersion(v){const map=new Map();v.measurements.forEach(m=>{const key=String(m.conditionKey||`${v.plan.variables.independent}:${formatValue(m.independentValue,v.plan.variables.independent)}`);if(!map.has(key))map.set(key,[]);map.get(key).push(m);});return[...map.entries()].map(([key,rows],index)=>({key,rows:rows.slice().sort((a,b)=>a.repeat-b.repeat),conditionNo:index+1}));}
+function groupMeasurementsVersion(v){const map=new Map(),measurements=Array.isArray(v?.measurements)?v.measurements:[],ind=String(v?.plan?.variables?.independent||"");measurements.forEach(m=>{const key=String(m.conditionKey||`${ind}:${formatValue(m.independentValue,ind)}`);if(!map.has(key))map.set(key,[]);map.get(key).push(m);});return[...map.entries()].map(([key,rows],index)=>({key,rows:rows.slice().sort((a,b)=>a.repeat-b.repeat),conditionNo:index+1}));}
 function groupMeasurements(s){const v=selectedVersion(s);return v?groupMeasurementsVersion(v):[];}
 
 async function fetchOne(id){
@@ -194,8 +239,9 @@ async function fetchAllStudents(){
 function setSelected(index,checked){if(loaded[index])loaded[index].selected=checked;updateButtons();}
 function studentCardHtml(s,i){
   if(!s.ok)return`<div class="student-card fail"><label><input type="checkbox" disabled><span>${esc(s.studentId)}</span></label><div class="meta">${esc(s.message)}</div></div>`;
-  const v=selectedVersion(s),groups=groupMeasurementsVersion(v),count=s.versions.length,away=Number(v.audit?.awayCount)||0;
-  return`<div class="student-card ok ${count>1?"multi":""}"><label><input type="checkbox" ${s.selected?"checked":""} onchange="setSelected(${i},this.checked)"><span>${esc(s.studentId)} ${esc(s.studentName)}</span><span class="attempt-badge">제${v.attemptNo}차${v.attemptNo>1?" 재제출":""}</span></label><div class="meta"><b>${esc(labelOf(v.plan.variables.independent))} → ${esc(labelOf(v.plan.variables.dependent))}</b><br>선택 제출본: 제${v.attemptNo}차 · ${esc(fmtDate(v.submittedAt))}<br>조건 ${groups.length}개 · 반복 ${v.plan.repeatCount||"-"}회 · 원자료 ${v.measurements.length}개 · 화면 이탈 ${away}회<br>저장된 제출본 ${count}개 · ${s.resubmissionAllowed?`<span class="grant-on">재제출 허용 중</span>`:`<span class="grant-off">재제출 잠김</span>`}</div><div class="card-actions"><button class="mini secondary" onclick="openVersionModal(${i})">제출본 선택${count>1?` (${count})`:""}</button><button class="mini" onclick="printOne(${i})">선택본 미리보기·인쇄</button><button class="mini ${s.resubmissionAllowed?"danger":"success"}" onclick="toggleResubmission(${i})">${s.resubmissionAllowed?"재제출 허용 취소":"재제출 허용"}</button></div></div>`;
+  const v=selectedVersion(s),groups=groupMeasurementsVersion(v),count=s.versions.length,away=Number(v.audit?.awayCount)||0,warnings=Array.isArray(v.validationWarnings)?v.validationWarnings:[];
+  const ind=String(v.plan.variables.independent||""),dep=String(v.plan.variables.dependent||""),relation=ind||dep?`${ind?labelOf(ind):"미선택"} → ${dep?labelOf(dep):"미선택"}`:"변인 미선택";
+  return`<div class="student-card ok ${count>1?"multi":""}"><label><input type="checkbox" ${s.selected?"checked":""} onchange="setSelected(${i},this.checked)"><span>${esc(s.studentId)} ${esc(s.studentName)}</span><span class="attempt-badge">제${v.attemptNo}차${v.attemptNo>1?" 재제출":""}</span>${warnings.length?`<span class="incomplete-badge">미완성 ${warnings.length}</span>`:""}</label><div class="meta"><b>${esc(relation)}</b><br>선택 제출본: 제${v.attemptNo}차 · ${esc(fmtDate(v.submittedAt))}<br>조건 ${groups.length}개 · 반복 ${v.plan.repeatCount||"-"}회 · 원자료 ${v.measurements.length}개 · 화면 이탈 ${away}회${warnings.length?`<br><span style="color:#b45309">미완성 항목: ${esc(warnings.join(" · "))}</span>`:""}<br>저장된 제출본 ${count}개 · ${s.resubmissionAllowed?`<span class="grant-on">재제출 허용 중</span>`:`<span class="grant-off">재제출 잠김</span>`}</div><div class="card-actions"><button class="mini secondary" onclick="openVersionModal(${i})">제출본 선택${count>1?` (${count})`:""}</button><button class="mini" onclick="printOne(${i})">선택본 미리보기·인쇄</button><button class="mini ${s.resubmissionAllowed?"danger":"success"}" onclick="toggleResubmission(${i})">${s.resubmissionAllowed?"재제출 허용 취소":"재제출 허용"}</button></div></div>`;
 }
 function renderLoaded(){$("studentList").innerHTML=loaded.length?loaded.map(studentCardHtml).join(""):"";updateButtons();}
 function updateButtons(){const count=loaded.filter(x=>x.ok&&x.selected).length;$("printBtn").disabled=count===0;$("csvBtn").disabled=count===0;}
@@ -203,7 +249,7 @@ function clearLoaded(){loaded=[];$("studentIds").value="";$("status").textConten
 
 function openVersionModal(index){
   const s=loaded[index];if(!s?.ok)return;versionModalStudentIndex=index;$("versionModalTitle").textContent=`${s.studentId} ${s.studentName} · 제출본 선택`;
-  $("versionModalBody").innerHTML=s.versions.slice().sort((a,b)=>b.attemptNo-a.attemptNo).map(v=>{const p=v.plan,groups=groupMeasurementsVersion(v),away=Number(v.audit?.awayCount)||0,events=Array.isArray(v.audit?.auditEvents)?v.audit.auditEvents:[];return`<label class="version-row ${s.selectedAttemptNo===v.attemptNo?"selected":""}"><input type="radio" name="versionChoice" value="${v.attemptNo}" ${s.selectedAttemptNo===v.attemptNo?"checked":""}><div><div class="version-title">제${v.attemptNo}차 ${v.attemptNo>1?"재제출":"최초 제출"} <span>${esc(fmtDate(v.submittedAt))}</span></div><div class="version-meta">${esc(labelOf(p.variables.independent))} → ${esc(labelOf(p.variables.dependent))} · 조건 ${groups.length}개 · 원자료 ${v.measurements.length}개 · 화면 이탈 ${away}회<br>접수번호 ${esc(shortId(v.submissionId))}${events.length?` · 이탈 기록 ${events.length}건`:""}</div></div></label>`;}).join("");
+  $("versionModalBody").innerHTML=s.versions.slice().sort((a,b)=>b.attemptNo-a.attemptNo).map(v=>{const p=v.plan,groups=groupMeasurementsVersion(v),away=Number(v.audit?.awayCount)||0,events=Array.isArray(v.audit?.auditEvents)?v.audit.auditEvents:[],warnings=Array.isArray(v.validationWarnings)?v.validationWarnings:[],ind=String(p.variables.independent||""),dep=String(p.variables.dependent||""),relation=ind||dep?`${ind?labelOf(ind):"미선택"} → ${dep?labelOf(dep):"미선택"}`:"변인 미선택";return`<label class="version-row ${s.selectedAttemptNo===v.attemptNo?"selected":""}"><input type="radio" name="versionChoice" value="${v.attemptNo}" ${s.selectedAttemptNo===v.attemptNo?"checked":""}><div><div class="version-title">제${v.attemptNo}차 ${v.attemptNo>1?"재제출":"최초 제출"} <span>${esc(fmtDate(v.submittedAt))}</span>${warnings.length?`<span class="incomplete-badge">미완성 ${warnings.length}</span>`:""}</div><div class="version-meta">${esc(relation)} · 조건 ${groups.length}개 · 원자료 ${v.measurements.length}개 · 화면 이탈 ${away}회<br>접수번호 ${esc(shortId(v.submissionId))}${events.length?` · 이탈 기록 ${events.length}건`:""}${warnings.length?`<br><span style="color:#b45309">미완성 항목: ${esc(warnings.join(" · "))}</span>`:""}</div></div></label>`;}).join("");
   $("versionModal").style.display="flex";
 }
 function confirmVersionChoice(){const s=loaded[versionModalStudentIndex],choice=document.querySelector('input[name="versionChoice"]:checked');if(!s||!choice)return;s.selectedAttemptNo=Number(choice.value);closeModal("versionModal");renderLoaded();}
@@ -215,11 +261,11 @@ async function toggleResubmission(index){
 
 function makeSampleVersion(id,name,attemptNo,ind,dep,repeat,values,controlValues,offset=0,timeOffsetMin=0){
   const required=["voltage","resistance","frequency"].filter(k=>k!==ind),controls=[...required,"speaker","measurement"];
-  const rq=ind==="frequency"?"입력 신호의 진동수를 변화시키면 소리의 파장은 어떻게 달라질까?":`${labelOf(ind)}를 변화시키면 ${labelOf(dep)}은 어떻게 달라질까?`;
+  const rq=ind==="frequency"?"입력 신호의 진동수 변화에 따른 소리의 파장 변화를 조사한다.":`${labelOf(ind)} 변화에 따른 ${labelOf(dep)} 변화를 조사한다.`;
   const hyp=ind==="frequency"?"입력 신호의 진동수가 증가할수록 소리의 파장은 감소할 것이다.":`${labelOf(ind)}가 증가하면 ${labelOf(dep)}은 증가할 것이다.`;
   const reasoning=ind==="frequency"?"같은 공기에서 소리의 속력이 일정할 때 진동수가 증가하면 한 번 진동하는 동안 파동이 진행하는 거리가 짧아지므로 파장이 감소할 것이라고 예상했다.":"전압이 증가하면 코일에 흐르는 전류가 증가하고, 코일의 자기장과 자석 사이의 힘이 커져 진동판의 진동 폭과 소리 파동의 상대 진폭이 증가할 것이라고 예상했다.";
-  const plan={recordType:"unit3_sound_plan_v6",version:6,researchQuestion:rq,hypothesis:hyp,reasoning,speakerEnergyExplanation:"전기적 신호에 따라 코일에 전류가 흐르면 코일의 자기장과 자석 사이의 자기력이 진동판을 움직인다. 전기에너지가 진동판의 운동에너지와 소리에너지로 전환되어 소리 파동이 만들어진다.",variables:{independent:ind,dependent:dep,controlled:controls},requiredControls:required,controlValues:{...controlValues},plannedValues:[...values],controlMethod:`${required.map(k=>`${labelOf(k)}를 ${formatValue(controlValues[k],k)} ${unitOf(k)}로`).join(", ")} 유지하고 같은 스피커와 측정 방법을 사용한다.`,collectionMethod:`${values.map(v=>`${formatValue(v,ind)} ${unitOf(ind)}`).join(", ")}에서 ${labelOf(dep)}을 각 ${repeat}회 측정하여 기록한다.`,repeatCount:repeat,procedureSteps:["조작·종속·통제 변인과 고정값을 정한다.",`조작 변인 값을 ${values.map(v=>formatValue(v,ind)).join(", ")} ${unitOf(ind)}로 계획한다.`,"첫 번째 조작 변인 값을 설정한다.",`같은 조건에서 ${repeat}회 반복 측정한다.`,"나머지 계획값에서도 같은 방법으로 측정한다.","원자료의 누락 여부를 확인하고 제출한다."]};
-  const measurements=[];let no=1;for(const x of values){for(let r=1;r<=repeat;r++){const set={voltage:controlValues.voltage,resistance:controlValues.resistance,frequency:controlValues.frequency};set[ind]=x;const idealCurrent=set.voltage/set.resistance,current=idealCurrent*(1+((r-(repeat+1)/2)*.006)),amp=Math.max(4,Math.min(98,10+42*idealCurrent+((r-(repeat+1)/2)*1.5)+offset)),wave=340/set.frequency*(1+((r-(repeat+1)/2)*.006)),depVal=dep==="current"?current:dep==="amplitude"?amp:wave;measurements.push({recordType:"unit3_sound_measurement_v6",type:"measurement",version:6,no:no++,conditionKey:`${ind}:${formatValue(x,ind)}`,independentKey:ind,independentValue:x,dependentKey:dep,dependentValue:Number(depVal.toFixed(dep==="wavelength"?4:dep==="current"?3:1)),voltage:set.voltage,resistance:set.resistance,frequency:set.frequency,current:Number(current.toFixed(3)),relativeAmplitude:Number(amp.toFixed(1)),wavelength:Number(wave.toFixed(4)),pitch:set.frequency<400?"낮은 음":set.frequency<700?"중간 음":"높은 음",repeat:r,measuredAt:new Date().toISOString()});}}
+  const plan={recordType:"unit3_sound_plan_v7",version:7,researchQuestion:rq,hypothesis:hyp,reasoning,speakerEnergyExplanation:"전기적 신호가 코일에 전달되면 코일에 전류가 흐르고 자기장이 생긴다. 코일과 자석 사이에 힘이 작용하여 진동판이 앞뒤로 떨고, 이 떨림이 주변 공기로 전달되어 소리 파동이 퍼진다.",variables:{independent:ind,dependent:dep,controlled:controls},requiredControls:required,controlValues:{...controlValues},plannedValues:[...values],controlMethod:`${required.map(k=>`${labelOf(k)}를 ${formatValue(controlValues[k],k)} ${unitOf(k)}로`).join(", ")} 유지하고 같은 스피커와 측정 방법을 사용한다.`,collectionMethod:`${values.map(v=>`${formatValue(v,ind)} ${unitOf(ind)}`).join(", ")}에서 ${labelOf(dep)}을 각 ${repeat}회 측정하여 기록한다.`,repeatCount:repeat,procedureSteps:["조작·종속·통제 변인과 고정값을 정한다.",`조작 변인 값을 ${values.map(v=>formatValue(v,ind)).join(", ")} ${unitOf(ind)}로 계획한다.`,"첫 번째 조작 변인 값을 설정한다.",`같은 조건에서 ${repeat}회 반복 측정한다.`,"나머지 계획값에서도 같은 방법으로 측정한다.","원자료의 누락 여부를 확인하고 제출한다."]};
+  const measurements=[];let no=1;for(const x of values){for(let r=1;r<=repeat;r++){const set={voltage:controlValues.voltage,resistance:controlValues.resistance,frequency:controlValues.frequency};set[ind]=x;const idealCurrent=set.voltage/set.resistance,current=idealCurrent*(1+((r-(repeat+1)/2)*.006)),amp=Math.max(4,Math.min(98,10+42*idealCurrent+((r-(repeat+1)/2)*1.5)+offset)),wave=340/set.frequency*(1+((r-(repeat+1)/2)*.006)),depVal=dep==="current"?current:dep==="amplitude"?amp:wave;measurements.push({recordType:"unit3_sound_measurement_v7",type:"measurement",version:7,no:no++,conditionKey:`${ind}:${formatValue(x,ind)}`,independentKey:ind,independentValue:x,dependentKey:dep,dependentValue:Number(depVal.toFixed(dep==="wavelength"?4:dep==="current"?3:1)),voltage:set.voltage,resistance:set.resistance,frequency:set.frequency,current:Number(current.toFixed(3)),relativeAmplitude:Number(amp.toFixed(1)),wavelength:Number(wave.toFixed(4)),pitch:set.frequency<400?"낮은 음":set.frequency<700?"중간 음":"높은 음",repeat:r,measuredAt:new Date().toISOString()});}}
   return{ok:true,studentId:id,studentName:name,schoolYear:String(CURRENT_SCHOOL_YEAR),submissionId:`SAMPLE-${id}-${attemptNo}`,attemptNo,isResubmission:attemptNo>1,parentSubmissionId:attemptNo>1?`SAMPLE-${id}-${attemptNo-1}`:"",timestamp:new Date(Date.now()+timeOffsetMin*60000).toISOString(),submittedAt:new Date(Date.now()+timeOffsetMin*60000).toISOString(),plan,measurements,audit:{awayCount:attemptNo>1?1:0,auditEvents:attemptNo>1?[{type:"away_5s",detectedAt:new Date().toISOString()}]:[]},meta:{measurementCount:measurements.length}};
 }
 function loadSampleStudents(){
@@ -227,38 +273,42 @@ function loadSampleStudents(){
   loaded=[{ok:true,studentId:"20101",studentName:"김탐구",schoolYear:String(CURRENT_SCHOOL_YEAR),versions:[v1,v2],selectedAttemptNo:2,resubmissionAllowed:false,resubmission:null,selected:true},{ok:true,studentId:"20102",studentName:"이과학",schoolYear:String(CURRENT_SCHOOL_YEAR),versions:[v3],selectedAttemptNo:1,resubmissionAllowed:false,resubmission:null,selected:true}];$("status").textContent="제출 이력 선택 기능을 확인할 수 있는 샘플 학생 2명을 불러왔습니다.";renderLoaded();
 }
 
-function fixedControlsText(plan,row){const ind=plan.variables.independent;return["voltage","resistance","frequency"].filter(k=>k!==ind).map(k=>`${shortOf(k)} ${formatValue(row[k],k)}${unitOf(k)}`).join(" · ");}
+function fixedControlsText(plan,row){const ind=String(plan?.variables?.independent||""),controlled=Array.isArray(plan?.variables?.controlled)?plan.variables.controlled:[];return["voltage","resistance","frequency"].filter(k=>k!==ind&&controlled.includes(k)).map(k=>`${shortOf(k)} ${formatValue(row[k],k)}${unitOf(k)}`).join(" · ")||"-";}
 function rawTableParts(s){
-  const v=selectedVersion(s),p=v.plan,ind=p.variables.independent,dep=p.variables.dependent;let extraHead="",extraCell=()=>"";
+  const v=selectedVersion(s),p=v.plan,ind=String(p.variables.independent||""),dep=String(p.variables.dependent||"");let extraHead="",extraCell=()=>"";
   if(dep==="amplitude"){extraHead="<th>보조 전류(A)</th>";extraCell=m=>`<td>${formatValue(m.current,"current")}</td>`;}else if(dep==="wavelength"){extraHead="<th>소리 관찰</th>";extraCell=m=>`<td>${esc(m.pitch||"")}</td>`;}
-  const head=`<tr><th>조건</th><th>반복</th><th>${esc(shortOf(ind))}<br>(${esc(unitOf(ind))})</th><th>${esc(shortOf(dep))}<br>(${esc(unitOf(dep))})</th>${extraHead}<th>고정 조건</th></tr>`;
-  const groups=groupMeasurementsVersion(v),body=groups.flatMap(g=>g.rows.map(m=>`<tr><td>${g.conditionNo}</td><td>${m.repeat}</td><td>${formatValue(m.independentValue,ind)}</td><td>${formatValue(m.dependentValue,dep)}</td>${extraCell(m)}<td>${esc(fixedControlsText(p,m))}</td></tr>`)).join("");return{head,body};
+  const head=`<tr><th>조건</th><th>반복</th><th>${esc(ind?shortOf(ind):"조작 변인")}<br>${ind&&unitOf(ind)?`(${esc(unitOf(ind))})`:""}</th><th>${esc(dep?shortOf(dep):"종속 변인")}<br>${dep&&unitOf(dep)?`(${esc(unitOf(dep))})`:""}</th>${extraHead}<th>고정 조건</th></tr>`;
+  const groups=groupMeasurementsVersion(v),body=groups.length?groups.flatMap(g=>g.rows.map(m=>`<tr><td>${g.conditionNo}</td><td>${m.repeat}</td><td>${formatValue(m.independentValue,ind)}</td><td>${formatValue(m.dependentValue,dep)}</td>${extraCell(m)}<td>${esc(fixedControlsText(p,m))}</td></tr>`)).join(""):`<tr><td class="empty-row" colspan="${5+(extraHead?1:0)}">원자료가 제출되지 않았습니다.</td></tr>`;return{head,body};
 }
-function transformedRowsHtml(s){const v=selectedVersion(s),p=v.plan,ind=p.variables.independent,dep=p.variables.dependent;return groupMeasurementsVersion(v).map(g=>`<tr><td>${g.conditionNo}</td><td>${formatValue(g.rows[0].independentValue,ind)}</td><td>${g.rows.map(r=>formatValue(r.dependentValue,dep)).join(", ")}</td><td></td></tr>`).join("");}
+function transformedRowsHtml(s){const v=selectedVersion(s),p=v.plan,ind=String(p.variables.independent||""),dep=String(p.variables.dependent||""),groups=groupMeasurementsVersion(v);return groups.length?groups.map(g=>`<tr><td>${g.conditionNo}</td><td>${formatValue(g.rows[0].independentValue,ind)}</td><td>${g.rows.map(row=>formatValue(row.dependentValue,dep)).join(", ")}</td><td></td></tr>`).join(""):`<tr><td class="empty-row" colspan="4">원자료가 없어 평균과 그래프를 작성할 수 없습니다.</td></tr>`;}
 function pageHeader(s,title){const v=selectedVersion(s);return`<div class="doc-head"><h1 class="doc-title">${title}</h1><table class="info"><tr><th style="width:8%">학번</th><td style="width:15%">${esc(s.studentId)}</td><th style="width:8%">이름</th><td style="width:14%">${esc(s.studentName)}</td><th style="width:10%">제출본</th><td style="width:18%">제${v.attemptNo}차 · ${esc(fmtDate(v.submittedAt))}</td><th style="width:11%">교사 확인</th><td></td></tr></table></div>`;}
 function variablePills(keys){return(keys||[]).map(k=>`<span class="variable-pill">${esc(labelOf(k))}</span>`).join("")||"-";}
-function controlValuesHtml(p){const ind=p.variables.independent,keys=["voltage","resistance","frequency"].filter(k=>k!==ind);return keys.map(k=>`${esc(shortOf(k))} ${esc(formatValue(p.controlValues?.[k],k))}${esc(unitOf(k))}`).join(" · ");}
-function procedureHtml(p){const steps=Array.isArray(p.procedureSteps)?p.procedureSteps:[];return`<div class="procedure-print-grid">${steps.map((x,i)=>`<div class="procedure-print-item"><b>${i+1}.</b>${nl(x)}</div>`).join("")}</div>`;}
-function conclusionHint(p){const dep=p.variables.dependent;if(dep==="amplitude")return"구체적인 평균값과 그래프 경향을 이용하고, 전기 조건·전류·코일과 자석·진동판·진폭을 연결하여 설명하세요.";if(dep==="current")return"구체적인 평균값과 그래프 경향을 이용하여 전기 조건과 전류 사이의 관계를 설명하세요.";return"구체적인 평균값과 그래프 경향을 이용하여 진동수, 소리의 높낮이, 파장 사이의 관계를 설명하세요.";}
-function validityHint(p){const dep=p.variables.dependent;if(dep==="current")return"통제한 입력 조건, 조작 범위와 간격, 반복 횟수, 전류 측정값의 작은 차이, 회로를 이상적인 저항 회로로 단순화한 한계를 검토하세요.";if(dep==="amplitude")return"통제한 입력 조건, 조작 범위와 간격, 반복 횟수, 상대 진폭 측정값의 작은 차이, 실제 스피커의 주파수 응답과 효율을 단순화한 한계를 검토하세요.";return"통제한 전압·저항, 진동수 범위와 간격, 반복 횟수, 파장 측정값의 작은 차이, 공기 중 소리 속력을 340 m/s로 고정한 한계를 검토하세요.";}
-function roundingNote(dep){if(dep==="current")return"평균 전류는 소수 둘째 자리까지 반올림하세요.";if(dep==="amplitude")return"평균 상대 진폭은 소수 첫째 자리까지 반올림하세요.";return"평균 파장은 소수 셋째 자리까지 반올림하세요.";}
-function plannedValuesText(p){const ind=p.variables.independent,vals=Array.isArray(p.plannedValues)?p.plannedValues:[];return vals.length?vals.map(v=>`${formatValue(v,ind)} ${unitOf(ind)}`).join(" · "):"원자료에서 확인";}
+function controlValuesHtml(p){const ind=String(p?.variables?.independent||""),controlled=Array.isArray(p?.variables?.controlled)?p.variables.controlled:[],keys=["voltage","resistance","frequency"].filter(k=>k!==ind&&controlled.includes(k));return keys.length?keys.map(k=>`${esc(shortOf(k))} ${esc(formatValue(p.controlValues?.[k],k))}${esc(unitOf(k))}`).join(" · "):"-";}
+function procedureHtml(p){const steps=Array.isArray(p.procedureSteps)?p.procedureSteps:[];return steps.length?`<div class="procedure-print-grid">${steps.map((x,i)=>`<div class="procedure-print-item"><b>${i+1}.</b>${nl(x)}</div>`).join("")}</div>`:`<div class="auto-text">-</div>`;}
+function conclusionHint(p){const dep=String(p?.variables?.dependent||"");if(dep==="amplitude")return"구체적인 평균값과 그래프 경향을 이용하고, 전기 조건·전류·코일과 자석·진동판·진폭을 연결하여 설명하세요.";if(dep==="current")return"구체적인 평균값과 그래프 경향을 이용하여 전기 조건과 전류 사이의 관계를 설명하세요.";if(dep==="wavelength")return"구체적인 평균값과 그래프 경향을 이용하여 진동수, 소리의 높낮이, 파장 사이의 관계를 설명하세요.";return"제출된 자료의 범위에서 확인할 수 있는 내용을 수치와 함께 서술하세요.";}
+function validityHint(p){const dep=String(p?.variables?.dependent||"");if(dep==="current")return"통제한 입력 조건, 조작 범위와 간격, 반복 횟수, 전류 측정값의 작은 차이, 회로를 이상적인 저항 회로로 단순화한 한계를 검토하세요.";if(dep==="amplitude")return"통제한 입력 조건, 조작 범위와 간격, 반복 횟수, 상대 진폭 측정값의 작은 차이, 실제 스피커의 주파수 응답과 효율을 단순화한 한계를 검토하세요.";if(dep==="wavelength")return"통제한 전압·저항, 진동수 범위와 간격, 반복 횟수, 파장 측정값의 작은 차이, 공기 중 소리 속력을 340 m/s로 고정한 한계를 검토하세요.";return"변인 설정, 통제 조건, 자료 수, 반복 측정 여부와 원자료의 한계를 검토하세요.";}
+function roundingNote(dep){if(dep==="current")return"평균 전류는 소수 둘째 자리까지 반올림하세요.";if(dep==="amplitude")return"평균 상대 진폭은 소수 첫째 자리까지 반올림하세요.";if(dep==="wavelength")return"평균 파장은 소수 셋째 자리까지 반올림하세요.";return"원자료가 있다면 같은 소수 자리 기준으로 평균을 나타내세요.";}
+function plannedValuesText(p){const ind=String(p?.variables?.independent||""),vals=Array.isArray(p.plannedValues)?p.plannedValues:[];return vals.length&&ind?vals.map(v=>`${formatValue(v,ind)} ${unitOf(ind)}`).join(" · "):"-";}
 function makePages(s){
-  const v=selectedVersion(s),p=v.plan,ind=p.variables.independent,dep=p.variables.dependent,controls=p.variables.controlled||[],raw=rawTableParts(s),away=Number(v.audit?.awayCount)||0;
+  const v=selectedVersion(s),p=v.plan,ind=String(p.variables.independent||""),dep=String(p.variables.dependent||""),controls=p.variables.controlled||[],raw=rawTableParts(s),warnings=Array.isArray(v.validationWarnings)?v.validationWarnings:[];
+  const relationText=ind||dep?`${ind?labelOf(ind):"미선택"} → ${dep?labelOf(dep):"미선택"}`:"변인 미선택";
+  const incompleteNote=warnings.length?`<div class="scenario incomplete-print"><b>미완성 제출 안내</b> 이 제출본에는 다음 미완성 항목이 기록되어 있습니다: ${esc(warnings.join(" · "))}</div>`:"";
   const p1=`<section class="print-page"><div class="page-inner">${pageHeader(s,"소리 신호 탐구 설계실 · 개인별 평가 자료")}
     <div class="scenario"><b>탐구 상황</b> 학생은 직접 조절할 입력 조건 하나를 조작 변인으로 선택하고, 측정되는 결과 하나를 종속 변인으로 선택하였다. 나머지 입력 조건을 고정하고, 계획한 서로 다른 값에서 반복 측정하였다. <span class="submission-note">접수번호 ${esc(shortId(v.submissionId))}</span></div>
+    ${incompleteNote}
     <div><span class="criterion-label">Criterion B. 탐구 및 설계하기</span></div>
-    <div class="two"><div class="section"><div class="section-title">B.i 탐구 질문</div><div class="auto-text">${nl(p.researchQuestion)}</div></div><div class="section"><div class="section-title">B.ii 가설</div><div class="auto-text">${nl(p.hypothesis)}</div></div></div>
-    <div class="section"><div class="section-title">B.ii 과학적 추론</div><div class="auto-text">${nl(p.reasoning)}</div></div>
-    <div class="section"><div class="section-title">Unit 3 공통 개념 설명 · 전기적 신호가 소리로 바뀌는 과정</div><div class="auto-text compact-answer">${nl(p.speakerEnergyExplanation||"-")}</div></div>
-    <div class="section"><div class="section-title">B.iii 학생이 설정한 변인과 수집 계획</div><table class="compact-table variable-table"><tr><th>조작 변인</th><th>종속 변인</th><th>통제 변인</th><th>반복</th></tr><tr><td>${variablePills([ind])}</td><td>${variablePills([dep])}</td><td>${variablePills(controls)}<div class="fixed-value">고정값: ${esc(controlValuesHtml(p))}</div></td><td style="text-align:center">각 조건 ${p.repeatCount||"-"}회</td></tr></table><div class="fixed-value"><b>계획한 조작값:</b> ${esc(plannedValuesText(p))}</div><div class="two" style="margin-top:.8mm"><div class="mini-box"><div class="mini-title">통제 방법</div><div class="mini-text">${nl(p.controlMethod)}</div></div><div class="mini-box"><div class="mini-title">데이터 수집 방법</div><div class="mini-text">${nl(p.collectionMethod)}</div></div></div></div>
+    <div class="two"><div class="section"><div class="section-title">B.i 과학적 연구로 검증할 문제 또는 관계</div><div class="auto-text">${nl(p.researchQuestion||"-")}</div></div><div class="section"><div class="section-title">B.ii 가설</div><div class="auto-text">${nl(p.hypothesis||"-")}</div></div></div>
+    <div class="section"><div class="section-title">B.ii 과학적 추론</div><div class="auto-text">${nl(p.reasoning||"-")}</div></div>
+    <div class="section"><div class="section-title">전자석 스피커가 소리를 만드는 과정</div><div class="auto-text compact-answer">${nl(p.speakerEnergyExplanation||"-")}</div></div>
+    <div class="section"><div class="section-title">B.iii 학생이 설정한 변인과 수집 계획</div><table class="compact-table variable-table"><tr><th>조작 변인</th><th>종속 변인</th><th>통제 변인</th><th>반복</th></tr><tr><td>${variablePills(ind?[ind]:[])}</td><td>${variablePills(dep?[dep]:[])}</td><td>${variablePills(controls)}<div class="fixed-value">고정값: ${esc(controlValuesHtml(p))}</div></td><td style="text-align:center">각 조건 ${p.repeatCount||"-"}회</td></tr></table><div class="fixed-value"><b>계획한 조작값:</b> ${esc(plannedValuesText(p))}</div><div class="two" style="margin-top:.8mm"><div class="mini-box"><div class="mini-title">통제 방법</div><div class="mini-text">${nl(p.controlMethod||"-")}</div></div><div class="mini-box"><div class="mini-title">데이터 수집 방법</div><div class="mini-text">${nl(p.collectionMethod||"-")}</div></div></div></div>
     <div class="section"><div class="section-title">B.iv 학생이 설계한 연구 방법</div>${procedureHtml(p)}</div>
     <div class="section raw-section" style="margin-bottom:0"><div class="section-title">C.i 1차시에서 수집한 원자료</div><table class="compact-table raw-table"><thead>${raw.head}</thead><tbody>${raw.body}</tbody></table></div>
     <div class="page-footer"><span>학생이 제출한 Criterion B 답안과 원자료 · 제${v.attemptNo}차 제출본</span><span>1 / 2</span></div></div></section>`;
   const p2=`<section class="print-page"><div class="page-inner">${pageHeader(s,"소리 신호 탐구 설계실 · Criterion C 서면 평가")}
     <div><span class="criterion-label">Criterion C. 처리 및 평가하기</span></div>
-    <div class="section"><div class="section-title">C.i 수집하고 변형한 데이터 제시</div><table class="compact-table"><thead><tr><th>조건</th><th>${esc(labelOf(ind))}<br>(${esc(unitOf(ind))})</th><th>${esc(labelOf(dep))} 반복 측정값<br>(${esc(unitOf(dep))})</th><th>평균 ${esc(shortOf(dep))}</th></tr></thead><tbody>${transformedRowsHtml(s)}</tbody></table><div class="print-only-note">반복 측정값의 평균을 계산하여 마지막 칸을 완성하세요. ${esc(roundingNote(dep))} 평균값은 아래 그래프에 사용합니다.</div></div>
-    <div class="graph-title">[그래프] ${esc(labelOf(ind))}에 따른 ${esc(labelOf(dep))} <span class="hint">두 축의 눈금을 알맞은 간격으로 표시하고, 평균값 데이터 점과 전체 경향을 나타내는 선 또는 곡선을 그리세요.</span></div><div class="graph"><span class="axis-y">${esc(labelOf(dep))} (${esc(unitOf(dep))})</span><span class="axis-x">${esc(labelOf(ind))} (${esc(unitOf(ind))})</span></div>
+    ${warnings.length?`<div class="scenario incomplete-print"><b>미완성 제출본</b> 원자료나 변인 설정이 부족하면 평균·그래프·결론 작성이 제한될 수 있습니다.</div>`:""}
+    <div class="section"><div class="section-title">C.i 수집하고 변형한 데이터 제시</div><table class="compact-table"><thead><tr><th>조건</th><th>${esc(ind?labelOf(ind):"조작 변인")}<br>${ind&&unitOf(ind)?`(${esc(unitOf(ind))})`:""}</th><th>${esc(dep?labelOf(dep):"종속 변인")} 반복 측정값<br>${dep&&unitOf(dep)?`(${esc(unitOf(dep))})`:""}</th><th>평균 ${esc(dep?shortOf(dep):"종속 변인")}</th></tr></thead><tbody>${transformedRowsHtml(s)}</tbody></table><div class="print-only-note">반복 측정값의 평균을 계산하여 마지막 칸을 완성하세요. ${esc(roundingNote(dep))} 평균값은 아래 그래프에 사용합니다.</div></div>
+    <div class="graph-title">[그래프] ${esc(relationText)} <span class="hint">두 축의 눈금을 알맞은 간격으로 표시하고, 평균값 데이터 점과 전체 경향을 나타내는 선 또는 곡선을 그리세요.</span></div><div class="graph"><span class="axis-y">${esc(dep?labelOf(dep):"종속 변인")} ${dep&&unitOf(dep)?`(${esc(unitOf(dep))})`:""}</span><span class="axis-x">${esc(ind?labelOf(ind):"조작 변인")} ${ind&&unitOf(ind)?`(${esc(unitOf(ind))})`:""}</span></div>
     <div class="section"><div class="question">C.ii 데이터를 해석하고 과학적 추론을 사용해 결론을 서술한다.</div><div class="hint">${esc(conclusionHint(p))}</div><div class="write-area cii"></div></div>
     <div class="section"><div class="question">C.iii 연구 결과를 토대로 가설의 타당성에 관해 논한다.</div><div class="hint">가설에서 예상한 변화와 실제 평균값·그래프를 비교하여 지지 여부를 판단하고 수치로 근거를 제시하세요.</div><div class="write-area ciii"></div></div>
     <div class="section"><div class="question">C.iv 연구 방법의 타당성에 관해 논한다.</div><div class="hint">${esc(validityHint(p))}</div><div class="write-area civ"></div></div>
@@ -272,8 +322,8 @@ function prepareAndPrint(){const count=buildPrintArea();if(!count){alert("인쇄
 function printOne(index){const s=loaded[index];if(!s?.ok)return;buildPrintArea([s]);setTimeout(()=>window.print(),160);}
 function csvCell(v){const s=String(v??"").replace(/"/g,'""');return`"${s}"`;}
 function downloadCSV(){
-  const rows=[["학번","이름","학년도","선택 제출 회차","최초/재제출","제출 시각","접수번호","탐구 질문","가설","과학적 추론","공통 스피커·에너지 설명","조작 변인","종속 변인","통제 변인","통제 고정값","계획한 조작값","통제 방법","데이터 수집 방법","반복 횟수","연구 방법(JSON)","원자료(JSON)","화면 이탈 횟수","화면 이탈 기록(JSON)","저장된 전체 제출본 수","재제출 허용 상태","재제출 허용 정보(JSON)"]];
-  selectedStudents().forEach(s=>{const v=selectedVersion(s),p=v.plan;rows.push([s.studentId,s.studentName,s.schoolYear,v.attemptNo,v.attemptNo>1?"재제출":"최초 제출",v.submittedAt,v.submissionId,p.researchQuestion,p.hypothesis,p.reasoning,p.speakerEnergyExplanation||"",labelOf(p.variables.independent),labelOf(p.variables.dependent),(p.variables.controlled||[]).map(labelOf).join("|"),JSON.stringify(p.controlValues||{}),JSON.stringify(p.plannedValues||[]),p.controlMethod,p.collectionMethod,p.repeatCount,JSON.stringify(p.procedureSteps||[]),JSON.stringify(v.measurements),Number(v.audit?.awayCount)||0,JSON.stringify(v.audit?.auditEvents||[]),s.versions.length,s.resubmissionAllowed?"허용":"잠김",JSON.stringify(s.resubmission||{})]);});
+  const rows=[["학번","이름","학년도","선택 제출 회차","최초/재제출","제출 시각","접수번호","과학적 연구로 검증할 문제 또는 관계","가설","과학적 추론","전자석 스피커가 소리를 만드는 과정","조작 변인","종속 변인","통제 변인","통제 고정값","계획한 조작값","통제 방법","데이터 수집 방법","반복 횟수","연구 방법(JSON)","원자료(JSON)","미완성 항목(JSON)","화면 이탈 횟수","화면 이탈 기록(JSON)","저장된 전체 제출본 수","재제출 허용 상태","재제출 허용 정보(JSON)"]];
+  selectedStudents().forEach(s=>{const v=selectedVersion(s),p=v.plan;rows.push([s.studentId,s.studentName,s.schoolYear,v.attemptNo,v.attemptNo>1?"재제출":"최초 제출",v.submittedAt,v.submissionId,p.researchQuestion,p.hypothesis,p.reasoning,p.speakerEnergyExplanation||"",labelOf(p.variables.independent),labelOf(p.variables.dependent),(p.variables.controlled||[]).map(labelOf).join("|"),JSON.stringify(p.controlValues||{}),JSON.stringify(p.plannedValues||[]),p.controlMethod,p.collectionMethod,p.repeatCount,JSON.stringify(p.procedureSteps||[]),JSON.stringify(v.measurements),JSON.stringify(v.validationWarnings||[]),Number(v.audit?.awayCount)||0,JSON.stringify(v.audit?.auditEvents||[]),s.versions.length,s.resubmissionAllowed?"허용":"잠김",JSON.stringify(s.resubmission||{})]);});
   const csv="\uFEFF"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n"),blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`Unit3_소리신호탐구_선택제출본_${new Date().toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function closeModal(id){$(id).style.display="none";}
