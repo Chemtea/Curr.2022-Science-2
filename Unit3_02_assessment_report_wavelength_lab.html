@@ -1,138 +1,191 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unit 3 교사용 인쇄센터 · 소리 신호 탐구 설계실</title>
   <script src="./platform-config.js"></script>
   <script src="./lock-realtime-client.js"></script>
   <script>
-    const WORKSHEET_LOCK = Object.freeze({UNIT_KEY:"unit3_eval",LESSON_ID:"u3e_l2"});
-    (function(){
-      const cfg=window.PLATFORM_CONFIG||{};const url=cfg.LOCK_API||cfg.PLATFORM_API||"";
-      if(location.protocol==="file:"||!url)return;
+    const PRINT_CONFIG = Object.freeze({UNIT_KEY:"unit3_eval", LESSON_ID:"u3e_l2", FALLBACK_SCHOOL_YEAR:2026});
+    (function lockGuard(){
+      const cfg=window.PLATFORM_CONFIG||{}, api=cfg.LOCK_API||cfg.PLATFORM_API||"";
+      if(location.protocol==="file:"||!api) return;
       async function check(){
-        try{const r=await fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"get_locks"}),cache:"no-store"});if(!r.ok)throw new Error();const d=await r.json();const u=d?.[WORKSHEET_LOCK.UNIT_KEY];if(u&&(u.isLocked===true||u.lessons?.[WORKSHEET_LOCK.LESSON_ID]===true)){document.documentElement.innerHTML=`<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>접근 제한</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1120;color:#e2e8f0;font-family:'Malgun Gothic';text-align:center}.b{padding:28px;border:1px solid #334155;border-radius:14px;background:#111827}h2{color:#f87171}</style></head><body><div class="b"><h2>🔒 수행평가 활동지 접근 제한</h2><p>선생님의 안내를 기다려 주세요.</p></div></body>`;}}
-        catch(e){console.warn("활동지 잠금 확인 실패",e);}
+        try{
+          const r=await fetch(api,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"get_locks"}),cache:"no-store"});
+          if(!r.ok) throw new Error();
+          const d=await r.json(), u=d?.[PRINT_CONFIG.UNIT_KEY];
+          if(u&&(u.isLocked===true||u.lessons?.[PRINT_CONFIG.LESSON_ID]===true)){
+            document.documentElement.innerHTML=`<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>접근 제한</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1120;color:#e2e8f0;font-family:'Malgun Gothic';text-align:center}.b{padding:28px;border:1px solid #334155;border-radius:14px;background:#111827}h2{color:#f87171}</style></head><body><div class="b"><h2>🔒 활동지 인쇄센터 접근 제한</h2><p>선생님의 안내를 기다려 주세요.</p></div></body>`;
+          }
+        }catch(e){console.warn("잠금 확인 실패",e);}
       }
       check();
-      if(typeof window.createLockRealtimeClient==="function"){const rtc=window.createLockRealtimeClient(check);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){rtc.reconnect();check();}});}
+      if(typeof window.createLockRealtimeClient==="function"){
+        const rtc=window.createLockRealtimeClient(check);
+        document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){rtc.reconnect();check();}});
+      }
     })();
   </script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Unit 3 파장 실험실 · IB MYP 기준 B·C 활동지</title>
   <style>
-    @page{size:A4 portrait;margin:10mm}
+    :root{--ink:#172033;--muted:#667085;--line:#7b8798;--soft:#f3f6fa;--blue:#0369a1;--green:#15803d;--red:#b91c1c}
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    html,body{margin:0;padding:0;font-family:"Malgun Gothic","Apple SD Gothic Neo",Arial,sans-serif;color:#111827;line-height:1.3;background:#e5e7eb}
-    body{padding:12px 0}.toolbar{position:sticky;top:0;z-index:20;width:190mm;margin:0 auto 9px;background:#111827;color:#fff;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}.toolbar span{font-size:12px;font-weight:700}.toolbar button{border:0;border-radius:6px;background:#0284c7;color:#fff;padding:7px 13px;font-weight:800;cursor:pointer}
-    .page{width:190mm;min-height:277mm;margin:0 auto 10mm;background:#fff;padding:0;box-shadow:0 5px 20px #0002;page-break-after:always;break-after:page}.page:last-of-type{page-break-after:auto;break-after:auto}
-    .inner{min-height:277mm;padding:7mm 8mm;display:flex;flex-direction:column}.header{border-bottom:2px solid #0f172a;padding-bottom:4px;margin-bottom:5px}.title{text-align:center;font-size:16px;font-weight:900;margin:0 0 4px}.info{width:100%;border-collapse:collapse;font-size:10.5px}.info th,.info td{border:1px solid #64748b;padding:4px 5px;text-align:center}.info th{background:#f1f5f9}
-    .scenario{border:1px solid #94a3b8;border-left:4px solid #0284c7;background:#f8fafc;border-radius:3px;padding:6px 8px;font-size:9.5px;line-height:1.45;margin-bottom:5px}.model{border:1px dashed #64748b;background:#f8fafc;padding:5px 7px;font-size:8.8px;margin-bottom:5px}
-    .criterion{border:1px solid #64748b;border-radius:4px;padding:6px 7px;flex:1}.criterion-title{display:inline-block;background:#0f172a;color:#fff;border-radius:3px;padding:3px 8px;font-size:11px;font-weight:900;margin-bottom:4px}.item{margin-bottom:5px}.item:last-child{margin-bottom:0}.item-title{font-size:10px;font-weight:900;margin-bottom:2px}.hint{font-size:8.5px;color:#475569;font-weight:500}.line{height:16px;border-bottom:1px dashed #94a3b8;font-size:9px;padding:1px 2px}.line.solid{border-bottom:1px solid #64748b}.lines-2 .line,.lines-3 .line,.lines-4 .line,.lines-5 .line,.lines-6 .line{height:16px}
-    .two{display:grid;grid-template-columns:1fr 1fr;gap:6px}.box{border:1px solid #cbd5e1;border-radius:3px;padding:5px 6px}.box-title{font-size:9.3px;font-weight:900;margin-bottom:3px}.var-table,.data-table{width:100%;border-collapse:collapse;text-align:center;font-size:8.7px}.var-table th,.var-table td,.data-table th,.data-table td{border:1px solid #64748b;padding:3px 4px;height:19px}.var-table th,.data-table th{background:#f1f5f9;font-weight:900}.small{font-size:8.3px;color:#475569}.procedure-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}.procedure-line{height:17px;border-bottom:1px dashed #94a3b8;font-size:9px;padding-top:2px}
-    .graph-block{border:1px solid #64748b;padding:4px 5px;margin-top:5px}.graph-head{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:9px;font-weight:900;margin-bottom:3px}.graph-head .small{font-weight:500}.graph{height:84mm;border:1px solid #94a3b8;background-color:#fff;background-image:linear-gradient(#e5e7eb 1px,transparent 1px),linear-gradient(90deg,#e5e7eb 1px,transparent 1px),linear-gradient(#cbd5e1 1px,transparent 1px),linear-gradient(90deg,#cbd5e1 1px,transparent 1px);background-size:5mm 5mm,5mm 5mm,25mm 25mm,25mm 25mm;position:relative}.axis-y{position:absolute;left:2px;top:50%;transform:translateY(-50%) rotate(-90deg);transform-origin:left top;font-size:8px;color:#64748b}.axis-x{position:absolute;bottom:1px;left:50%;transform:translateX(-50%);font-size:8px;color:#64748b}
-    .footer{margin-top:auto;text-align:center;font-size:8px;color:#64748b;padding-top:4px}.rubric-note{border:1px solid #cbd5e1;background:#f8fafc;border-radius:3px;padding:4px 6px;font-size:8.5px;margin-top:3px}.check-row{display:flex;gap:11px;flex-wrap:wrap;font-size:8.5px;margin-top:2px}
-    @media print{html,body{background:#fff}body{padding:0}.toolbar{display:none!important}.page{width:auto;min-height:0;margin:0;box-shadow:none}.inner{min-height:277mm}.page{page-break-after:always;break-after:page}.page:last-of-type{page-break-after:auto;break-after:auto}}
+    html,body{margin:0;padding:0;font-family:"Malgun Gothic","Apple SD Gothic Neo",Arial,sans-serif;color:var(--ink);background:#e5e7eb}
+    .screen{max-width:1100px;margin:18px auto;background:#fff;border-radius:14px;padding:18px;box-shadow:0 8px 30px #0002}.screen h1{font-size:1.35rem;margin:0 0 5px;color:#0f172a}.screen p{color:#64748b;font-size:.84rem;margin:0 0 14px;line-height:1.55}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}.toolbar button{border:0;border-radius:8px;padding:9px 13px;font-weight:900;cursor:pointer;color:#fff;background:#0369a1}.toolbar button.secondary{background:#475569}.toolbar button.success{background:#15803d}.toolbar button.danger{background:#b91c1c}.toolbar button:disabled{opacity:.45;cursor:not-allowed}
+    .ids{width:100%;min-height:76px;border:1px solid #94a3b8;border-radius:8px;padding:9px;font:inherit;resize:vertical}.status{border:1px solid #cbd5e1;background:#f8fafc;border-radius:8px;padding:9px 11px;font-size:.8rem;color:#475569;margin:8px 0}
+    .student-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px}.student-card{border:1px solid #cbd5e1;border-radius:9px;padding:10px;background:#fff}.student-card.ok{border-color:#22c55e}.student-card.fail{border-color:#f87171;background:#fff7f7}.student-card label{display:flex;align-items:center;gap:7px;font-weight:900}.student-card .meta{font-size:.74rem;color:#64748b;margin-top:5px;line-height:1.45}
+    .auth-panel{border:1px solid #38bdf8;background:#eff9ff;border-radius:9px;padding:11px;margin-bottom:10px}.auth-panel input{border:1px solid #94a3b8;border-radius:7px;padding:8px;width:230px}.auth-panel button{border:0;border-radius:7px;background:#0369a1;color:#fff;padding:8px 12px;font-weight:900;cursor:pointer}
+    #printArea{display:none}
+    .print-page{width:190mm;height:277mm;margin:0 auto 10mm;background:#fff;position:relative;overflow:hidden;page-break-after:always;break-after:page}.print-page:last-child{page-break-after:auto;break-after:auto}.page-inner{height:277mm;padding:0;display:flex;flex-direction:column}
+    .doc-head{border-bottom:2px solid #111827;padding-bottom:2mm;margin-bottom:1.8mm}.doc-title{text-align:center;font-size:14.2pt;font-weight:950;margin:0 0 1.4mm}.info{width:100%;border-collapse:collapse;font-size:8.5pt}.info th,.info td{border:1px solid #64748b;padding:1.1mm 1.4mm;text-align:center}.info th{background:#f1f5f9}
+    .scenario{border:1px solid #94a3b8;border-left:4px solid #0284c7;background:#f8fafc;padding:1.5mm 2mm;font-size:7.45pt;line-height:1.36;margin-bottom:1.3mm}.criterion-label{display:inline-block;background:#0f172a;color:#fff;border-radius:3px;padding:.75mm 2.2mm;font-size:8.3pt;font-weight:950;margin-bottom:1mm}
+    .section{border:1px solid #7b8798;border-radius:3px;padding:1.35mm;margin-bottom:1.05mm}.section-title{font-size:8pt;font-weight:950;margin-bottom:.55mm}.auto-text{border-bottom:1px solid #94a3b8;min-height:5.4mm;padding:.55mm .8mm;font-size:7pt;line-height:1.28;white-space:pre-wrap;overflow-wrap:anywhere}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:1.4mm}.mini-box{border:1px solid #cbd5e1;padding:1mm}.mini-title{font-size:6.8pt;font-weight:950;margin-bottom:.35mm}.mini-text{font-size:6.45pt;line-height:1.22;white-space:pre-wrap;overflow-wrap:anywhere}
+    .compact-table{width:100%;border-collapse:collapse;font-size:6.75pt;text-align:center}.compact-table th,.compact-table td{border:1px solid #64748b;padding:.55mm .65mm;height:4.5mm}.compact-table th{background:#eef2f7}.raw-table{font-size:6.2pt}.raw-table th,.raw-table td{height:3.85mm;padding:.35mm .45mm}
+    .variable-table td{vertical-align:top;text-align:left;font-size:6.8pt;line-height:1.23}.variable-pill{display:inline-block;border:1px solid #94a3b8;border-radius:999px;padding:.3mm .9mm;margin:.2mm;font-size:6.25pt;background:#f8fafc}.fixed-value{font-size:6.3pt;color:#475569;margin-top:.4mm}
+    .procedure-print-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65mm 1.7mm}.procedure-print-item{font-size:6.35pt;line-height:1.2;border-bottom:1px dashed #cbd5e1;padding:.28mm 0;break-inside:avoid}.procedure-print-item b{color:#0369a1;margin-right:.45mm}
+    .page-footer{margin-top:auto;border-top:1px solid #d1d5db;padding-top:.7mm;font-size:6.4pt;color:#64748b;display:flex;justify-content:space-between}
+    .graph-title{font-size:7.8pt;font-weight:950;margin-bottom:.65mm}.graph{height:61mm;border:1px solid #64748b;position:relative;background-color:#fff;background-image:linear-gradient(#e5e7eb 1px,transparent 1px),linear-gradient(90deg,#e5e7eb 1px,transparent 1px),linear-gradient(#cbd5e1 1px,transparent 1px),linear-gradient(90deg,#cbd5e1 1px,transparent 1px);background-size:5mm 5mm,5mm 5mm,25mm 25mm,25mm 25mm;margin-bottom:1.2mm}.axis-y{position:absolute;left:1.5mm;top:50%;transform:translateY(-50%) rotate(-90deg);transform-origin:left top;font-size:6.8pt;color:#475569}.axis-x{position:absolute;bottom:1mm;left:50%;transform:translateX(-50%);font-size:6.8pt;color:#475569;white-space:nowrap}
+    .write-area{border:1px solid #94a3b8;background:repeating-linear-gradient(to bottom,#fff 0,#fff 5.7mm,#cbd5e1 5.9mm);min-height:22mm;padding:1mm;font-size:7.3pt}.write-area.small{min-height:16.5mm}.write-area.medium{min-height:21mm}.c-two{display:grid;grid-template-columns:1fr 1fr;gap:1.4mm}.question{font-size:7.55pt;font-weight:950;margin-bottom:.65mm}.hint{font-weight:500;color:#64748b;font-size:6.55pt}.print-only-note{font-size:6.3pt;color:#64748b;margin-top:.45mm}
+    @page{size:A4 portrait;margin:10mm}
+    @media print{html,body{background:#fff}.screen{display:none!important}#printArea{display:block}.print-page{width:auto;height:277mm;margin:0;box-shadow:none}.page-inner{height:277mm}}
   </style>
 </head>
 <body>
-  <div class="toolbar"><span>Unit 3 · 파장 실험실 · IB MYP 과학 기준 B·C 활동지 (A4 3쪽)</span><button onclick="window.print()">인쇄 / PDF 저장</button></div>
-
-  <!-- 1쪽 Criterion B -->
-  <section class="page"><div class="inner">
-    <div class="header"><h1 class="title">파장 실험실 탐구 활동지 · Criterion B & C</h1><table class="info"><tr><th style="width:10%">학번</th><td style="width:22%"></td><th style="width:10%">이름</th><td style="width:22%"></td><th style="width:16%">지도교사 확인</th><td></td></tr></table></div>
-    <div class="scenario"><b>[탐구 상황]</b> 디지털 기기의 스피커는 전기적 신호를 진동으로 바꾸어 소리를 냅니다. 「파장 실험실」에서 <b>전원 전압 또는 저항 중 하나</b>를 조작 변인으로 선택하여 전류·상대 진폭과의 관계를 탐구하고, 이어서 <b>진동수–파장</b> 사이의 관계를 탐구하세요.</div>
-    <div class="model"><b>[가상 모델]</b> 같은 스피커와 같은 진동수에서는 전류가 증가할수록 진동판의 상대 진폭이 증가한다고 단순화합니다. 공기 중 소리의 속력은 340 m/s로 고정합니다. 실제 스피커의 모든 특성을 그대로 재현한 것은 아닙니다.</div>
-    <div class="criterion">
-      <div class="criterion-title">■ Criterion B. 탐구 및 설계하기</div>
-
-      <div class="item"><div class="item-title">1. 과학적 연구로 검증할 문제나 질문을 서술한다. (B.i)</div>
-        <div class="small">탐구 1에는 자신이 선택한 전기 조작 변인(전압 또는 저항)과 전류·상대 진폭, 탐구 2에는 진동수와 파장이 드러나도록 질문형 문장으로 작성하세요.</div>
-        <div class="line solid">탐구 질문 1:</div><div class="line solid"></div>
-        <div class="line solid">탐구 질문 2:</div><div class="line solid"></div>
-      </div>
-
-      <div class="item"><div class="item-title">2. 검증 가능한 가설을 요약하고 과학적 추론을 사용해 설명한다. (B.ii)</div>
-        <div class="two">
-          <div class="box"><div class="box-title">가설 1 · 전기 입력과 상대 진폭</div><div class="line">만약 __________________________________________</div><div class="line">_____________________________________________라면,</div><div class="line">____________________________________할 것이다.</div><div class="line">왜냐하면 _____________________________________</div><div class="line">_____________________________________이기 때문이다.</div></div>
-          <div class="box"><div class="box-title">가설 2 · 진동수와 파장</div><div class="line">만약 __________________________________________</div><div class="line">_____________________________________________라면,</div><div class="line">____________________________________할 것이다.</div><div class="line">왜냐하면 _____________________________________</div><div class="line">_____________________________________이기 때문이다.</div></div>
-        </div>
-      </div>
-
-      <div class="item"><div class="item-title">3. 변수 조작 방법과 데이터 수집 방법을 서술한다. (B.iii)</div>
-        <div class="two">
-          <table class="var-table"><tr><th colspan="2">탐구 1</th></tr><tr><th style="width:33%">조작 변수</th><td></td></tr><tr><th>종속 변수</th><td></td></tr><tr><th>통제 변수<br>(2개 이상)</th><td></td></tr><tr><th>조작 방법</th><td></td></tr><tr><th>데이터 수집 방법</th><td></td></tr></table>
-          <table class="var-table"><tr><th colspan="2">탐구 2</th></tr><tr><th style="width:33%">조작 변수</th><td></td></tr><tr><th>종속 변수</th><td></td></tr><tr><th>통제 변수<br>(2개 이상)</th><td></td></tr><tr><th>조작 방법</th><td></td></tr><tr><th>데이터 수집 방법</th><td></td></tr></table>
-        </div>
-      </div>
-
-      <div class="item"><div class="item-title">4. 과학적 연구를 설계한다. (B.iv) <span class="hint">각 탐구에서 통제 변인을 유지하고 서로 다른 값 5개 이상을 수집하도록 순서를 구체적으로 작성하세요.</span></div>
-        <div class="procedure-grid">
-          <div><div class="procedure-line">1.</div><div class="procedure-line">2.</div><div class="procedure-line">3.</div><div class="procedure-line">4.</div><div class="procedure-line">5.</div></div>
-          <div><div class="procedure-line">6.</div><div class="procedure-line">7.</div><div class="procedure-line">8.</div><div class="procedure-line">9.</div><div class="procedure-line">10.</div></div>
-        </div>
-        <div class="rubric-note"><b>설계 확인:</b> 조작 범위·간격, 통제 조건, 기록할 값과 단위, 두 탐구의 수행 순서가 다른 학생도 그대로 따라 할 수 있을 만큼 명확해야 합니다.</div>
-      </div>
+  <section class="screen">
+    <h1>🧑‍🏫 Unit 3 개인별 활동지 인쇄센터</h1>
+    <p>학생이 1차시에 제출한 Criterion B 답안과 원자료를 불러와, 선택한 조작·종속 변인에 맞춘 A4 2쪽의 Criterion C 서면 활동지를 만듭니다.</p>
+    <div id="authPanel" class="auth-panel"><b>교사 인증</b><br><input id="adminPw" type="password" placeholder="관리자 비밀번호"><button id="authBtn" onclick="authenticateTeacher()">인증</button><span id="authMsg" style="font-size:.78rem;margin-left:8px;color:#b91c1c"></span></div>
+    <div id="controlPanel" style="display:none">
+      <label style="font-weight:900;font-size:.86rem">불러올 학번</label><textarea id="studentIds" class="ids" placeholder="학번을 줄바꿈, 쉼표 또는 공백으로 구분해 입력하세요.&#10;예: 20101 20102 20103"></textarea>
+      <div class="toolbar"><button onclick="fetchAllStudents()">제출자료 불러오기</button><button class="secondary" onclick="loadSampleStudents()">샘플 2명 보기</button><button class="success" id="printBtn" onclick="prepareAndPrint()" disabled>선택 학생 전체 인쇄</button><button class="secondary" id="csvBtn" onclick="downloadCSV()" disabled>CSV 내려받기</button><button class="danger" onclick="clearLoaded()">목록 초기화</button></div>
+      <div id="status" class="status">학번을 입력하고 제출자료를 불러오세요.</div><div id="studentList" class="student-list"></div>
     </div>
-    <div class="footer">- 1 / 3 · Criterion B -</div>
-  </div></section>
+  </section>
+  <div id="printArea"></div>
 
-  <!-- 2쪽 Criterion C.i -->
-  <section class="page"><div class="inner">
-    <div class="header"><h1 class="title">파장 실험실 · 데이터 제시</h1></div>
-    <div class="criterion">
-      <div class="criterion-title">■ Criterion C. 처리 및 평가하기</div>
-      <div class="item"><div class="item-title">1. 수집하고 변형한 데이터를 제시한다. (C.i)</div>
-        <div class="two">
-          <div><div class="box-title">[표 1] 탐구 1 · 전기 입력과 소리 파동</div><table class="data-table"><tr><th>번호</th><th>전압<br>(V)</th><th>저항<br>(Ω)</th><th>전류<br>(A)</th><th>상대 진폭<br>(%)</th></tr><tr><td>1</td><td></td><td></td><td></td><td></td></tr><tr><td>2</td><td></td><td></td><td></td><td></td></tr><tr><td>3</td><td></td><td></td><td></td><td></td></tr><tr><td>4</td><td></td><td></td><td></td><td></td></tr><tr><td>5</td><td></td><td></td><td></td><td></td></tr><tr><td>추가</td><td></td><td></td><td></td><td></td></tr></table><div class="small">선택한 조작 변인: 전압 / 저항 · 고정한 진동수: ______ Hz</div></div>
-          <div><div class="box-title">[표 2] 탐구 2 · 진동수와 파장</div><table class="data-table"><tr><th>번호</th><th>진동수<br>(Hz)</th><th>파장<br>(m)</th><th>주기<br>(ms)</th></tr><tr><td>1</td><td></td><td></td><td></td></tr><tr><td>2</td><td></td><td></td><td></td></tr><tr><td>3</td><td></td><td></td><td></td></tr><tr><td>4</td><td></td><td></td><td></td></tr><tr><td>5</td><td></td><td></td><td></td></tr><tr><td>추가</td><td></td><td></td><td></td></tr></table><div class="small">고정한 전압: ______ V · 고정한 저항: ______ Ω</div></div>
-        </div>
-        <div class="check-row"><span>□ 표 제목</span><span>□ 변수 이름</span><span>□ 단위</span><span>□ 같은 자리수로 정리</span><span>□ 누락 없는 데이터</span></div>
-      </div>
+  <script>
+    "use strict";
+    const TARGET_GAS_URL="https://script.google.com/macros/s/AKfycbxcQx5yTSayzaekf6QZHdmm0KP73AjfqOLER59M6XnwISn5u0XwL6yYhvV-7NTBuBRq/exec";
+    const cfg=window.PLATFORM_CONFIG||{};const PLATFORM_API_URL=cfg.PLATFORM_API||"";
+    const VARIABLE_OPTIONS={
+      voltage:{label:"입력 신호의 전압 크기",short:"전압",unit:"V"},
+      resistance:{label:"회로 저항",short:"저항",unit:"Ω"},
+      frequency:{label:"입력 신호의 진동수",short:"진동수",unit:"Hz"},
+      current:{label:"회로 전류",short:"전류",unit:"A"},
+      amplitude:{label:"소리 파동의 상대 진폭",short:"상대 진폭",unit:"상대값"},
+      wavelength:{label:"소리의 파장",short:"파장",unit:"m"},
+      speaker:{label:"같은 스피커 사용",short:"같은 스피커",unit:""},
+      measurement:{label:"같은 측정 방법 사용",short:"같은 측정 방법",unit:""}
+    };
+    let teacherAuthed=false,loaded=[];const $=id=>document.getElementById(id);
 
-      <div class="graph-block"><div class="graph-head"><span>[그래프 1] 탐구 1의 관계를 가장 잘 보여주는 그래프</span><span class="small">가로축·세로축 변수와 단위, 알맞은 눈금, 데이터 점, 추세를 표시하세요.</span></div><div class="graph"><span class="axis-y">세로축 변수·단위</span><span class="axis-x">가로축 변수·단위</span></div></div>
-      <div class="graph-block"><div class="graph-head"><span>[그래프 2] 탐구 2의 관계를 가장 잘 보여주는 그래프</span><span class="small">가로축·세로축 변수와 단위, 알맞은 눈금, 데이터 점, 추세를 표시하세요.</span></div><div class="graph"><span class="axis-y">세로축 변수·단위</span><span class="axis-x">가로축 변수·단위</span></div></div>
-    </div>
-    <div class="footer">- 2 / 3 · Criterion C.i -</div>
-  </div></section>
+    async function sha256(text){const bytes=new TextEncoder().encode(text);const hash=await crypto.subtle.digest("SHA-256",bytes);return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,"0")).join("");}
+    function currentAdminReady(){try{const u=JSON.parse(sessionStorage.getItem("current_student")||"null"),token=String(sessionStorage.getItem("current_admin_key")||"");return u?.isAdmin===true&&token.startsWith("adm_");}catch{return false;}}
+    function unlockControls(){teacherAuthed=true;$("authPanel").style.display="none";$("controlPanel").style.display="block";}
+    async function authenticateTeacher(){if(location.protocol==="file:"){unlockControls();return;}const pw=$("adminPw").value.trim(),msg=$("authMsg"),btn=$("authBtn");if(!pw){msg.textContent="비밀번호를 입력하세요.";return;}btn.disabled=true;btn.textContent="인증 중...";try{const r=await fetch(PLATFORM_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"verifyAuth",passwordHash:await sha256(pw)})});const d=await r.json();if(!(d?.success===true||d?.ok===true)){msg.textContent="관리자 비밀번호가 일치하지 않습니다.";return;}unlockControls();}catch(e){console.error(e);msg.textContent="인증 통신 오류가 발생했습니다.";}finally{btn.disabled=false;btn.textContent="인증";}}
+    if(currentAdminReady()||location.protocol==="file:")unlockControls();
 
-  <!-- 3쪽 Criterion C.ii-v -->
-  <section class="page"><div class="inner">
-    <div class="header"><h1 class="title">파장 실험실 · 해석 및 평가</h1></div>
-    <div class="criterion">
-      <div class="criterion-title">■ Criterion C. 처리 및 평가하기</div>
+    function parseMaybe(v){if(v==null)return null;if(typeof v==="object")return v;try{return JSON.parse(v);}catch{return null;}}
+    function esc(v){return String(v??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));}
+    function nl(v){return esc(v).replace(/\n/g,"<br>");}
+    function fmtDate(v){if(!v)return"";const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString("ko-KR");}
+    function extractIds(){return[...new Set($("studentIds").value.split(/[\s,;]+/).map(x=>x.trim()).filter(Boolean))];}
+    function labelOf(key){return VARIABLE_OPTIONS[key]?.label||String(key||"미선택");}
+    function shortOf(key){return VARIABLE_OPTIONS[key]?.short||labelOf(key);}
+    function unitOf(key){return VARIABLE_OPTIONS[key]?.unit||"";}
+    function keyFromLabel(label){const s=String(label||"");if(s.includes("전압"))return"voltage";if(s.includes("저항"))return"resistance";if(s.includes("전류"))return"current";if(s.includes("진동수"))return"frequency";if(s.includes("진폭"))return"amplitude";if(s.includes("파장"))return"wavelength";if(s.includes("스피커"))return"speaker";if(s.includes("측정 방법"))return"measurement";return"";}
+    function labelsToKeys(v){const s=String(v||"");return Object.keys(VARIABLE_OPTIONS).filter(k=>s.includes(VARIABLE_OPTIONS[k].label)||s.includes(VARIABLE_OPTIONS[k].short));}
+    function legacyProcedures(p){return[p.method1,p.method2,p.method3,p.method4].filter(Boolean);}
+    function normalizePlan(plan){
+      const p=plan||{};
+      const independent=p.variables?.independent||keyFromLabel(p.independentVariable)||"voltage";
+      const dependent=p.variables?.dependent||keyFromLabel(p.dependentVariable)||"amplitude";
+      const controlled=Array.isArray(p.variables?.controlled)?p.variables.controlled:labelsToKeys(p.controlledVariables);
+      return{...p,version:Number(p.version)||3,variables:{independent,dependent,controlled},controlValues:{voltage:Number(p.controlValues?.voltage)||6,resistance:Number(p.controlValues?.resistance)||10,frequency:Number(p.controlValues?.frequency)||500},procedureSteps:Array.isArray(p.procedureSteps)?p.procedureSteps.filter(Boolean):legacyProcedures(p)};
+    }
+    function basicMeasurement(m){
+      const frequency=Number(m.frequency??m.f??500);
+      return{...m,voltage:Number(m.voltage??m.V??0),resistance:Number(m.resistance??m.R??10),current:Number(m.current??m.I??0),frequency,relativeAmplitude:Number(m.relativeAmplitude??m.amp??0),wavelength:Number(m.wavelength??(frequency?340/frequency:0)),repeat:Number(m.repeat??1),pitch:String(m.pitch||"")};
+    }
+    function valueOf(row,key){if(key==="voltage")return Number(row.voltage);if(key==="resistance")return Number(row.resistance);if(key==="current")return Number(row.current);if(key==="frequency")return Number(row.frequency);if(key==="amplitude")return Number(row.relativeAmplitude);if(key==="wavelength")return Number(row.wavelength);return NaN;}
+    function formatValue(value,key){if(!Number.isFinite(Number(value)))return"-";const n=Number(value);if(key==="voltage")return n.toFixed(1);if(key==="resistance"||key==="frequency")return n.toFixed(0);if(key==="current")return n.toFixed(2);if(key==="wavelength")return n.toFixed(3);return n.toFixed(1);}
+    function enrichMeasurement(raw,plan){const m=basicMeasurement(raw),ind=plan.variables.independent,dep=plan.variables.dependent;const independentValue=Number.isFinite(Number(raw.independentValue))?Number(raw.independentValue):valueOf(m,ind);const dependentValue=Number.isFinite(Number(raw.dependentValue))?Number(raw.dependentValue):valueOf(m,dep);return{...m,independentKey:raw.independentKey||ind,dependentKey:raw.dependentKey||dep,independentValue,dependentValue,conditionKey:String(raw.conditionKey||`${ind}:${formatValue(independentValue,ind)}`)};}
 
-      <div class="item"><div class="item-title">2. 데이터를 해석하고 과학적 추론을 사용해 결론을 서술한다. (C.ii)</div>
-        <div class="box"><div class="box-title">탐구 1 결론 <span class="hint">구체적인 수치·그래프의 경향과 선택한 전기 조작 변인, 전류, 상대 진폭 사이의 관계를 사용하세요.</span></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div></div>
-        <div class="box" style="margin-top:4px"><div class="box-title">탐구 2 결론 <span class="hint">구체적인 수치·그래프의 경향과 진동수, 파장 사이의 관계를 사용하세요.</span></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div></div>
-      </div>
+    function findValidSubmission(records,id){
+      const rows=Array.isArray(records)?records:[];
+      for(let i=rows.length-1;i>=0;i--){
+        const rec=rows[i];let logs=parseMaybe(rec.logs);if(!Array.isArray(logs))continue;
+        const planRow=logs.find(x=>["unit3_sound_plan_v5","unit3_sound_plan_v4","unit3_sound_plan_v3"].includes(x?.recordType)||x?.type==="plan");
+        if(!planRow)continue;
+        const plan=normalizePlan(planRow.plan||planRow);
+        const measurements=logs.filter(x=>["unit3_sound_measurement_v5","unit3_sound_measurement_v4","unit3_sound_measurement_v3"].includes(x?.recordType)||x?.type==="measurement").map(x=>enrichMeasurement(x,plan));
+        if(measurements.length)return{ok:true,studentId:String(rec.studentId||id),studentName:String(rec.studentName||planRow.studentName||""),timestamp:rec.timestamp||rec.submittedAt||"",plan,measurements,raw:rec,selected:true};
+      }
+      return{ok:false,studentId:String(id),studentName:"",message:"소리 신호 탐구 제출자료를 찾지 못했습니다.",selected:false};
+    }
+    async function fetchOne(id){try{const r=await fetch(`${TARGET_GAS_URL}?studentId=${encodeURIComponent(id)}&t=${Date.now()}`,{cache:"no-store"});const d=await r.json();return findValidSubmission(d,id);}catch(e){console.error(e);return{ok:false,studentId:String(id),studentName:"",message:"조회 통신 오류",selected:false};}}
+    async function fetchAllStudents(){const ids=extractIds();if(!ids.length){alert("학번을 한 명 이상 입력하세요.");return;}loaded=[];renderLoaded();$("status").textContent=`${ids.length}명의 제출자료를 불러오는 중입니다...`;for(let start=0;start<ids.length;start+=5){const batch=ids.slice(start,start+5),results=await Promise.all(batch.map(fetchOne));loaded.push(...results);renderLoaded();$("status").textContent=`진행 ${Math.min(start+5,ids.length)}/${ids.length}명`;await new Promise(r=>setTimeout(r,120));}const ok=loaded.filter(x=>x.ok).length;$("status").textContent=`불러오기 완료: 성공 ${ok}명 · 실패 ${loaded.length-ok}명`;renderLoaded();}
+    function setSelected(index,checked){if(loaded[index])loaded[index].selected=checked;updateButtons();}
+    function renderLoaded(){$("studentList").innerHTML=loaded.length?loaded.map((s,i)=>{if(!s.ok)return`<div class="student-card fail"><label><input type="checkbox" disabled><span>${esc(s.studentId)}</span></label><div class="meta">${esc(s.message)}</div></div>`;const groups=groupMeasurements(s);return`<div class="student-card ok"><label><input type="checkbox" ${s.selected?"checked":""} onchange="setSelected(${i},this.checked)"><span>${esc(s.studentId)} ${esc(s.studentName)}</span></label><div class="meta">${esc(labelOf(s.plan.variables.independent))} → ${esc(labelOf(s.plan.variables.dependent))}<br>조건 ${groups.length}개 · 반복 ${s.plan.repeatCount||"-"}회 · 원자료 ${s.measurements.length}개<br>제출 ${esc(fmtDate(s.timestamp))}</div></div>`;}).join(""):"";updateButtons();}
+    function updateButtons(){const count=loaded.filter(x=>x.ok&&x.selected).length;$("printBtn").disabled=count===0;$("csvBtn").disabled=count===0;}
+    function clearLoaded(){loaded=[];$("studentIds").value="";$("status").textContent="목록을 초기화했습니다.";$("printArea").innerHTML="";renderLoaded();}
 
-      <div class="item"><div class="item-title">3. 연구 결과를 토대로 가설의 타당성에 관해 논한다. (C.iii)</div>
-        <div class="two">
-          <div class="box"><div class="box-title">가설 1 평가</div><div class="line">가설은 ( 지지됨 / 일부 지지됨 / 지지되지 않음 )</div><div class="line"></div><div class="line"></div><div class="line"></div></div>
-          <div class="box"><div class="box-title">가설 2 평가</div><div class="line">가설은 ( 지지됨 / 일부 지지됨 / 지지되지 않음 )</div><div class="line"></div><div class="line"></div><div class="line"></div></div>
-        </div>
-        <div class="rubric-note">판단만 쓰지 말고, 가설의 예측과 실제 데이터가 일치하거나 일치하지 않는 지점을 수치로 비교하세요.</div>
-      </div>
+    function makeSample(id,name,ind,dep,repeat,values,controlValues,offset=0){
+      const required=["voltage","resistance","frequency"].filter(k=>k!==ind);const controls=[...required,"speaker","measurement"];
+      const plan={recordType:"unit3_sound_plan_v5",version:5,researchQuestion:`${labelOf(ind)}을(를) 변화시키면 ${labelOf(dep)}은(는) 어떻게 달라질까?`,hypothesis:`${labelOf(ind)}이(가) 증가하면 ${labelOf(dep)}은(는) 일정한 방향으로 변할 것이다.`,reasoning:ind==="frequency"?"입력 신호가 더 빠르게 반복되면 진동판도 더 빠르게 진동하므로 소리 파동의 간격과 높낮이가 달라질 것이라고 예상했다.":"전기 회로의 조건이 바뀌면 코일에 흐르는 전류와 코일·자석 사이의 작용이 달라져 진동판과 소리 파동의 진폭도 달라질 것이라고 예상했다.",variables:{independent:ind,dependent:dep,controlled:controls},requiredControls:required,controlValues:{...controlValues},controlMethod:`${required.map(k=>`${labelOf(k)}을(를) ${formatValue(controlValues[k],k)} ${unitOf(k)}로`).join(", ")} 유지하고 같은 스피커와 측정 방법을 사용한다.`,collectionMethod:`서로 다른 ${labelOf(ind)} 값 5개를 정하고, 각 조건에서 ${labelOf(dep)}을(를) ${repeat}회 측정하여 기록한다.`,repeatCount:repeat,procedureSteps:["조작·종속·통제 변인과 고정값을 정한다.","첫 번째 조작 변인 값을 설정한다.",`같은 조건에서 ${repeat}회 반복 측정한다.`,"조작 변인만 바꾸어 서로 다른 값 5개 이상을 측정한다.","원자료의 누락 여부를 확인하고 제출한다."]};
+      const measurements=[];let no=1;
+      for(const x of values){for(let r=1;r<=repeat;r++){const s={voltage:controlValues.voltage,resistance:controlValues.resistance,frequency:controlValues.frequency};s[ind]=x;const idealCurrent=s.voltage/s.resistance;const current=idealCurrent*(1+((r-1.5)*.006));const amp=Math.max(4,Math.min(98,10+42*idealCurrent+((r-1.5)*1.5)+offset));const wave=340/s.frequency*(1+((r-1.5)*.006));const depVal=dep==="current"?current:dep==="amplitude"?amp:wave;measurements.push({recordType:"unit3_sound_measurement_v5",type:"measurement",version:5,no:no++,conditionKey:`${ind}:${formatValue(x,ind)}`,independentKey:ind,independentValue:x,dependentKey:dep,dependentValue:Number(depVal.toFixed(dep==="wavelength"?4:dep==="current"?3:1)),voltage:s.voltage,resistance:s.resistance,frequency:s.frequency,current:Number(current.toFixed(3)),relativeAmplitude:Number(amp.toFixed(1)),wavelength:Number(wave.toFixed(4)),pitch:s.frequency<400?"낮은 음":s.frequency<700?"중간 음":"높은 음",repeat:r});}}
+      return{ok:true,studentId:id,studentName:name,timestamp:new Date().toISOString(),plan,measurements,selected:true};
+    }
+    function loadSampleStudents(){loaded=[makeSample("20101","김탐구","voltage","amplitude",2,[2,4,6,8,10],{voltage:4,resistance:10,frequency:500},0),makeSample("20102","이과학","frequency","wavelength",3,[200,400,600,800,1000],{voltage:6,resistance:10,frequency:500},0)];$("status").textContent="샘플 학생 2명을 불러왔습니다.";renderLoaded();}
 
-      <div class="item"><div class="item-title">4. 연구 방법의 타당성에 관해 논한다. (C.iv)</div>
-        <div class="box"><div class="box-title">연구 질문에 답하기에 적절했던 점</div><div class="line"></div><div class="line"></div></div>
-        <div class="two" style="margin-top:4px">
-          <div class="box"><div class="box-title">한계 1과 결과에 미친 영향</div><div class="line"></div><div class="line"></div><div class="line"></div></div>
-          <div class="box"><div class="box-title">한계 2와 결과에 미친 영향</div><div class="line"></div><div class="line"></div><div class="line"></div></div>
-        </div>
-        <div class="small" style="margin-top:2px">예시 범주: 가상 모델의 단순화, 공기 중 소리 속력 고정, 실제 스피커 특성 미반영, 데이터 범위·간격, 통제 변인의 유지 여부</div>
-      </div>
+    function groupMeasurements(s){const map=new Map();s.measurements.forEach(m=>{const key=String(m.conditionKey||`${s.plan.variables.independent}:${formatValue(m.independentValue,s.plan.variables.independent)}`);if(!map.has(key))map.set(key,[]);map.get(key).push(m);});return[...map.entries()].map(([key,rows],index)=>({key,rows:rows.slice().sort((a,b)=>a.repeat-b.repeat),conditionNo:index+1}));}
+    function fixedControlsText(plan,row){const ind=plan.variables.independent;return["voltage","resistance","frequency"].filter(k=>k!==ind).map(k=>`${shortOf(k)} ${formatValue(row[k],k)}${unitOf(k)}`).join(" · ");}
+    function rawTableParts(s){
+      const p=s.plan,ind=p.variables.independent,dep=p.variables.dependent;let extraHead="",extraCell=()=>"";
+      if(dep==="amplitude"){extraHead="<th>보조 전류(A)</th>";extraCell=m=>`<td>${formatValue(m.current,"current")}</td>`;}
+      else if(dep==="wavelength"){extraHead="<th>소리 관찰</th>";extraCell=m=>`<td>${esc(m.pitch||"")}</td>`;}
+      const head=`<tr><th>조건</th><th>반복</th><th>${esc(shortOf(ind))}<br>(${esc(unitOf(ind))})</th><th>${esc(shortOf(dep))}<br>(${esc(unitOf(dep))})</th>${extraHead}<th>고정 조건</th></tr>`;
+      const groups=groupMeasurements(s);const body=groups.flatMap(g=>g.rows.map(m=>`<tr><td>${g.conditionNo}</td><td>${m.repeat}</td><td>${formatValue(m.independentValue,ind)}</td><td>${formatValue(m.dependentValue,dep)}</td>${extraCell(m)}<td>${esc(fixedControlsText(p,m))}</td></tr>`)).join("");return{head,body};
+    }
+    function transformedRowsHtml(s){const p=s.plan,ind=p.variables.independent,dep=p.variables.dependent;return groupMeasurements(s).map(g=>`<tr><td>${g.conditionNo}</td><td>${formatValue(g.rows[0].independentValue,ind)}</td><td>${g.rows.map(r=>formatValue(r.dependentValue,dep)).join(", ")}</td><td></td></tr>`).join("");}
+    function pageHeader(s,title){return`<div class="doc-head"><h1 class="doc-title">${title}</h1><table class="info"><tr><th style="width:10%">학번</th><td style="width:22%">${esc(s.studentId)}</td><th style="width:10%">이름</th><td style="width:22%">${esc(s.studentName)}</td><th style="width:16%">교사 확인</th><td></td></tr></table></div>`;}
+    function variablePills(keys){return(keys||[]).map(k=>`<span class="variable-pill">${esc(labelOf(k))}</span>`).join("")||"-";}
+    function controlValuesHtml(p){const ind=p.variables.independent;const keys=["voltage","resistance","frequency"].filter(k=>k!==ind);return keys.map(k=>`${esc(shortOf(k))} ${esc(formatValue(p.controlValues?.[k],k))}${esc(unitOf(k))}`).join(" · ");}
+    function procedureHtml(p){const steps=Array.isArray(p.procedureSteps)?p.procedureSteps:[];return`<div class="procedure-print-grid">${steps.map((x,i)=>`<div class="procedure-print-item"><b>${i+1}.</b>${nl(x)}</div>`).join("")}</div>`;}
+    function conclusionHint(p){const ind=p.variables.independent,dep=p.variables.dependent;if(dep==="amplitude")return"구체적인 평균값과 그래프 경향을 이용하고, 전기 조건·전류·코일과 자석·진동판·진폭을 연결하여 설명하세요.";if(dep==="current")return"구체적인 평균값과 그래프 경향을 이용하여 전기 조건과 전류 사이의 관계를 설명하세요.";return"구체적인 평균값과 그래프 경향을 이용하여 진동수, 소리의 높낮이, 파장 사이의 관계를 설명하세요.";}
+    function validityHint(p){return p.variables.independent==="frequency"?"통제한 전압·저항, 진동수 범위와 간격, 반복 횟수, 파장 측정의 작은 차이, 공기 중 소리 속력을 고정한 모델의 한계를 검토하세요.":"통제한 입력 조건, 조작 범위와 간격, 반복 횟수, 상대 진폭 측정의 작은 차이, 실제 스피커 특성을 단순화한 모델의 한계를 검토하세요.";}
 
-      <div class="item"><div class="item-title">5. 연구 방법의 개선 또는 확장 방안을 서술한다. (C.v)</div>
-        <div class="box"><div class="box-title">구체적인 개선 방안과 기대 효과</div><div class="line"></div><div class="line"></div><div class="line"></div></div>
-        <div class="box" style="margin-top:4px"><div class="box-title">확장할 수 있는 새로운 탐구 질문 또는 방법</div><div class="line"></div><div class="line"></div><div class="line"></div></div>
-      </div>
+    function makePages(s){
+      const p=s.plan||{},ind=p.variables?.independent||"voltage",dep=p.variables?.dependent||"amplitude",controls=p.variables?.controlled||[];const raw=rawTableParts(s);
+      const p1=`<section class="print-page"><div class="page-inner">${pageHeader(s,"소리 신호 탐구 설계실 · 개인별 평가 자료")}
+        <div class="scenario"><b>탐구 상황</b> 학생은 직접 조절할 입력 조건 하나를 조작 변인으로 선택하고, 그에 따라 측정되는 결과를 종속 변인으로 선택하였다. 나머지 입력 조건을 고정한 뒤 자신의 연구 방법에 따라 서로 다른 조건에서 반복 측정하였다.</div>
+        <div><span class="criterion-label">Criterion B. 탐구 및 설계하기</span></div>
+        <div class="two"><div class="section"><div class="section-title">B.i 탐구 질문</div><div class="auto-text">${nl(p.researchQuestion)}</div></div><div class="section"><div class="section-title">B.ii 가설</div><div class="auto-text">${nl(p.hypothesis)}</div></div></div>
+        <div class="section"><div class="section-title">B.ii 과학적 추론</div><div class="auto-text">${nl(p.reasoning)}</div></div>
+        <div class="section"><div class="section-title">B.iii 학생이 설정한 변인과 수집 계획</div><table class="compact-table variable-table"><tr><th>조작 변인</th><th>종속 변인</th><th>통제 변인</th><th>반복</th></tr><tr><td>${variablePills([ind])}</td><td>${variablePills([dep])}</td><td>${variablePills(controls)}<div class="fixed-value">고정값: ${esc(controlValuesHtml(p))}</div></td><td style="text-align:center">각 조건 ${p.repeatCount||"-"}회</td></tr></table><div class="two" style="margin-top:.8mm"><div class="mini-box"><div class="mini-title">통제 방법</div><div class="mini-text">${nl(p.controlMethod)}</div></div><div class="mini-box"><div class="mini-title">데이터 수집 방법</div><div class="mini-text">${nl(p.collectionMethod)}</div></div></div></div>
+        <div class="section"><div class="section-title">B.iv 학생이 설계한 연구 방법</div>${procedureHtml(p)}</div>
+        <div class="section" style="margin-bottom:0"><div class="section-title">C.i 1차시에서 수집한 원자료</div><table class="compact-table raw-table"><thead>${raw.head}</thead><tbody>${raw.body}</tbody></table></div>
+        <div class="page-footer"><span>학생이 제출한 Criterion B 답안과 원자료</span><span>1 / 2</span></div></div></section>`;
+      const p2=`<section class="print-page"><div class="page-inner">${pageHeader(s,"소리 신호 탐구 설계실 · Criterion C 서면 평가")}
+        <div><span class="criterion-label">Criterion C. 처리 및 평가하기</span></div>
+        <div class="section"><div class="section-title">C.i 수집하고 변형한 데이터 제시</div><table class="compact-table"><thead><tr><th>조건</th><th>${esc(labelOf(ind))}<br>(${esc(unitOf(ind))})</th><th>${esc(labelOf(dep))} 반복 측정값<br>(${esc(unitOf(dep))})</th><th>평균 ${esc(shortOf(dep))}</th></tr></thead><tbody>${transformedRowsHtml(s)}</tbody></table><div class="print-only-note">반복 측정값의 평균을 계산하여 마지막 칸을 완성하세요. 평균값은 아래 그래프에 사용합니다.</div></div>
+        <div class="graph-title">[그래프] ${esc(labelOf(ind))}에 따른 ${esc(labelOf(dep))} <span class="hint">축 이름·단위·눈금·평균값 데이터 점·전체 경향을 직접 표시하세요.</span></div><div class="graph"><span class="axis-y">${esc(labelOf(dep))} (${esc(unitOf(dep))})</span><span class="axis-x">${esc(labelOf(ind))} (${esc(unitOf(ind))})</span></div>
+        <div class="section"><div class="question">C.ii 데이터를 해석하고 과학적 추론을 사용해 결론을 서술한다.</div><div class="hint">${esc(conclusionHint(p))}</div><div class="write-area medium"></div></div>
+        <div class="section"><div class="question">C.iii 연구 결과를 토대로 가설의 타당성에 관해 논한다.</div><div class="hint">가설에서 예상한 변화와 실제 평균값·그래프를 비교하여 지지 여부를 판단하고 수치로 근거를 제시하세요.</div><div class="write-area small"></div></div>
+        <div class="c-two"><div class="section"><div class="question">C.iv 연구 방법의 타당성에 관해 논한다.</div><div class="hint">${esc(validityHint(p))}</div><div class="write-area medium"></div></div><div class="section"><div class="question">C.v 연구 방법의 개선 또는 확장 방안을 서술한다.</div><div class="hint">확인한 한계를 직접 줄이는 구체적 개선안 또는 새로 탐구할 변인을 제안하세요.</div><div class="write-area medium"></div></div></div>
+        <div class="page-footer"><span>2차시 서면 수행평가 · 태블릿 및 인터넷 사용 없음</span><span>2 / 2</span></div></div></section>`;
+      return p1+p2;
+    }
 
-      <div class="item"><div class="item-title">통합 적용 · 내가 제안하는 디지털 알림음 설정 <span class="hint">평가 결과를 바탕으로 전압, 저항, 진동수를 하나씩 선택하고 이유를 설명하세요.</span></div>
-        <div class="line solid">전압 ______ V · 저항 ______ Ω · 진동수 ______ Hz</div><div class="line"></div><div class="line"></div>
-      </div>
-    </div>
-    <div class="footer">- 3 / 3 · Criterion C.ii–v -</div>
-  </div></section>
+    function selectedStudents(){return loaded.filter(x=>x.ok&&x.selected);}
+    function buildPrintArea(){const students=selectedStudents();$("printArea").innerHTML=students.map(makePages).join("");return students.length;}
+    function prepareAndPrint(){const count=buildPrintArea();if(!count){alert("인쇄할 학생을 선택하세요.");return;}setTimeout(()=>window.print(),120);}
+    function csvCell(v){const s=String(v??"").replace(/"/g,'""');return`"${s}"`;}
+    function downloadCSV(){const rows=[["학번","이름","탐구 질문","가설","과학적 추론","조작 변인","종속 변인","통제 변인","통제 고정값","통제 방법","데이터 수집 방법","반복 횟수","연구 방법(JSON)","원자료(JSON)"]];selectedStudents().forEach(s=>rows.push([s.studentId,s.studentName,s.plan.researchQuestion,s.plan.hypothesis,s.plan.reasoning,labelOf(s.plan.variables.independent),labelOf(s.plan.variables.dependent),(s.plan.variables.controlled||[]).map(labelOf).join("|"),JSON.stringify(s.plan.controlValues||{}),s.plan.controlMethod,s.plan.collectionMethod,s.plan.repeatCount,JSON.stringify(s.plan.procedureSteps||[]),JSON.stringify(s.measurements)]));const csv="\uFEFF"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n"),blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`Unit3_소리신호탐구_제출자료_${new Date().toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+  </script>
 </body>
 </html>
