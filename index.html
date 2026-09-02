@@ -6352,43 +6352,26 @@
                 badgeClass: "badge-unit3-eval",
                 cardClass: "unit-3-eval-card",
                 btnClass: "btn-unit3-eval",
-                desc: "관리자가 공개한 평가 자료입니다. 파장 실험실에서 전기 신호와 소리 파동의 관계를 탐구할 수 있습니다.",
+                desc: "선생님의 안내에 따라 입장하세요.",
                 lessons: [
                     {
-                        id: "u3e_l1",
-                        chasi: "평가 1",
-                        title: "형성평가",
-                        desc: "",
-                        file: "01_formative_circuit_lab.html",
-                        isLocked: false,
+                        id: "u3e_l3",
+                        chasi: "수행평가",
+                        title: "수행평가",
+                        desc: "선생님의 안내를 받은 뒤 시작하세요.",
+                        file: "Unit3_01_assessment_wavelength_lab.html",
+                        isLocked: true,
                         tags: []
                     },
                     {
                         id: "u3e_l2",
-                        chasi: "탐구 활동지",
-                        title: "파장 실험실 B·C 활동지",
-                        desc: "탐구 질문·가설·변인·연구 방법을 설계하고, 수집한 자료를 표와 그래프로 처리하여 결론과 연구 방법을 평가합니다.",
+                        chasi: "교사용 관리",
+                        title: "교사용 관리",
+                        desc: "관리자 전용 메뉴입니다.",
                         file: "Unit3_02_assessment_report_wavelength_lab.html",
-                        isLocked: false,
-                        tags: ["Criterion B", "Criterion C", "탐구 설계", "처리 및 평가"]
-                    },
-                    {
-                        id: "u3e_l3",
-                        chasi: "총괄평가",
-                        title: "파장 실험실",
-                        desc: "전원 전압 또는 회로의 저항과 소리 파동의 상대 진폭, 신호 진동수와 파장 사이의 관계를 직접 설계하고 측정합니다.",
-                        file: "Unit3_01_assessment_wavelength_lab.html",
                         isLocked: true,
-                        tags: ["전기와 소리", "IB 기준 B·C", "가상 실험", "데이터 제출"]
-                    },
-                    {
-                        id: "u3e_l4",
-                        chasi: "교사용",
-                        title: "교사용 자료",
-                        desc: "",
-                        file: "04_assessment_report_answer.html",
-                        isLocked: true,
-                        tags: []
+                        tags: [],
+                        adminOnly: true
                     }
                 ]
             }
@@ -7823,11 +7806,12 @@
         function createUnitCard(key, unit) {
             const card = document.createElement('div');
             const isLocked = unit.isLocked;
+            const visibleLessonCount = unit.lessons.filter(l => isAdminMode || l.adminOnly !== true).length;
             card.className = `unit-entry-card ${unit.themeClass} ${isLocked ? 'is-locked' : ''}`;
 
             const badgeHtml = isLocked 
                 ? `<span class="unit-entry-badge badge-locked">🔒 잠김 (비공개)</span>`
-                : `<span class="unit-entry-badge ${unit.badgeClass}">${unit.title.split('.')[0]} · ${unit.lessons.length}개 항목</span>`;
+                : `<span class="unit-entry-badge ${unit.badgeClass}">${unit.title.split('.')[0]} · ${visibleLessonCount}개 항목</span>`;
 
             const btnText = isLocked ? `🔒 잠김 (입장 불가)` : `${unit.icon} ${unit.title} 입장하기 ➔`;
 
@@ -7913,6 +7897,8 @@
             container.innerHTML = '';
 
             unit.lessons.forEach(l => {
+                if (l.adminOnly === true && !isAdminMode) return;
+
                 const card = document.createElement('div');
                 const isLocked = l.isLocked;
                 card.className = `lesson-card ${unit.cardClass} ${isLocked ? 'is-locked' : ''}`;
@@ -8152,11 +8138,14 @@
             document.getElementById('lessonView').style.display = 'block';
 
             document.getElementById('headerMainTitle').innerText = `${unit.icon} ${unit.title} 학습관`;
-            document.getElementById('headerSubTitle').innerText = `${unit.title}의 프로그램 목록입니다.`;
+            document.getElementById('headerSubTitle').innerText = unit.category === 'eval'
+                ? '선생님의 안내에 따라 이용하세요.'
+                : `${unit.title}의 프로그램 목록입니다.`;
 
             const navBar = document.getElementById('unitNavBar');
             navBar.className = `unit-navigation-bar ${unit.barThemeClass || ''}`;
-            document.getElementById('unitStatusText').innerHTML = `<span class="${unit.statusClass}">현재 위치: ${unit.title} (총 ${unit.lessons.length}개 항목)</span>`;
+            const visibleLessonCount = unit.lessons.filter(l => isAdminMode || l.adminOnly !== true).length;
+            document.getElementById('unitStatusText').innerHTML = `<span class="${unit.statusClass}">현재 위치: ${unit.title} (총 ${visibleLessonCount}개 항목)</span>`;
 
             const batchBar = document.getElementById('adminBatchControlBar');
             if (batchBar) {
