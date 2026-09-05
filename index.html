@@ -2715,8 +2715,9 @@
                 <div class="eval-section-wrapper">
                     <div class="section-header-box">
                         <span class="section-label-tag tag-eval">🏆 IB MYP ASSESSMENT</span>
-                        <h2>탐구 수행평가 전용 평가관</h2>
+                        <h2>평가관</h2>
                         <p>관리자가 공개한 평가 자료만 이용할 수 있습니다.</p>
+                        <button id="evalCollectionCenterBtn" class="modal-btn-confirm" style="display:none;margin-top:14px;" onclick="openAssessmentCollectionCenter()">🖨️ 교사용 제출물 수합·인쇄</button>
                     </div>
                     <div class="unit-select-grid" id="evalUnitGrid"></div>
                 </div>
@@ -3042,6 +3043,7 @@
             <h3>🧰 관리자 도구</h3>
             <p class="modal-desc-sub">자주 쓰는 공지·질문·포인트·평가관은 상단에 유지하고, 운영·설정 기능은 이곳에 모았습니다.</p>
             <div class="admin-tools-grid">
+                <button id="toolAssessmentCollectionBtn" class="tool-primary" style="display:none;" onclick="openAssessmentCollectionCenter()">🖨️ <b>평가 제출물 수합·인쇄</b><br><small>학생 제출자료 조회·학번순 일괄 인쇄</small></button>
                 <button id="toolRewardBtn" onclick="launchAdminTool('reward')"><span class="admin-tool-title-row"><span>🎁 <b>상품</b></span><span id="toolRewardBadge" class="pending-badge" style="display:none;" title="상품·경품 처리 대기">0</span></span><small>상품 신청 처리·경품 추첨</small></button>
                 <button id="toolShopEditorBtn" class="tool-primary" onclick="launchAdminTool('shopEditor')">🛒 <b>상품 추가·수정</b><br><small>가격·재고·활성화·경품 일정</small></button>
                 <button id="toolRoleBtn" onclick="launchAdminTool('roles')">🛡️ <b>중간관리자</b><br><small>계정 유형 및 권한 설정</small></button>
@@ -3591,7 +3593,7 @@
         let questionBadgePollTimer = null;
         let studentHeaderRequestInFlight = false;
 
-        // 탐구 수행평가 전용 평가관 노출 모드
+        // 공통 평가관 노출 모드 (Unit 3·Unit 4)
         // all: 전체 보이기 / admin_only: 관리자 모드에서만 보이기 / hidden: 전체 감추기
         let evalHallVisibilityMode = 'hidden';
 
@@ -6374,6 +6376,41 @@
                         adminOnly: true
                     }
                 ]
+            },
+            unit4_eval: {
+                id: "unit4_eval",
+                category: "eval",
+                title: "Unit 4 수행평가",
+                icon: "🏆",
+                isLocked: true,
+                themeClass: "theme-unit3-eval",
+                barThemeClass: "bar-unit3-eval",
+                statusClass: "status-unit3-eval",
+                bannerClass: "banner-unit3-eval",
+                badgeClass: "badge-unit3-eval",
+                cardClass: "unit-3-eval-card",
+                btnClass: "btn-unit3-eval",
+                desc: "선생님의 안내에 따라 입장하세요.",
+                lessons: [
+                    {
+                        id: "u4e_l1",
+                        chasi: "1차시",
+                        title: "1차시 활동",
+                        desc: "선생님의 안내를 받은 뒤 시작하세요.",
+                        file: "unit4_lesson1_two_session.html",
+                        isLocked: true,
+                        tags: []
+                    },
+                    {
+                        id: "u4e_l2",
+                        chasi: "2차시",
+                        title: "2차시 활동",
+                        desc: "선생님의 안내를 받은 뒤 시작하세요.",
+                        file: "unit4_lesson2_two_session.html",
+                        isLocked: true,
+                        tags: []
+                    }
+                ]
             }
         };
 
@@ -7262,12 +7299,23 @@
             return data;
         }
 
+        function openAssessmentCollectionCenter() {
+            // 메뉴 노출과 별개로 이동 시에도 최고관리자 세션이 필요합니다.
+            // 제출자료의 실제 접근 권한은 수합 서버에서 다시 검증합니다.
+            if (!getAdminSessionToken()) {
+                alert('교사용 관리자 인증 후 제출물 수합·인쇄를 이용할 수 있습니다.');
+                return;
+            }
+            window.location.href = 'Assessment_Collection_Center.html';
+        }
+
         function openAdminToolsModal(){
             const m=document.getElementById('adminToolsModal'); if(!m)return;
             const full=isFullAdminMode();
             const show=(id,on)=>{const el=document.getElementById(id);if(el)el.style.display=on?'':'none';};
             show('toolRewardBtn',canUseAdminFeature('rewards_manage')||canUseAdminFeature('draw_manage'));
             show('toolSignupBtn',canUseAdminFeature('signup_manage'));
+            show('toolAssessmentCollectionBtn',!!getAdminSessionToken());
             ['toolShopEditorBtn','toolRoleBtn','toolAcademicBtn','toolPasswordResetBtn','toolStudentEditBtn','toolCreateStudentBtn'].forEach(id=>show(id,full));
             m.style.display='flex';
         }
@@ -7877,6 +7925,8 @@
                 (evalHallVisibilityMode === 'admin_only' && isAdminMode === true);
             if (evalHallSection) evalHallSection.style.display = shouldShowEvalHall ? 'block' : 'none';
             if (evalHallDivider) evalHallDivider.style.display = shouldShowEvalHall ? 'block' : 'none';
+            const collectionButton = document.getElementById('evalCollectionCenterBtn');
+            if (collectionButton) collectionButton.style.display = getAdminSessionToken() ? 'inline-block' : 'none';
 
             for (const [key, unit] of Object.entries(defaultCurriculum)) {
                 if (unit.category === 'eval') {
@@ -8120,8 +8170,8 @@
                     (evalHallVisibilityMode === 'admin_only' && isAdminMode === true);
                 if (!allowed) {
                     alert(evalHallVisibilityMode === 'admin_only'
-                        ? '🛡️ 현재 탐구 수행평가 전용 평가관은 관리자만 이용할 수 있습니다.'
-                        : '🔒 현재 탐구 수행평가 전용 평가관은 숨김 상태입니다.');
+                        ? '🛡️ 현재 평가관은 관리자만 이용할 수 있습니다.'
+                        : '🔒 현재 평가관은 숨김 상태입니다.');
                     return;
                 }
             }

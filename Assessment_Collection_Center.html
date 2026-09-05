@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="same-origin">
+<title>교사용 제출물 수합 · 평가관</title>
+<style>
+:root{color-scheme:light;--ink:#182738;--muted:#627487;--line:#dce5ed;--blue:#175ac3;--blue-soft:#eaf2ff;--paper:#fff;--bg:#f3f6fa;--red:#ac3030;--green:#176949;font-family:Arial,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);line-height:1.6}a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}button,input,select{font:inherit}button,.button{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;border:1px solid #c6d5e4;border-radius:9px;background:#fff;color:var(--ink);font-weight:700;padding:.6rem .85rem;cursor:pointer;line-height:1.4;text-decoration:none}button:hover,.button:hover{background:#f1f6fb;text-decoration:none}button:disabled{opacity:.45;cursor:default}button.primary{background:var(--blue);border-color:var(--blue);color:#fff}button.primary:hover:not(:disabled){background:#104aab}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #88b8ff;outline-offset:2px}input[type="checkbox"]{accent-color:var(--blue);width:17px;height:17px;cursor:pointer}input:not([type="checkbox"]),select{border:1px solid #c6d5e4;background:#fff;border-radius:8px;padding:.56rem .7rem;min-height:42px;color:var(--ink);width:100%}select{cursor:pointer}
+.top{background:#152c48;color:#fff}.top-inner{max-width:1260px;margin:auto;padding:27px 26px;display:flex;justify-content:space-between;align-items:center;gap:20px}.eyebrow{font-weight:700;letter-spacing:.04em;color:#acc9f1;font-size:.8rem}.top h1{font-size:1.65rem;line-height:1.3;margin:5px 0 6px}.top p{margin:0;color:#d2dfee;font-size:.95rem}.top .button{white-space:nowrap;color:#fff;border-color:#6b819a;background:transparent}.top .button:hover{background:#28405f}.container{max-width:1260px;margin:0 auto;padding:25px 26px 48px}.notice{padding:14px 17px;border:1px solid var(--line);border-radius:11px;background:#fff;margin-bottom:20px;font-size:.93rem}.notice strong{color:#254970}.notice p{margin:0}.notice p+p{margin-top:3px}.panel{background:var(--paper);border:1px solid var(--line);border-radius:13px;overflow:hidden;box-shadow:0 3px 14px #1d436b06}.panel-head{padding:19px 21px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:15px}.panel-head h2{margin:0;font-size:1.12rem}.tag{font-size:.75rem;background:var(--blue-soft);color:var(--blue);border-radius:20px;padding:4px 10px;font-weight:700;margin-right:7px}.small{font-size:.83rem;color:var(--muted)}.filters{padding:19px 21px;display:grid;grid-template-columns:95px 80px 80px 125px 155px minmax(170px,1fr) auto;gap:12px;align-items:end}.filter label{display:block;font-size:.82rem;font-weight:700;color:#495e73;margin-bottom:5px}.filter-year{display:flex;gap:6px}.summary{padding:12px 21px;background:#f9fbfe;border-top:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}.counts{display:flex;gap:20px;font-size:.9rem}.counts b{color:var(--blue);font-size:1.08rem;margin:0 3px}.actions{display:flex;gap:7px;flex-wrap:wrap}.actions button{padding:.5rem .7rem;font-size:.88rem}.status{margin:0;padding:11px 21px;font-size:.89rem;color:var(--muted);border-bottom:1px solid var(--line);background:#fff}.status.error{color:var(--red);background:#fff6f5}.status.ok{color:var(--green);background:#f2faf6}.status:empty{display:none}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:1080px}th{text-align:left;color:#586b7d;background:#fbfcfe;font-size:.8rem;font-weight:700;padding:12px 13px;border-bottom:1px solid var(--line);white-space:nowrap}td{padding:13px;border-bottom:1px solid #eaf0f5;vertical-align:middle}tbody tr:hover{background:#f7faff}tbody tr.selected{background:#eff5ff}th:first-child,td:first-child{width:45px;text-align:center;padding-left:21px}th:last-child,td:last-child{padding-right:21px}tbody tr:last-child td{border-bottom:0}.student-id{font-variant-numeric:tabular-nums;font-weight:800;color:#254668}.student-name{font-weight:700}.row-actions{display:flex;gap:6px;white-space:nowrap}.row-actions button{font-size:.8rem;font-weight:600;padding:.4rem .6rem;border-radius:7px}.lesson-pill{display:inline-block;border-radius:5px;background:#f0f4fa;color:#48627d;font-size:.82rem;font-weight:700;padding:2px 8px}.date{white-space:nowrap;font-variant-numeric:tabular-nums;font-size:.82rem;color:#586b7d}.empty{text-align:center;padding:56px 20px;color:var(--muted)}.empty strong{display:block;margin-bottom:7px;color:#344c66;font-size:1rem}.foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;padding:15px 21px;background:#fbfcfe;border-top:1px solid var(--line);font-size:.8rem;color:var(--muted)}.login-box{max-width:640px;margin:32px auto;padding:32px;background:#fff;border:1px solid var(--line);border-radius:13px}.login-box h2{font-size:1.2rem;margin:0 0 10px}.login-box p{color:var(--muted);margin:0 0 18px}[hidden]{display:none!important}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+tbody tr.student-start td{border-top:3px solid #c6d5e4}tbody tr.lesson-start td{border-top:2px solid #e2eaf2}.attempt{display:inline-block;font-size:.78rem;font-weight:700;border-radius:5px;padding:2px 7px;white-space:nowrap}.attempt.original{background:#edf2f7;color:#4b6278}.attempt.resubmitted{background:#eaf2ff;color:#175ac3}.revision{font-size:.75rem;color:#63768a;white-space:nowrap}.filename{font-size:.73rem;color:#708195;overflow-wrap:anywhere;max-width:235px;margin-top:4px;line-height:1.4}.permission-button{font-size:.78rem;padding:.4rem .6rem;white-space:nowrap}.permission-granted{color:#176949;font-size:.74rem;font-weight:700;margin-bottom:4px;white-space:nowrap}
+@media(max-width:1100px){.filters{grid-template-columns:110px 1fr 1fr 1fr}.filter-view{grid-column:1}.filter-search{grid-column:2/4}.filter-refresh{grid-column:4}.filter-refresh button{width:100%}.top-inner{align-items:flex-start}}@media(max-width:600px){.top-inner{padding:22px 17px;flex-direction:column;gap:14px}.top h1{font-size:1.4rem}.top p{font-size:.85rem}.container{padding:17px 12px 35px}.panel-head,.summary,.foot{padding-left:14px;padding-right:14px}.filters{padding:16px 14px;grid-template-columns:1fr 1fr;gap:11px}.filter-view{grid-column:1/3}.filter-search{grid-column:1/3}.filter-refresh{grid-column:1/3}.counts{gap:12px}.actions{width:100%}.actions button.primary{flex:1}.notice{font-size:.85rem}.panel-head{align-items:flex-start;flex-direction:column;gap:6px}}@media print{body{display:none!important}}
+</style>
+<script src="./platform-config.js"></script>
+<script src="./assessment-print.js?v=20260905-resubmission"></script>
+</head>
+<body>
+<header class="top"><div class="top-inner"><div><div class="eyebrow">SCIENCE · 평가관</div><h1>교사용 제출물 수합</h1><p>학생이 제출한 활동지를 학번순으로 확인하고, 모아서 인쇄합니다.</p></div><a class="button" href="./index.html">평가관으로</a></div></header>
+<main class="container">
+<div class="notice"><p><strong>최초 제출본과 재제출본을 모두 보관</strong>하며, 같은 학생·차시의 제출본을 제출 순서대로 나란히 표시합니다. 학생은 최초 1회 제출 후 교사가 허용한 경우에만 1회 재제출할 수 있습니다.</p><p>최신 자료만 인쇄하려면 <strong>‘최신 제출본만’</strong>을 선택하세요. ‘선택 자료 인쇄 / PDF’의 인쇄창에서 프린터 또는 <strong>‘PDF로 저장’</strong>을 선택할 수 있습니다.</p></div>
+<section id="authNotice" class="login-box" hidden><h2 id="authHeading">교사 로그인이 필요합니다.</h2><p id="authText">평가관에서 교사로 로그인한 뒤 이 화면을 다시 열어 주세요.</p><a class="button" href="./index.html">평가관에서 로그인</a></section>
+<section id="collectionPanel" class="panel" aria-labelledby="collectionTitle">
+<div class="panel-head"><h2 id="collectionTitle"><span class="tag">UNIT 4</span>미래 변화 탐구 글쓰기</h2><span class="small" id="lastUpdated">제출 목록을 확인하고 있습니다.</span></div>
+<div class="filters">
+<div class="filter"><label for="yearFilter">학년도</label><input id="yearFilter" type="number" min="2000" max="2100" step="1" inputmode="numeric" aria-label="조회 학년도"></div>
+<div class="filter"><label for="gradeFilter">학년</label><select id="gradeFilter"><option value="">전체</option></select></div>
+<div class="filter"><label for="classFilter">반</label><select id="classFilter"><option value="">전체</option></select></div>
+<div class="filter"><label for="lessonFilter">차시</label><select id="lessonFilter"><option value="">1·2차시 전체</option><option value="1">1차시</option><option value="2">2차시</option></select></div>
+<div class="filter filter-view"><label for="viewFilter">표시할 제출본</label><select id="viewFilter"><option value="all">모든 제출본</option><option value="latest">최신 제출본만</option></select></div>
+<div class="filter filter-search"><label for="searchFilter">학생 찾기</label><input id="searchFilter" type="search" placeholder="학번 또는 이름" autocomplete="off"></div>
+<div class="filter filter-refresh"><button id="refreshButton" type="button">목록 새로고침</button></div>
+</div>
+<div class="summary"><div class="counts"><span>현재 목록 <b id="visibleCount">0</b>건</span><span>선택 <b id="selectedCount">0</b>건</span></div><div class="actions"><button id="selectButton" type="button">목록 전체 선택</button><button id="clearButton" type="button">선택 해제</button><button id="downloadButton" type="button">선택 자료 HTML 저장</button><button class="primary" id="printButton" type="button">선택 자료 인쇄 / PDF</button></div></div>
+<p id="status" class="status" role="status" aria-live="polite"></p>
+<div class="table-wrap"><table><thead><tr><th><input id="selectAll" type="checkbox" aria-label="현재 목록 전체 선택"></th><th>학번 ↑</th><th>이름</th><th>차시</th><th>제출 시각 <span class="small">(한국)</span></th><th>제출본 / 파일명</th><th>재제출 권한</th><th>확인 / 저장</th></tr></thead><tbody id="submissionRows"></tbody></table></div>
+<div id="emptyState" class="empty"><strong id="emptyTitle">제출 목록을 불러오고 있습니다.</strong><span id="emptyText">잠시 기다려 주세요.</span></div>
+<div class="foot"><span>학번 → 차시 → 최초·재제출 순서입니다. 필터를 바꾸면 숨겨진 항목은 선택에서 제외됩니다.</span><span>각 제출본은 서로 다른 파일명으로 저장됩니다.</span></div>
+</section>
+</main>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const state = { items: [], visible: [], selected: new Set(), busy: false, authenticated: false, schoolYear: null };
+  let adminKey = '';
+  try { adminKey = sessionStorage.getItem('current_admin_key') || ''; } catch (_) {}
+  const baseUrl = String(window.PLATFORM_CONFIG && window.PLATFORM_CONFIG.baseUrl || '').replace(/\/$/, '');
+  const endpoint = baseUrl ? baseUrl + '/functions/v1/assessment-worksheet-api' : '';
+  const sortLocale = new Intl.Collator('ko', { numeric: true, sensitivity: 'base' });
+  function compareItems(a, b) {
+    return sortLocale.compare(String(a.studentId || ''), String(b.studentId || '')) || Number(a.lesson) - Number(b.lesson) || Number(a.revision) - Number(b.revision) || sortLocale.compare(String(a.studentName || ''), String(b.studentName || ''));
+  }
+  function parseStudentId(value) {
+    const id = String(value || '').trim();
+    if (/^[1-6][0-9]{3}$/.test(id)) return { grade: id.slice(0, 1), classroom: String(Number(id.slice(1, 2))) };
+    if (/^[1-6][0-9]{4}$/.test(id)) return { grade: id.slice(0, 1), classroom: String(Number(id.slice(1, 3))) };
+    return { grade: '', classroom: '' };
+  }
+  function displayTime(value) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '시각 확인 필요' : new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
+  }
+  function setStatus(message, kind = '') { $('status').textContent = message; $('status').className = 'status' + (kind ? ' ' + kind : ''); }
+  function setBusy(busy) {
+    state.busy = busy;
+    ['yearFilter','gradeFilter','classFilter','lessonFilter','viewFilter','searchFilter','refreshButton'].forEach(id => { $(id).disabled = busy || !state.authenticated; });
+    updateActions();
+  }
+  function showAuth(message) {
+    state.authenticated = false;
+    state.items = []; state.visible = []; state.selected.clear();
+    $('authNotice').hidden = false;
+    $('authText').textContent = message || '평가관에서 교사로 로그인한 뒤 이 화면을 다시 열어 주세요.';
+    $('collectionPanel').hidden = true;
+  }
+  async function api(action, args = {}) {
+    if (!endpoint) throw new Error('플랫폼 연결 설정을 찾지 못했습니다. platform-config.js가 같은 폴더에 있는지 확인해 주세요.');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 25000);
+    try {
+      const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...args, adminKey }), signal: controller.signal, credentials: 'omit', cache: 'no-store' });
+      let data;
+      try { data = await response.json(); } catch (_) { throw new Error('서버 응답을 읽지 못했습니다. 잠시 후 다시 시도해 주세요.'); }
+      if (!response.ok || !data || data.success !== true) {
+        if (data && data.permissionDenied) showAuth('교사 로그인 정보가 만료되었거나 이 화면을 사용할 권한이 없습니다. 평가관에서 교사로 다시 로그인해 주세요.');
+        const error = new Error(data && typeof data.message === 'string' ? data.message : '제출 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        error.staleSubmission = data && data.staleSubmission === true;
+        throw error;
+      }
+      return data;
+    } catch (error) {
+      if (error && error.name === 'AbortError') throw new Error('서버 응답 시간이 초과되었습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요.');
+      if (error instanceof TypeError) throw new Error('서버에 연결하지 못했습니다. 네트워크와 플랫폼 연결 설정을 확인해 주세요.');
+      throw error;
+    } finally { clearTimeout(timer); }
+  }
+  function fillOptions(select, values, suffix) {
+    const before = select.value;
+    select.replaceChildren(new Option('전체', ''));
+    [...new Set(values.filter(Boolean))].sort((a, b) => Number(a) - Number(b)).forEach(value => select.add(new Option(value + suffix, value)));
+    if ([...select.options].some(option => option.value === before)) select.value = before;
+  }
+  function updateClassOptions() {
+    const grade = $('gradeFilter').value;
+    fillOptions($('classFilter'), state.items.map(item => parseStudentId(item.studentId)).filter(info => !grade || info.grade === grade).map(info => info.classroom), '반');
+  }
+  function updateFilterOptions() {
+    fillOptions($('gradeFilter'), state.items.map(item => parseStudentId(item.studentId).grade), '학년');
+    updateClassOptions();
+  }
+  function getVisible() {
+    const grade = $('gradeFilter').value, classroom = $('classFilter').value, lesson = $('lessonFilter').value, view = $('viewFilter').value;
+    const search = $('searchFilter').value.trim().toLocaleLowerCase('ko');
+    return state.items.filter(item => {
+      const info = parseStudentId(item.studentId);
+      return (view !== 'latest' || item.isLatest === true) && (!grade || info.grade === grade) && (!classroom || info.classroom === classroom) && (!lesson || Number(item.lesson) === Number(lesson)) && (!search || String(item.studentId).toLocaleLowerCase('ko').includes(search) || String(item.studentName).toLocaleLowerCase('ko').includes(search));
+    }).sort(compareItems);
+  }
+  function td(text, className) {
+    const node = document.createElement('td'); node.textContent = text;
+    if (className) node.className = className;
+    return node;
+  }
+  function actionButton(label, onClick) {
+    const button = document.createElement('button'); button.type = 'button'; button.textContent = label; button.disabled = state.busy; button.addEventListener('click', onClick); return button;
+  }
+  function renderRows() {
+    state.visible = getVisible();
+    const visibleIds = new Set(state.visible.map(item => item.id));
+    state.selected = new Set([...state.selected].filter(id => visibleIds.has(id)));
+    const rows = document.createDocumentFragment();
+    state.visible.forEach((item, index) => {
+      const row = document.createElement('tr'); row.classList.toggle('selected', state.selected.has(item.id)); row.dataset.id = item.id;
+      const previous = state.visible[index - 1];
+      row.classList.toggle('student-start', !!previous && String(previous.studentId) !== String(item.studentId));
+      row.classList.toggle('lesson-start', !!previous && String(previous.studentId) === String(item.studentId) && Number(previous.lesson) !== Number(item.lesson));
+      const selection = document.createElement('td'), check = document.createElement('input');
+      check.type = 'checkbox'; check.checked = state.selected.has(item.id); check.disabled = state.busy; check.setAttribute('aria-label', item.studentId + ' ' + item.studentName + ' ' + item.lesson + '차시 선택');
+      check.addEventListener('change', () => { if (check.checked) state.selected.add(item.id); else state.selected.delete(item.id); row.classList.toggle('selected', check.checked); updateActions(); });
+      selection.append(check); row.append(selection, td(item.studentId, 'student-id'), td(item.studentName, 'student-name'));
+      const lessonCell = td(''), lessonLabel = document.createElement('span'); lessonLabel.className = 'lesson-pill'; lessonLabel.textContent = item.lesson + '차시'; lessonCell.append(lessonLabel);
+      const attemptCell = td(''), attempt = document.createElement('span'), revision = document.createElement('span'), filename = document.createElement('div');
+      attempt.className = Number(item.revision) === 1 ? 'attempt original' : 'attempt resubmitted';
+      attempt.textContent = Number(item.revision) === 1 ? '최초 제출' : '재제출 ' + (Number(item.revision) - 1);
+      revision.className = 'revision'; revision.textContent = ' v' + Number(item.revision) + (item.isLatest === true ? ' · 최신' : '');
+      filename.className = 'filename'; filename.textContent = item.filename || ''; attemptCell.append(attempt, revision, filename);
+      const permission = td('');
+      if (item.isLatest === true) {
+        const permissionButton = actionButton(item.resubmissionAllowed === true ? '허용 취소' : '재제출 1회 허용', () => setResubmission(item.id, item.resubmissionAllowed !== true));
+        permissionButton.className = 'permission-button';
+        if (item.resubmissionAllowed === true) { const granted = document.createElement('div'); granted.className = 'permission-granted'; granted.textContent = '재제출 1회 허용 중'; permission.append(granted); }
+        permission.append(permissionButton);
+      } else { permission.textContent = '이전 제출본'; permission.className = 'small'; }
+      row.append(lessonCell, td(displayTime(item.submittedAt), 'date'), attemptCell, permission);
+      const actions = td(''), group = document.createElement('div'); group.className = 'row-actions';
+      group.append(actionButton('미리보기', () => openDocuments([item.id], false)), actionButton('HTML 저장', () => downloadDocuments([item.id]))); actions.append(group); row.append(actions); rows.append(row);
+    });
+    $('submissionRows').replaceChildren(rows);
+    $('emptyState').hidden = state.visible.length > 0;
+    if (!state.visible.length) {
+      $('emptyTitle').textContent = state.items.length ? '조건에 맞는 제출물이 없습니다.' : '아직 제출된 활동지가 없습니다.';
+      $('emptyText').textContent = state.items.length ? '학년·반·차시 또는 검색어를 변경해 보세요.' : '학생이 ‘교사에게 제출’을 완료하면 이곳에 표시됩니다.';
+    }
+    $('visibleCount').textContent = state.visible.length;
+    updateActions();
+  }
+  function updateActions() {
+    const ready = state.authenticated && !state.busy, count = state.selected.size;
+    $('selectedCount').textContent = count;
+    $('selectButton').disabled = !ready || !state.visible.length;
+    $('clearButton').disabled = !ready || !count;
+    $('downloadButton').disabled = !ready || !count;
+    $('printButton').disabled = !ready || !count;
+    $('selectAll').disabled = !ready || !state.visible.length;
+    $('selectAll').checked = !!state.visible.length && count === state.visible.length;
+    $('selectAll').indeterminate = count > 0 && count < state.visible.length;
+    $('submissionRows').querySelectorAll('input,button').forEach(node => { node.disabled = !ready; });
+  }
+  function validYear() {
+    const value = Number($('yearFilter').value);
+    if (!Number.isInteger(value) || value < 2000 || value > 2100) throw new Error('학년도를 2000~2100 사이의 정수로 입력해 주세요.');
+    return value;
+  }
+  async function loadList() {
+    if (state.busy || !state.authenticated) return;
+    let schoolYear;
+    try { schoolYear = validYear(); } catch (error) { setStatus(error.message, 'error'); return; }
+    if (state.schoolYear !== schoolYear) { state.items = []; state.selected.clear(); renderRows(); }
+    setBusy(true); setStatus('제출 목록을 불러오고 있습니다.');
+    try {
+      const items = [], seen = new Set(); let offset = 0, rounds = 0;
+      while (true) {
+        const data = await api('admin_list', { schoolYear, offset, limit: 500, view: 'all' });
+        if (!Array.isArray(data.items)) throw new Error('제출 목록의 형식이 올바르지 않습니다.');
+        data.items.forEach(item => { if (item && item.id && !seen.has(item.id)) { seen.add(item.id); items.push(item); } });
+        if (!data.hasMore) break;
+        const next = Number(data.nextOffset);
+        if (!Number.isInteger(next) || next <= offset || ++rounds > 100) throw new Error('제출 목록을 끝까지 불러오지 못했습니다. 다시 새로고침해 주세요.');
+        offset = next;
+      }
+      state.schoolYear = schoolYear; state.items = items.sort(compareItems);
+      updateFilterOptions(); renderRows();
+      $('lastUpdated').textContent = '최근 확인 ' + displayTime(new Date().toISOString());
+      setStatus(schoolYear + '학년도 전체 제출본 ' + items.length + '건을 확인했습니다.', 'ok');
+      return true;
+    } catch (error) {
+      setStatus(error.message, 'error');
+      if (!state.items.length) { $('emptyTitle').textContent = '제출 목록을 불러오지 못했습니다.'; $('emptyText').textContent = '연결 상태를 확인한 뒤 목록을 새로고침해 주세요.'; }
+      return false;
+    } finally { setBusy(false); }
+  }
+  async function setResubmission(submissionId, allow) {
+    if (state.busy || !state.authenticated) return;
+    const item = state.items.find(record => record.id === submissionId);
+    if (!item || item.isLatest !== true) { setStatus('최신 제출본에서만 재제출 권한을 변경할 수 있습니다. 목록을 새로고침해 주세요.', 'error'); return; }
+    const who = item.studentId + ' ' + item.studentName + ' 학생의 Unit 4 ' + item.lesson + '차시';
+    const question = allow ? who + ' 재제출을 1회 허용할까요?\n허용한 뒤 제출이 완료되면 권한은 자동으로 사용됩니다.' : who + '의 아직 사용하지 않은 재제출 허용을 취소할까요?';
+    if (!window.confirm(question)) return;
+    setBusy(true); setStatus('재제출 권한을 변경하고 있습니다.');
+    try {
+      const data = await api('admin_set_resubmission', { submissionId, allow });
+      if (typeof data.resubmissionAllowed !== 'boolean') throw new Error('변경 후 권한 상태를 확인하지 못했습니다. 목록을 새로고침해 주세요.');
+      const message = data.resubmissionAllowed === true ? who + ' 재제출을 1회 허용했습니다.' : who + ' 재제출 허용을 취소했습니다.';
+      setBusy(false);
+      const refreshed = await loadList();
+      if (state.authenticated) setStatus(refreshed ? message : message + ' 목록 갱신에 실패했으므로 새로고침해 주세요.', refreshed ? 'ok' : 'error');
+    } catch (error) {
+      if (error.staleSubmission && state.authenticated) { setBusy(false); await loadList(); }
+      setStatus(error.message, 'error');
+    }
+    finally { setBusy(false); }
+  }
+  async function fetchDocuments(ids) {
+    const requested = [...new Set(ids)];
+    if (!requested.length) throw new Error('먼저 인쇄하거나 저장할 자료를 선택해 주세요.');
+    const records = new Map();
+    for (let index = 0; index < requested.length; index += 100) {
+      setStatus('활동지를 준비하고 있습니다. ' + Math.min(index + 100, requested.length) + ' / ' + requested.length + '건');
+      const data = await api('admin_get', { ids: requested.slice(index, index + 100) });
+      if (!Array.isArray(data.items)) throw new Error('활동지 응답의 형식이 올바르지 않습니다.');
+      data.items.forEach(item => { if (item && requested.includes(item.id)) records.set(item.id, item); });
+    }
+    if (records.size !== requested.length) throw new Error('일부 제출 자료를 찾지 못했습니다. 목록을 새로고침한 뒤 다시 선택해 주세요.');
+    return requested.map(id => records.get(id)).sort(compareItems);
+  }
+  function renderDocument(items) {
+    if (!window.WorksheetPrint || typeof window.WorksheetPrint.renderDocument !== 'function') throw new Error('인쇄 서식을 불러오지 못했습니다. assessment-print.js가 같은 폴더에 있는지 확인해 주세요.');
+    return window.WorksheetPrint.renderDocument(items);
+  }
+  function safeFilename(value) { return String(value || '').replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').replace(/^[. ]+|[. ]+$/g, '').slice(0, 180); }
+  function filenameFor(items) {
+    if (items.length === 1) {
+      const item = items[0], prefix = safeFilename(item.studentId) + '_';
+      let name = safeFilename(item.filename);
+      if (!name.startsWith(prefix)) name = prefix + safeFilename(item.studentName) + '_Unit4_' + item.lesson + '차시_' + item.revision + '번째제출.html';
+      return name.replace(/\.(pdf|html?)$/i, '') + '.html';
+    }
+    return safeFilename(items[0].studentId) + '-' + safeFilename(items[items.length - 1].studentId) + '_' + validYear() + '_Unit4_' + items.length + '건_수합.html';
+  }
+  async function downloadDocuments(ids) {
+    if (state.busy || !state.authenticated) return;
+    setBusy(true);
+    try {
+      const items = await fetchDocuments(ids), html = renderDocument(items);
+      const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+      const link = document.createElement('a'); link.href = url; link.download = filenameFor(items); document.body.append(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      setStatus(items.length + '건의 HTML 다운로드를 시작했습니다. 파일을 열면 인쇄하거나 PDF로 저장할 수 있습니다.', 'ok');
+    } catch (error) { setStatus(error.message, 'error'); }
+    finally { setBusy(false); }
+  }
+  async function openDocuments(ids, shouldPrint) {
+    if (state.busy || !state.authenticated) return;
+    // Must run before awaiting the API so browsers recognize this as a user-initiated window.
+    const preview = window.open('', '_blank');
+    if (!preview) { setStatus('새 창이 차단되었습니다. 이 사이트의 팝업을 허용하거나 ‘HTML 저장’으로 파일을 열어 인쇄해 주세요.', 'error'); return; }
+    preview.opener = null;
+    preview.document.title = '활동지를 준비하고 있습니다';
+    const message = preview.document.createElement('p'); message.textContent = '선택한 활동지를 준비하고 있습니다. 잠시 기다려 주세요.'; message.style.cssText = 'font:16px sans-serif;padding:30px;color:#42566e'; preview.document.body.append(message);
+    setBusy(true);
+    try {
+      const items = await fetchDocuments(ids), html = renderDocument(items);
+      if (preview.closed) throw new Error('미리보기 창이 닫혔습니다. 다시 눌러 주세요.');
+      preview.document.open(); preview.document.write(html); preview.document.close();
+      if (shouldPrint) {
+        const launch = () => { if (!preview.closed) { preview.focus(); preview.print(); } };
+        if (preview.document.readyState === 'complete') setTimeout(launch, 250);
+        else preview.addEventListener('load', () => setTimeout(launch, 250), { once: true });
+      }
+      setStatus(items.length + '건을 학번순으로 열었습니다.' + (shouldPrint ? ' 인쇄창에서 프린터 또는 ‘PDF로 저장’을 선택해 주세요.' : ' 새 창에서 내용을 확인하고 인쇄할 수 있습니다.'), 'ok');
+    } catch (error) { if (!preview.closed) preview.close(); setStatus(error.message, 'error'); }
+    finally { setBusy(false); }
+  }
+  $('refreshButton').addEventListener('click', loadList);
+  $('yearFilter').addEventListener('change', loadList);
+  $('gradeFilter').addEventListener('change', () => { updateClassOptions(); renderRows(); });
+  ['classFilter','lessonFilter','viewFilter'].forEach(id => $(id).addEventListener('change', renderRows));
+  $('searchFilter').addEventListener('input', renderRows);
+  $('selectButton').addEventListener('click', () => { state.selected = new Set(state.visible.map(item => item.id)); renderRows(); });
+  $('clearButton').addEventListener('click', () => { state.selected.clear(); renderRows(); });
+  $('selectAll').addEventListener('change', () => { state.selected = $('selectAll').checked ? new Set(state.visible.map(item => item.id)) : new Set(); renderRows(); });
+  $('printButton').addEventListener('click', () => openDocuments([...state.selected], true));
+  $('downloadButton').addEventListener('click', () => downloadDocuments([...state.selected]));
+  async function init() {
+    setBusy(true);
+    if (!adminKey) { showAuth(); setBusy(false); return; }
+    if (!endpoint) { showAuth('플랫폼 연결 설정이 없습니다. 이 파일과 platform-config.js를 같은 폴더에 배치한 뒤 다시 열어 주세요.'); $('authHeading').textContent = '플랫폼 연결이 필요합니다.'; setBusy(false); return; }
+    try {
+      const data = await api('admin_list', { limit: 1 });
+      const currentYear = Number(data.currentSchoolYear);
+      if (!Number.isInteger(currentYear) || currentYear < 2000 || currentYear > 2100) throw new Error('현재 학년도 정보를 확인하지 못했습니다.');
+      $('yearFilter').value = currentYear;
+      state.authenticated = true;
+      setBusy(false); await loadList();
+    } catch (error) {
+      setBusy(false);
+      if (!$('authNotice').hidden) return;
+      setStatus(error.message, 'error');
+      $('emptyTitle').textContent = '교사 권한과 연결 상태를 확인하지 못했습니다.';
+      $('emptyText').textContent = '평가관에서 로그인 상태를 확인한 뒤 이 화면을 다시 열어 주세요.';
+    }
+  }
+  init();
+})();
+</script>
+</body>
+</html>
