@@ -1239,6 +1239,41 @@
             box-shadow: 0 4px 12px rgba(220, 38, 38, 0.5);
             filter: brightness(1.1);
         }
+
+        /* WORKSHEET_PDF_ORIGINAL_STYLE_START */
+        #worksheetView .worksheet-row-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        #worksheetView .worksheet-btn-group { flex-wrap: wrap; }
+        #worksheetView .ws-btn-original {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            border: 1px solid #34d399;
+            border-radius: 6px;
+            background: #064e3b;
+            color: #d1fae5;
+            font-size: 0.8rem;
+            font-weight: 800;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        #worksheetView .ws-btn-original:hover:not(:disabled) { background: #065f46; }
+        #worksheetView .ws-btn-original:focus-visible { outline: 2px solid #a7f3d0; outline-offset: 3px; }
+        #worksheetView .ws-btn-original:disabled { border-color: #475569; background: #334155; color: #94a3b8; cursor: not-allowed; }
+        #worksheetView .ws-original-missing { color: #94a3b8; font-size: 0.73rem; white-space: nowrap; }
+        @media (max-width: 640px) {
+            #worksheetView .worksheet-row-card { flex-wrap: wrap; }
+            #worksheetView .worksheet-name-label { flex-basis: 100%; white-space: normal; }
+            #worksheetView .worksheet-row-actions { width: 100%; justify-content: flex-start; }
+        }
+        /* WORKSHEET_PDF_ORIGINAL_STYLE_END */
+
         .ws-btn-locked {
             background: #334155;
             color: #94a3b8;
@@ -2504,13 +2539,48 @@
         .admin-tool-launcher{background:rgba(15,23,42,.35)!important;border:1px solid rgba(255,255,255,.72)!important;}
         /* ADMIN_TOOLS_GROUPS_START */
         #adminToolsModal [hidden]{display:none!important;}
-        #adminToolsModal .point-modal-box{max-height:calc(100dvh - 32px);overflow:auto;}
-        #adminToolsModal .admin-tools-section{margin:24px 0 0;padding:18px 0 0;border-top:1px solid #334155;text-align:left;}
-        #adminToolsModal .admin-tools-section h4{margin:0;color:#f8fafc;font-size:1rem;line-height:1.5;}
-        #adminToolsModal .admin-tools-section-description{margin:5px 0 12px;color:#94a3b8;font-size:.8rem;line-height:1.6;}
-        #adminToolsModal .admin-tools-grid button{min-width:0;overflow-wrap:anywhere;line-height:1.6;}
-        #adminToolsModal .admin-tools-grid button small{display:block;margin-top:4px;font-weight:500;color:#b7c7dc;font-size:.78rem;}
-        #adminToolsModal button:focus-visible{outline:3px solid #67e8f9;outline-offset:3px;}
+        #adminToolsModal.admin-tools-inline{position:relative;z-index:1;inset:auto;width:min(1160px,calc(100% - 40px));margin:30px auto 28px;padding:0;background:transparent;border:0;border-radius:0;color:#e2e8f0;text-align:left;font-family:inherit;scroll-margin-top:128px;}
+        #adminToolsModal .admin-tools-inline-body{width:100%;min-width:0;padding:0;box-sizing:border-box;}
+        #adminToolsModal .admin-tools-inline-heading{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0 0 20px;}
+        #adminToolsModal .admin-tools-kicker{display:inline-block;padding:3px 10px;margin-bottom:8px;border-radius:6px;border:1px solid rgba(56,189,248,.35);background:rgba(56,189,248,.1);color:#38bdf8;font-size:.75rem;font-weight:800;}
+        #adminToolsModal h3{margin:0;color:#f8fafc;font-size:1.35rem;font-weight:800;letter-spacing:-.4px;line-height:1.5;}
+        #adminToolsModal .admin-tools-inline-heading p{margin:5px 0 0;color:#94a3b8;font-size:.88rem;line-height:1.6;}
+        #adminToolsModal .admin-tools-fold{flex:0 0 auto;border:1px solid #334155;background:#161b26;color:#cbd5e1;border-radius:10px;padding:9px 14px;cursor:pointer;font:inherit;font-size:.82rem;font-weight:700;}
+        #adminToolsModal .admin-tools-fold:hover{border-color:#38bdf8;color:#7dd3fc;}
+        #adminToolsModal .admin-tools-categories{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start;}
+        #adminToolsModal .admin-tools-section{--tools-accent:#38bdf8;--tools-tint:rgba(56,189,248,.1);--tools-line:rgba(56,189,248,.28);--tools-gradient:linear-gradient(90deg,#38bdf8,#818cf8);position:relative;min-width:0;margin:0;padding:0;border:1px solid rgba(148,163,184,.2);border-radius:20px;background:rgba(22,27,38,.95);text-align:left;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.14);}
+        #adminToolsModal #adminToolsProducts{--tools-accent:#fbbf24;--tools-tint:rgba(245,158,11,.1);--tools-line:rgba(245,158,11,.28);--tools-gradient:linear-gradient(90deg,#f59e0b,#ec4899);}
+        #adminToolsModal #adminToolsPlatform{--tools-accent:#c084fc;--tools-tint:rgba(168,85,247,.12);--tools-line:rgba(168,85,247,.28);--tools-gradient:linear-gradient(90deg,#a855f7,#818cf8);}
+        #adminToolsModal .admin-tools-section::before{content:'';position:absolute;inset:0 0 auto;height:4px;background:var(--tools-gradient);opacity:.65;pointer-events:none;}
+        #adminToolsModal .admin-tools-section[open]{border-color:var(--tools-line);}
+        #adminToolsModal .admin-tools-section[open]::before{opacity:1;}
+        #adminToolsModal .admin-tools-section summary{display:flex;align-items:center;gap:14px;padding:22px 24px;color:#f8fafc;list-style:none;cursor:pointer;user-select:none;}
+        #adminToolsModal .admin-tools-section summary::-webkit-details-marker{display:none;}
+        #adminToolsModal .admin-tools-section summary::after{content:'⌄';margin-left:auto;flex:0 0 auto;color:#94a3b8;font-size:1.2rem;line-height:1;transition:transform .18s ease;}
+        #adminToolsModal .admin-tools-section[open] summary::after{transform:rotate(180deg);color:var(--tools-accent);}
+        #adminToolsModal .admin-category-icon{display:grid;place-items:center;flex:0 0 44px;height:44px;border:1px solid var(--tools-line);border-radius:14px;background:var(--tools-tint);font-size:1.3rem;}
+        #adminToolsModal .admin-category-copy{display:flex;flex-direction:column;gap:2px;min-width:0;}
+        #adminToolsModal .admin-category-title{font-size:1.05rem;font-weight:800;letter-spacing:-.25px;}
+        #adminToolsModal .admin-category-desc{color:#94a3b8;font-size:.8rem;font-weight:400;line-height:1.5;}
+        #adminToolsModal .admin-tools-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:0 20px 20px;}
+        #adminToolsModal .admin-tools-grid button{display:flex;align-items:center;gap:12px;min-width:0;min-height:90px;margin:0;border:1px solid rgba(148,163,184,.15);background:rgba(11,14,20,.45);border-radius:13px;padding:15px 13px;font-family:inherit;font-size:.9rem;font-weight:600;line-height:1.45;color:#e2e8f0;text-align:left;overflow-wrap:anywhere;cursor:pointer;transition:border-color .18s ease,background .18s ease,transform .18s ease;}
+        #adminToolsModal .admin-tools-grid button:hover{border-color:var(--tools-line);background:var(--tools-tint);transform:translateY(-1px);}
+        #adminToolsModal .admin-tool-icon{display:grid;place-items:center;flex:0 0 36px;height:36px;border-radius:10px;background:rgba(148,163,184,.07);font-size:1.2rem;}
+        #adminToolsModal .admin-tool-copy{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1;}
+        #adminToolsModal .admin-tool-copy b{color:#f1f5f9;font-size:.88rem;font-weight:750;line-height:1.45;}
+        #adminToolsModal .admin-tool-copy small{display:block;margin:0;color:#94a3b8;font-size:.75rem;font-weight:400;line-height:1.5;}
+        #adminToolsModal .admin-tool-end{display:flex;align-items:center;gap:4px;flex:0 0 auto;color:#64748b;}
+        #adminToolsModal .admin-tool-arrow{font-size:1.1rem;}
+        #adminToolsModal .admin-tools-grid button:hover .admin-tool-arrow{color:var(--tools-accent);}
+        #adminToolsModal .admin-tools-grid .tool-danger .admin-tool-icon{background:rgba(239,68,68,.1);}
+        #adminToolsModal .admin-tools-grid .tool-danger:hover{border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.06);}
+        #adminToolsModal .pending-badge{margin:0;}
+        #adminToolsModal :is(button,summary):focus-visible{outline:3px solid #7dd3fc;outline-offset:3px;}
+        #adminToolsModal .admin-tools-section summary:focus-visible{outline-offset:-5px;border-radius:18px;}
+        #adminToolsModal #adminToolsEmpty{padding:24px;text-align:center;color:#94a3b8;}
+        @media(max-width:980px){#adminToolsModal .admin-tools-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+        @media(max-width:620px){#adminToolsModal.admin-tools-inline{width:calc(100% - 24px);margin-top:22px;scroll-margin-top:180px;}#adminToolsModal .admin-tools-inline-heading{gap:10px;align-items:flex-start;}#adminToolsModal .admin-tools-inline-heading p{font-size:.82rem;}#adminToolsModal h3{font-size:1.2rem;}#adminToolsModal .admin-tools-fold{padding:8px 10px;}#adminToolsModal .admin-tools-section{border-radius:16px;}#adminToolsModal .admin-tools-section summary{padding:19px 16px;gap:11px;}#adminToolsModal .admin-tools-grid{grid-template-columns:minmax(0,1fr);padding:0 12px 12px;gap:8px;}#adminToolsModal .admin-tools-grid button{min-height:78px;padding:13px;}#adminToolsModal .admin-category-desc{font-size:.76rem;}}
+        @media(prefers-reduced-motion:reduce){#adminToolsModal .admin-tools-grid button,#adminToolsModal .admin-tools-section summary::after{transition:none;}#adminToolsModal .admin-tools-grid button:hover{transform:none;}}
         /* ADMIN_TOOLS_GROUPS_END */
         .admin-tools-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
         .admin-tools-grid button{border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:12px;padding:14px 12px;font-weight:900;cursor:pointer;text-align:left;}
@@ -2820,6 +2890,23 @@
 /* UNIT_ICON_PICKER_END */
 @media(max-width:640px){#lessonUploadModal{padding:8px;}#lessonUploadModal .lu-box{padding:18px;max-height:calc(100dvh - 16px);border-radius:12px;}#lessonUploadModal .lu-grid{grid-template-columns:1fr;}#lessonUploadModal .lu-wide{grid-column:auto;}#lessonUploadModal .lu-connection{align-items:flex-start;flex-direction:column;}#lessonUploadModal .lu-review dl{grid-template-columns:85px minmax(0,1fr);}}
 </style>
+<style id="shopEditorArchiveStyles">
+/* SHOP_EDITOR_ARCHIVE_START */
+#shopEditorModal .shop-editor-status-filters{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;}
+#shopEditorModal .shop-editor-status-filters button{border:1px solid #64748b;border-radius:10px;background:#1e293b;color:#e2e8f0;padding:9px 12px;font:inherit;font-size:.85rem;font-weight:800;cursor:pointer;}
+#shopEditorModal .shop-editor-status-filters button[aria-pressed="true"]{background:#0e7490;border-color:#67e8f9;color:#fff;}
+#shopEditorModal .shop-editor-status-filters span{margin-left:4px;}
+#shopEditorModal button:focus-visible{outline:3px solid #67e8f9;outline-offset:3px;}
+#shopEditorModal button:disabled{opacity:.55;cursor:wait;}
+#shopEditorModal [hidden]{display:none!important;}
+#shopEditorSaveStatus:empty{display:none;}
+#shopEditorModal .admin-form-actions{flex-wrap:wrap;gap:8px;}
+/* SHOP_EDITOR_ARCHIVE_END */
+</style>
+    <!-- PLATFORM_SELF_SERVICE_ASSETS_START -->
+    <link rel="stylesheet" href="./platform-manage.css">
+    <link rel="stylesheet" href="./submission-management.css">
+    <!-- PLATFORM_SELF_SERVICE_ASSETS_END -->
 </head>
 <body>
     <!-- ===== 운영 서버 ENVIRONMENT MARKER ===== -->
@@ -2853,7 +2940,7 @@
                 <button id="questionAdminBtn" onclick="openAdminTeacherQuestionModal()">💬 질문 <span id="pendingQuestionBadge" class="pending-badge" style="display:none;">0</span></button>
                 <button id="pointAdminBtn" onclick="openAdminPointModal()">⭐ 포인트</button>
                 <button id="classDashboardBtn" onclick="openClassDashboardModal()">📊 현황판</button>
-                <button id="adminToolsBtn" class="admin-tool-launcher" onclick="openAdminToolsModal()">🧰 관리자 도구
+                <button id="adminToolsBtn" class="admin-tool-launcher" aria-controls="adminToolsModal" aria-expanded="false" onclick="openAdminToolsModal()">🧰 관리자 도구
                     <span id="pendingSignupBadge" class="pending-badge" style="display:none;" title="회원가입 승인 대기">0</span>
                     <span id="pendingRewardBadge" class="pending-badge" style="display:none;" title="상품·경품 처리 대기">0</span>
                 </button>
@@ -2883,6 +2970,8 @@
             </div>
         </div>
     </div>
+
+
 
     <div id="floatingSideContainer" class="floating-side-container compact-mode">
         <div id="floatingWorksheetBar" class="floating-side-card side-card-worksheet" onclick="openWorksheetHub()" title="단원별 학습지 보관함 열기">
@@ -2939,6 +3028,62 @@
             </div>
         </div>
     </header>
+
+    <!-- ADMIN_TOOLS_GROUPS_START -->
+    <!-- ADMIN_TOOLS_INLINE_START -->
+    <section id="adminToolsModal" class="admin-tools-inline" style="display:none;" role="region" aria-labelledby="adminToolsHeading">
+        <div class="admin-tools-inline-body">
+            <div class="admin-tools-inline-heading">
+                <div><span class="admin-tools-kicker">수업 운영</span><h3 id="adminToolsHeading" tabindex="-1">관리자 도구</h3>
+                <p>수업 준비와 운영에 필요한 도구를 한곳에서 관리하세요.</p></div>
+                <button id="adminToolsCloseBtn" type="button" class="admin-tools-fold" onclick="closeAdminToolsModal()">도구 접기</button>
+            </div>
+            <div class="admin-tools-categories">
+            <details id="adminToolsCourse" class="admin-tools-section" name="admin-tools-category" open aria-labelledby="adminToolsCourseHeading" hidden>
+                <summary id="adminToolsCourseHeading"><span class="admin-category-icon" aria-hidden="true">📚</span><span class="admin-category-copy"><span class="admin-category-title">수업 기능</span><span class="admin-category-desc">자료 등록 · 수업 꾸미기 · 평가와 활동</span></span></summary>
+                <div class="admin-tools-grid">
+                    <button type="button" id="toolLessonUploadBtn" class="tool-primary" style="display:none;" onclick="openLessonUploadModal()"><span class="admin-tool-icon" aria-hidden="true">📤</span><span class="admin-tool-copy"><b>수업 자료 등록</b><small>HTML·학습지 업로드 및 단원·차시 추가</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                    <button type="button" id="toolLessonArchiveBtn" class="tool-primary" style="display:none;" onclick="openLessonArchiveModal()"><span class="admin-tool-icon" aria-hidden="true">📦</span><span class="admin-tool-copy"><b>자료 보관함</b><small>자료를 목록에서 숨기거나 다시 복원</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                    <button type="button" id="toolUnitSettingsBtn" class="tool-primary" style="display:none;" onclick="openUnitSettingsModal()"><span class="admin-tool-icon" aria-hidden="true">🎨</span><span class="admin-tool-copy"><b>단원 꾸미기</b><small>기존 단원의 이름·아이콘·색상 변경</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                    <button type="button" id="toolLessonSettingsBtn" class="tool-primary" style="display:none;" onclick="PlatformManage.open('lessons')"><span class="admin-tool-icon" aria-hidden="true">✏️</span><span class="admin-tool-copy"><b>차시 정보 편집</b><small>제목·설명·순서·학습지 PDF 연결</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                    <button type="button" id="toolSubmissionManagementBtn" class="tool-primary" style="display:none;" onclick="PlatformManage.open('submissions')"><span class="admin-tool-icon" aria-hidden="true">📋</span><span class="admin-tool-copy"><b>제출 관리</b><small>반·차시별 제출 현황과 재제출 관리</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                    <button type="button" id="toolAssessmentCollectionBtn" class="tool-primary" style="display:none;" onclick="openAssessmentCollectionCenter()"><span class="admin-tool-icon" aria-hidden="true">🖨️</span><span class="admin-tool-copy"><b>평가 제출물 수합·인쇄</b><small>학생 제출자료 조회·학번순 일괄 인쇄</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                    <button type="button" id="classroomPickerToolBtn" class="tool-primary" style="display:none;" onclick="classroomLaunchTool('picker')"><span class="admin-tool-icon" aria-hidden="true">🙋</span><span class="admin-tool-copy"><b>학생 추첨</b><small>발표·활동 참여자 선택 · 다시 뽑기</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                    <button type="button" id="classroomPoolToolBtn" class="tool-primary" style="display:none;" onclick="classroomLaunchTool('pool')"><span class="admin-tool-icon" aria-hidden="true">↔</span><span class="admin-tool-copy"><b>포인트 모으기·재지급</b><small>활동 기준 차감 · 남은 포인트 보관</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                    <button type="button" id="classroomAwardsToolBtn" style="display:none;" onclick="classroomLaunchTool('awards')"><span class="admin-tool-icon" aria-hidden="true">⭐</span><span class="admin-tool-copy"><b>개별 보상 지급</b><small>별도 보상 예산 · 학생별 지급액</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                    <button id="toolSelfStudyBtn" type="button" class="tool-primary" style="display:none;" onclick="launchAdminTool('selfStudy')"><span class="admin-tool-icon" aria-hidden="true">🤫</span><span class="admin-tool-copy"><b>자습 모드</b><small>소음 측정·경보 팝업 열기</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                </div>
+            </details>
+            <details id="adminToolsProducts" class="admin-tools-section" name="admin-tools-category" aria-labelledby="adminToolsProductsHeading" hidden>
+                <summary id="adminToolsProductsHeading"><span class="admin-category-icon" aria-hidden="true">🎁</span><span class="admin-category-copy"><span class="admin-category-title">상품 관리</span><span class="admin-category-desc">상품 구성 · 신청 처리 · 보관함</span></span></summary>
+                <div class="admin-tools-grid">
+                    <button type="button" id="toolRewardBtn" onclick="launchAdminTool('reward')"><span class="admin-tool-icon" aria-hidden="true">🎁</span><span class="admin-tool-copy"><b>상품</b><small>상품 신청 처리·경품 추첨</small></span><span class="admin-tool-end"><span id="toolRewardBadge" class="pending-badge" style="display:none;" title="상품·경품 처리 대기">0</span><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                    <button type="button" id="toolShopEditorBtn" class="tool-primary" onclick="launchAdminTool('shopEditor')"><span class="admin-tool-icon" aria-hidden="true">🛒</span><span class="admin-tool-copy"><b>상품 추가·수정</b><small>가격·재고·활성화·경품 일정</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                </div>
+            </details>
+            <details id="adminToolsPlatform" class="admin-tools-section" name="admin-tools-category" aria-labelledby="adminToolsPlatformHeading" hidden>
+                <summary id="adminToolsPlatformHeading"><span class="admin-category-icon" aria-hidden="true">⚙️</span><span class="admin-category-copy"><span class="admin-category-title">플랫폼 관리</span><span class="admin-category-desc">설정 이력 · 계정과 권한 · 오류 점검</span></span></summary>
+                <div class="admin-tools-grid">
+                    <button type="button" id="toolSettingsHistoryBtn" class="tool-primary" style="display:none;" onclick="PlatformManage.open('history')"><span class="admin-tool-icon" aria-hidden="true">↩️</span><span class="admin-tool-copy"><b>변경 이력·되돌리기</b><small>단원·차시 표시 설정을 이전 상태로 복원</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                    <button type="button" id="toolDiagnosticsBtn" class="tool-primary" style="display:none;" onclick="PlatformManage.open('diagnostics')"><span class="admin-tool-icon" aria-hidden="true">🔎</span><span class="admin-tool-copy"><b>오류 점검</b><small>자료·PDF 연결·보호 정보·배포 상태 확인</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                    <button type="button" id="toolRoleBtn" onclick="launchAdminTool('roles')"><span class="admin-tool-icon" aria-hidden="true">🛡️</span><span class="admin-tool-copy"><b>중간관리자</b><small>계정 유형 및 권한 설정</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                    <button type="button" id="toolAcademicBtn" onclick="launchAdminTool('academic')"><span class="admin-tool-icon" aria-hidden="true">📅</span><span class="admin-tool-copy"><b>학년도</b><small>다음 학년도 준비·전환</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                    <button type="button" id="toolSignupBtn" onclick="launchAdminTool('signup')"><span class="admin-tool-icon" aria-hidden="true">👥</span><span class="admin-tool-copy"><b>회원가입</b><small>외부 회원가입 승인·거절</small></span><span class="admin-tool-end"><span id="toolSignupBadge" class="pending-badge" style="display:none;" title="회원가입 승인 대기">0</span><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                    <button type="button" id="toolPasswordResetBtn" class="tool-danger" onclick="launchAdminTool('passwordReset')"><span class="admin-tool-icon" aria-hidden="true">🔑</span><span class="admin-tool-copy"><b>비밀번호 초기화</b><small>학생을 최초 비밀번호 설정 상태로 전환</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                    <button type="button" id="toolStudentEditBtn" onclick="launchAdminTool('studentEdit')"><span class="admin-tool-icon" aria-hidden="true">✏️</span><span class="admin-tool-copy"><b>학생 계정 수정</b><small>학생 이름 수정·계정 정보 확인</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                    <button type="button" id="toolCreateStudentBtn" class="tool-primary" onclick="launchAdminTool('createStudent')"><span class="admin-tool-icon" aria-hidden="true">➕</span><span class="admin-tool-copy"><b>학생 계정 추가</b><small>전학생 학번·이름으로 즉시 계정 생성</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
+                </div>
+            </details>
+            </div>
+            <p id="adminToolsEmpty" class="modal-desc-sub" role="status" hidden>현재 계정에서 사용할 수 있는 관리자 도구가 없습니다.</p>
+        </div>
+    </section>
+    <!-- ADMIN_TOOLS_INLINE_END -->
+    <!-- ADMIN_TOOLS_GROUPS_END -->
+
+    <!-- PLATFORM_SELF_SERVICE_PANEL_START -->
+    <section id="platformManagePanel" hidden></section>
+    <!-- PLATFORM_SELF_SERVICE_PANEL_END -->
 
     <div id="qrModal" class="qr-modal-overlay" onclick="closeQrModal(event)">
         <div class="qr-modal-card" onclick="event.stopPropagation()">
@@ -3299,63 +3444,27 @@
 
     <!-- 관리자 포인트 지급 -->
 
-    <!-- ADMIN_TOOLS_GROUPS_START -->
-    <div id="adminToolsModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="adminToolsHeading">
-        <div class="modal-box point-modal-box" style="max-width:720px;">
-            <h3 id="adminToolsHeading">🧰 관리자 도구</h3>
-            <p class="modal-desc-sub">플랫폼 관리·수업 기능·상품 관리로 나누었습니다. 현재 계정에서 사용할 수 있는 도구만 표시됩니다.</p>
-            <section id="adminToolsPlatform" class="admin-tools-section" aria-labelledby="adminToolsPlatformHeading" hidden>
-                <h4 id="adminToolsPlatformHeading">플랫폼 관리</h4>
-                <p class="admin-tools-section-description">계정·권한·학년도 설정</p>
-                <div class="admin-tools-grid">
-                    <button type="button" id="toolRoleBtn" onclick="launchAdminTool('roles')">🛡️ <b>중간관리자</b><br><small>계정 유형 및 권한 설정</small></button>
-                    <button type="button" id="toolAcademicBtn" onclick="launchAdminTool('academic')">📅 <b>학년도</b><br><small>다음 학년도 준비·전환</small></button>
-                    <button type="button" id="toolSignupBtn" onclick="launchAdminTool('signup')"><span class="admin-tool-title-row"><span>👥 <b>회원가입</b></span><span id="toolSignupBadge" class="pending-badge" style="display:none;" title="회원가입 승인 대기">0</span></span><small>외부 회원가입 승인·거절</small></button>
-                    <button type="button" id="toolPasswordResetBtn" class="tool-danger" onclick="launchAdminTool('passwordReset')">🔑 <b>비밀번호 초기화</b><br><small>학생을 최초 비밀번호 설정 상태로 전환</small></button>
-                    <button type="button" id="toolStudentEditBtn" onclick="launchAdminTool('studentEdit')">✏️ <b>학생 계정 수정</b><br><small>학생 이름 수정·계정 정보 확인</small></button>
-                    <button type="button" id="toolCreateStudentBtn" class="tool-primary" onclick="launchAdminTool('createStudent')">➕ <b>학생 계정 추가</b><br><small>전학생 학번·이름으로 즉시 계정 생성</small></button>
-                </div>
-            </section>
-            <section id="adminToolsCourse" class="admin-tools-section" aria-labelledby="adminToolsCourseHeading" hidden>
-                <h4 id="adminToolsCourseHeading">수업 기능</h4>
-                <p class="admin-tools-section-description">수업 자료·평가·교실 활동</p>
-                <div class="admin-tools-grid">
-                    <button type="button" id="toolLessonUploadBtn" class="tool-primary" style="display:none;" onclick="openLessonUploadModal()">📤 <b>수업 자료 등록</b><br><small>HTML·학습지 업로드 및 단원·차시 추가</small></button>
-                    <button type="button" id="toolLessonArchiveBtn" class="tool-primary" style="display:none;" onclick="openLessonArchiveModal()">📦 <b>자료 보관함</b><br><small>자료를 목록에서 숨기거나 다시 복원</small></button>
-                    <button type="button" id="toolUnitSettingsBtn" class="tool-primary" style="display:none;" onclick="openUnitSettingsModal()">🎨 <b>단원 꾸미기</b><br><small>기존 단원의 이름·아이콘·색상 변경</small></button>
-                    <button type="button" id="toolAssessmentCollectionBtn" class="tool-primary" style="display:none;" onclick="openAssessmentCollectionCenter()">🖨️ <b>평가 제출물 수합·인쇄</b><br><small>학생 제출자료 조회·학번순 일괄 인쇄</small></button>
-                    <button type="button" id="classroomPickerToolBtn" class="tool-primary" style="display:none;" onclick="classroomLaunchTool('picker')">🙋 <b>학생 추첨</b><br><small>발표·활동 참여자 선택 · 다시 뽑기</small></button>
-                    <button type="button" id="classroomPoolToolBtn" class="tool-primary" style="display:none;" onclick="classroomLaunchTool('pool')">↔ <b>포인트 모으기·재지급</b><br><small>활동 기준 차감 · 남은 포인트 보관</small></button>
-                    <button type="button" id="classroomAwardsToolBtn" style="display:none;" onclick="classroomLaunchTool('awards')">⭐ <b>개별 보상 지급</b><br><small>별도 보상 예산 · 학생별 지급액</small></button>
-                    <button id="toolSelfStudyBtn" type="button" class="tool-primary" style="display:none;" onclick="launchAdminTool('selfStudy')">🤫 <b>자습 모드</b><br><small>소음 측정·경보 팝업 열기</small></button>
-                </div>
-            </section>
-            <section id="adminToolsProducts" class="admin-tools-section" aria-labelledby="adminToolsProductsHeading" hidden>
-                <h4 id="adminToolsProductsHeading">상품 관리</h4>
-                <p class="admin-tools-section-description">상품 구성·신청 처리</p>
-                <div class="admin-tools-grid">
-                    <button type="button" id="toolRewardBtn" onclick="launchAdminTool('reward')"><span class="admin-tool-title-row"><span>🎁 <b>상품</b></span><span id="toolRewardBadge" class="pending-badge" style="display:none;" title="상품·경품 처리 대기">0</span></span><small>상품 신청 처리·경품 추첨</small></button>
-                    <button type="button" id="toolShopEditorBtn" class="tool-primary" onclick="launchAdminTool('shopEditor')">🛒 <b>상품 추가·수정</b><br><small>가격·재고·활성화·경품 일정</small></button>
-                </div>
-            </section>
-            <p id="adminToolsEmpty" class="modal-desc-sub" role="status" hidden>현재 계정에서 사용할 수 있는 관리자 도구가 없습니다.</p>
-            <div class="modal-btn-group" style="margin-top:18px;">
-                <button id="adminToolsCloseBtn" type="button" class="modal-btn-cancel" onclick="closeAdminToolsModal()">닫기</button>
-            </div>
-        </div>
-    </div>
-    <!-- ADMIN_TOOLS_GROUPS_END -->
+
 
     <div id="shopEditorModal" class="modal-overlay" style="display:none;">
         <div class="modal-box point-modal-box" style="max-width:980px;">
             <h3>🛒 상품 추가·수정</h3>
-            <p class="modal-desc-sub">상품은 삭제하지 않고 <b>활성/비활성</b>으로 운영하는 것을 권장합니다. 이미 신청 기록이 있는 상품의 유형은 변경할 수 없습니다.</p>
+            <p class="modal-desc-sub">사용 중인 상품만 먼저 표시합니다. 추첨이 끝난 상품은 <b>추첨 완료</b>에서, 숨긴 상품은 <b>보관함</b>에서 확인하고 복원할 수 있습니다. 기존 신청·당첨·포인트 기록은 유지됩니다.</p>
             <div class="admin-editor-layout">
                 <div>
                     <div class="admin-search-row">
                         <input id="shopEditorSearch" type="text" placeholder="상품 ID 또는 이름 검색" oninput="renderShopEditorList()">
                         <button class="modal-btn-confirm" onclick="startNewShopItem()">＋ 새 상품</button>
                     </div>
+                    <!-- SHOP_EDITOR_ARCHIVE_START -->
+                    <div id="shopEditorStatusFilters" class="shop-editor-status-filters" role="group" aria-label="상품 목록 구분">
+                        <button id="shopEditorTabActive" type="button" aria-pressed="true" onclick="setShopEditorStatusTab('active')">사용 중 <span id="shopEditorCountActive">0</span></button>
+                        <button id="shopEditorTabCompleted" type="button" aria-pressed="false" onclick="setShopEditorStatusTab('completed')">추첨 완료 <span id="shopEditorCountCompleted">0</span></button>
+                        <button id="shopEditorTabArchived" type="button" aria-pressed="false" onclick="setShopEditorStatusTab('archived')">보관함 <span id="shopEditorCountArchived">0</span></button>
+                    </div>
+                    <p id="shopEditorStatusDescription" class="modal-desc-sub"></p>
+                    <button id="shopEditorRefreshBtn" type="button" class="modal-btn-cancel" onclick="openShopEditorModal()">목록 새로고침</button>
+                    <!-- SHOP_EDITOR_ARCHIVE_END -->
                     <div id="shopEditorList" class="admin-editor-list"><div class="point-empty">불러오는 중...</div></div>
                 </div>
                 <div class="admin-editor-form">
@@ -3366,14 +3475,15 @@
                         <div class="admin-form-field"><label>가격 / 응모 포인트</label><input id="shopEditCost" type="number" min="1" step="1"></div>
                         <div class="admin-form-field"><label>재고 (빈 값 = 제한 없음)</label><input id="shopEditStock" type="number" min="0" step="1"></div>
                         <div id="shopExchangeLimitField" class="admin-form-field"><label>1인 최대 구매 수량</label><input id="shopEditMaxPerUser" type="number" min="1" step="1"></div>
-                        <div class="admin-form-field"><label>학생에게 공개</label><select id="shopEditActive"><option value="true">활성화</option><option value="false">숨김/판매중지</option></select></div>
+                        <div class="admin-form-field"><label>상품 표시</label><select id="shopEditActive"><option value="true">사용 중 · 학생에게 공개</option><option value="false">보관함 · 학생에게 숨김</option></select></div>
                         <div id="shopDrawDeadlineField" class="admin-form-field" style="display:none;"><label>응모 마감 (한국시간)</label><input id="shopEditEntryDeadline" type="datetime-local"></div>
                         <div id="shopDrawDateField" class="admin-form-field" style="display:none;"><label>추첨 예정 (한국시간)</label><input id="shopEditDrawDate" type="datetime-local"></div>
                         <div id="shopDrawWinnerField" class="admin-form-field" style="display:none;"><label>당첨 인원</label><input id="shopEditWinnerCount" type="number" min="1" step="1" value="1"></div>
                         <div class="admin-form-field full"><label>설명</label><textarea id="shopEditDescription" maxlength="1000"></textarea></div>
                     </div>
                     <div id="shopEditorDrawnNote" class="admin-info-note"></div>
-                    <div class="admin-form-actions"><button class="modal-btn-confirm" onclick="saveShopEditorItem()">💾 저장</button></div>
+                    <div class="admin-form-actions"><button id="shopEditorSaveBtn" type="button" class="modal-btn-confirm" onclick="saveShopEditorItem()">💾 저장</button><button id="shopEditorArchiveBtn" type="button" class="modal-btn-cancel" onclick="setShopEditorArchived(true)">보관함으로 이동</button><button id="shopEditorRestoreBtn" type="button" class="modal-btn-cancel" onclick="setShopEditorArchived(false)" hidden>복원</button></div>
+                    <p id="shopEditorSaveStatus" class="admin-info-note" role="status" aria-live="polite"></p>
                 </div>
             </div>
             <div class="modal-btn-group" style="margin-top:16px;"><button type="button" class="modal-btn-cancel" onclick="closeShopEditorModal()">닫기</button></div>
@@ -5209,7 +5319,7 @@ window.addEventListener('storage',event=>{
             for (const id of adminModalIds) {
                 const modal = document.getElementById(id);
                 if (modal && getComputedStyle(modal).display !== 'none') {
-                    modal.style.display = 'none';
+                    if(id==='adminToolsModal')closeAdminToolsModal();else modal.style.display = 'none';
                     event.preventDefault();
                     return;
                 }
@@ -6465,6 +6575,7 @@ window.addEventListener('storage',event=>{
         }
 
         function closeAdminRewardModal() {
+            adminRewardLoadRevision++;
             document.getElementById('adminRewardModal').style.display = 'none';
         }
 
@@ -6493,6 +6604,10 @@ window.addEventListener('storage',event=>{
 
         let adminDrawCampaignsCache = [];
         let adminDrawStatusTab = 'ongoing';
+        let adminRewardLoadRevision = 0;
+        let pendingRewardBadgeRevision = 0;
+        function isVisibleAdminDrawCampaign(draw) { return !!draw && draw.active === true; }
+        function rewardRequestAuthKey() { const auth=getPrivilegedAuthPayload();return String(auth.adminKey||'')+'|'+String(auth.managerSessionToken||''); }
 
         function parseDrawCampaignDate(value, endOfDay = false) {
             const raw = String(value || '').trim();
@@ -6530,7 +6645,7 @@ window.addEventListener('storage',event=>{
 
         function updateAdminDrawTabCounts() {
             const counts = { ongoing: 0, upcoming: 0, completed: 0 };
-            adminDrawCampaignsCache.forEach(draw => {
+            adminDrawCampaignsCache.filter(isVisibleAdminDrawCampaign).forEach(draw => {
                 const status = getDrawCampaignStatus(draw);
                 counts[status] = (counts[status] || 0) + 1;
             });
@@ -6552,7 +6667,7 @@ window.addEventListener('storage',event=>{
             if (!drawList) return;
             updateAdminDrawTabCounts();
 
-            const filtered = adminDrawCampaignsCache.filter(draw => getDrawCampaignStatus(draw) === adminDrawStatusTab);
+            const filtered = adminDrawCampaignsCache.filter(draw => isVisibleAdminDrawCampaign(draw) && getDrawCampaignStatus(draw) === adminDrawStatusTab);
             if (filtered.length === 0) {
                 const label = adminDrawStatusTab === 'completed' ? '추첨 완료된' : (adminDrawStatusTab === 'upcoming' ? '진행 예정인' : '진행 중인');
                 drawList.innerHTML = `<div class="point-empty">현재 ${label} 경품이 없습니다.</div>`;
@@ -6592,6 +6707,8 @@ window.addEventListener('storage',event=>{
         }
 
         async function loadAdminRewardRequests() {
+            const revision=++adminRewardLoadRevision, authKey=rewardRequestAuthKey();
+            const badgeRevision=++pendingRewardBadgeRevision;
             const list = document.getElementById('adminRewardRequestList');
             const drawList = document.getElementById('adminDrawCampaignList');
             list.innerHTML = '<div class="point-empty">신청 내역을 불러오는 중...</div>';
@@ -6600,15 +6717,16 @@ window.addEventListener('storage',event=>{
 
             try {
                 const data = await callPointApi("admin_list_reward_requests");
+                if(revision!==adminRewardLoadRevision||authKey!==rewardRequestAuthKey()||!(canUseAdminFeature('rewards_manage')||canUseAdminFeature('draw_manage')))return;
                 const items = Array.isArray(data.items) ? data.items : [];
-                const draws = Array.isArray(data.draws) ? data.draws : [];
+                const draws = Array.isArray(data.draws) ? data.draws.filter(isVisibleAdminDrawCampaign) : [];
                 adminRewardRequestsCache = items;
-                const readyDrawCount = draws.filter(x => x && x.readyToDraw).length;
-                updatePendingRewardBadge(items.length + readyDrawCount);
+                const readyDrawCount = draws.filter(x => isVisibleAdminDrawCampaign(x) && x.readyToDraw===true).length;
+                if(badgeRevision===pendingRewardBadgeRevision)updatePendingRewardBadge(items.length + readyDrawCount);
 
                 adminDrawCampaignsCache = draws;
                 if (draws.length === 0) {
-                    if (drawList) drawList.innerHTML = '<div class="point-empty">등록된 경품이 없습니다.</div>';
+                    if (drawList) drawList.innerHTML = '<div class="point-empty">표시할 경품이 없습니다. 숨긴 경품은 상품 보관함에서 관리하세요.</div>';
                     updateAdminDrawTabCounts();
                 } else {
                     renderAdminDrawCampaigns();
@@ -6661,9 +6779,13 @@ window.addEventListener('storage',event=>{
 
                 updateRewardSelectedCount();
             } catch (err) {
+                if(revision!==adminRewardLoadRevision||authKey!==rewardRequestAuthKey()||!(canUseAdminFeature('rewards_manage')||canUseAdminFeature('draw_manage')))return;
                 list.innerHTML = `<div class="point-empty">⚠️ ${escapeHtml(err.message)}</div>`;
                 if (drawList) drawList.innerHTML = '<div class="point-empty">불러오지 못했습니다.</div>';
                 adminRewardRequestsCache = [];
+                adminDrawCampaignsCache = [];
+                updateAdminDrawTabCounts();
+                if(badgeRevision===pendingRewardBadgeRevision)updatePendingRewardBadge(0);
                 updateRewardSelectedCount();
             }
         }
@@ -7280,13 +7402,18 @@ window.addEventListener('storage',event=>{
             const auth = getPrivilegedAuthPayload();
             if (!auth.adminKey && !auth.managerSessionToken) return;
 
+            const revision=++pendingRewardBadgeRevision, authKey=rewardRequestAuthKey();
             callPointApi("admin_list_reward_requests")
                 .then(data => {
+                    if(revision!==pendingRewardBadgeRevision||authKey!==rewardRequestAuthKey()||!(canUseAdminFeature('rewards_manage')||canUseAdminFeature('draw_manage')))return;
                     const itemCount = Array.isArray(data.items) ? data.items.length : 0;
-                    const drawCount = Array.isArray(data.draws) ? data.draws.filter(x => x && x.readyToDraw).length : 0;
+                    const drawCount = Array.isArray(data.draws) ? data.draws.filter(x => isVisibleAdminDrawCampaign(x) && x.readyToDraw===true).length : 0;
                     updatePendingRewardBadge(itemCount + drawCount);
                 })
-                .catch(() => {});
+                .catch(() => {
+                    if(revision!==pendingRewardBadgeRevision||authKey!==rewardRequestAuthKey()||!(canUseAdminFeature('rewards_manage')||canUseAdminFeature('draw_manage')))return;
+                    updatePendingRewardBadge(0);
+                });
         }
 
 
@@ -9011,6 +9138,8 @@ window.addEventListener('storage',event=>{
             show('toolUnitSettingsBtn',!!getAdminSessionToken());
             show('toolLessonArchiveBtn',!!getAdminSessionToken());
             show('toolSelfStudyBtn',!!getAdminSessionToken());
+            ['toolLessonSettingsBtn','toolSettingsHistoryBtn','toolSubmissionManagementBtn','toolDiagnosticsBtn'].forEach(id=>show(id,!!getAdminSessionToken()));
+            window.PlatformManage?.syncAccess();
             classroomUpdateToolVisibility();
             ['toolShopEditorBtn','toolRoleBtn','toolAcademicBtn','toolPasswordResetBtn','toolStudentEditBtn','toolCreateStudentBtn'].forEach(id=>show(id,full));
             let visibleGroups=0;
@@ -9021,27 +9150,23 @@ window.addEventListener('storage',event=>{
             });
             const empty=document.getElementById('adminToolsEmpty');if(empty)empty.hidden=visibleGroups>0;
             const modal=document.getElementById('adminToolsModal');
+            if(!isAdminMode || (!full && !['signup_manage','rewards_manage','draw_manage','curriculum_control','questions_manage','announcements_manage','points_view','points_adjust'].some(permission=>canUseAdminFeature(permission))))closeAdminToolsModal();
             if(modal?.style.display==='flex' && modal.contains(document.activeElement) && !document.activeElement?.getClientRects().length)document.getElementById('adminToolsCloseBtn')?.focus();
         }
         function openAdminToolsModal(){
-            const m=document.getElementById('adminToolsModal');if(!m)return;
-            syncAdminToolsMenu();m.style.display='flex';
-            const first=Array.from(m.querySelectorAll('button')).find(button=>!button.disabled && button.getClientRects().length);
-            first?.focus();
+            const panel=document.getElementById('adminToolsModal');if(!panel)return;
+            const allowed=isAdminMode && (isFullAdminMode() || ['signup_manage','rewards_manage','draw_manage','curriculum_control','questions_manage','announcements_manage','points_view','points_adjust'].some(permission=>canUseAdminFeature(permission)));
+            if(!allowed){closeAdminToolsModal();return;}
+            syncAdminToolsMenu();panel.style.display='flex';
+            document.getElementById('adminToolsBtn')?.setAttribute('aria-expanded','true');
+            panel.scrollIntoView?.({block:'start',behavior:'smooth'});
+            document.getElementById('adminToolsHeading')?.focus({preventScroll:true});
         }
         function closeAdminToolsModal(){
-            const m=document.getElementById('adminToolsModal');const wasOpen=m?.style.display==='flex';if(m)m.style.display='none';
+            const panel=document.getElementById('adminToolsModal');const wasOpen=panel?.style.display==='flex';if(panel)panel.style.display='none';
+            document.getElementById('adminToolsBtn')?.setAttribute('aria-expanded','false');
             if(wasOpen){const launcher=document.getElementById('adminToolsBtn');if(launcher?.getClientRects().length)launcher.focus();else document.querySelector('#userAuthDisplayArea button')?.focus();}
         }
-        function adminToolsTrapFocus(event){
-            const modal=document.getElementById('adminToolsModal');if(event.key!=='Tab' || modal?.style.display!=='flex')return;
-            const buttons=Array.from(modal.querySelectorAll('button')).filter(button=>!button.disabled && button.getClientRects().length);
-            if(!buttons.length){event.preventDefault();return;}
-            const first=buttons[0],last=buttons[buttons.length-1];
-            if(event.shiftKey && (document.activeElement===first || !modal.contains(document.activeElement))){event.preventDefault();last.focus();}
-            else if(!event.shiftKey && (document.activeElement===last || !modal.contains(document.activeElement))){event.preventDefault();first.focus();}
-        }
-        document.addEventListener('keydown',adminToolsTrapFocus);
         /* ADMIN_TOOLS_GROUPS_END */
         function launchAdminTool(tool){
             closeAdminToolsModal();
@@ -9087,24 +9212,77 @@ window.addEventListener('storage',event=>{
             finally{if(btn){btn.disabled=false;btn.textContent='계정 생성';}}
         }
 
-        function closeShopEditorModal(){const m=document.getElementById('shopEditorModal');if(m)m.style.display='none';}
+        /* SHOP_EDITOR_ARCHIVE_START */
+        let shopEditorStatusTab='active';
+        let shopEditorBusy=false;
+        let shopEditorGeneration=0;
+        let shopEditorLoadedAuth='';
+        let shopEditorOriginalItem=null;
+        let shopEditorInitialForm=null;
+        let shopEditorUncertain=false;
+        const SHOP_EDITOR_FORM_FIELDS={itemId:'shopEditItemId',type:'shopEditType',itemName:'shopEditName',cost:'shopEditCost',stock:'shopEditStock',maxPerUser:'shopEditMaxPerUser',active:'shopEditActive',entryDeadline:'shopEditEntryDeadline',drawDate:'shopEditDrawDate',winnerCount:'shopEditWinnerCount',description:'shopEditDescription'};
+        function getShopEditorStatus(item){return item?.active!==true?'archived':(item?.type==='draw'&&item?.drawnAt?'completed':'active');}
+        function shopEditorContextMatches(generation,auth){
+            return generation===shopEditorGeneration&&!!auth&&auth===getAdminSessionToken()&&isFullAdminMode()&&document.getElementById('shopEditorModal')?.style.display!=='none';
+        }
+        function readShopEditorForm(){
+            const values={};Object.entries(SHOP_EDITOR_FORM_FIELDS).forEach(([key,id])=>values[key]=String(document.getElementById(id)?.value||''));return values;
+        }
+        function setShopEditorMessage(message){const el=document.getElementById('shopEditorSaveStatus');if(el)el.textContent=message||'';}
+        function syncShopEditorActions(){
+            const selected=adminShopEditorItems.find(x=>String(x.itemId)===selectedShopEditorItemId);
+            const archive=document.getElementById('shopEditorArchiveBtn'),restore=document.getElementById('shopEditorRestoreBtn');
+            if(archive)archive.hidden=!selected||selected.active!==true;
+            if(restore)restore.hidden=!selected||selected.active===true;
+            const canSave=!!shopEditorLoadedAuth&&shopEditorLoadedAuth===getAdminSessionToken()&&!shopEditorUncertain&&isFullAdminMode();
+            ['shopEditorSaveBtn','shopEditorArchiveBtn','shopEditorRestoreBtn'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=shopEditorBusy||!canSave;});
+        }
+        function setShopEditorBusy(busy){
+            shopEditorBusy=busy;
+            document.querySelectorAll('#shopEditorModal input,#shopEditorModal select,#shopEditorModal textarea,#shopEditorModal button').forEach(el=>el.disabled=busy);
+            const id=document.getElementById('shopEditItemId');if(id)id.disabled=busy||!!selectedShopEditorItemId;
+            document.getElementById('shopEditorModal')?.setAttribute('aria-busy',String(busy));
+            syncShopEditorActions();
+        }
+        function closeShopEditorModal(){
+            shopEditorGeneration++;shopEditorLoadedAuth='';
+            const m=document.getElementById('shopEditorModal');if(m)m.style.display='none';
+        }
         async function openShopEditorModal(){
-            if(!isFullAdminMode()){alert('최고관리자만 상품 자체를 추가·수정할 수 있습니다.');return;}
+            if(shopEditorBusy)return;
+            const auth=getAdminSessionToken();
+            if(!isFullAdminMode()||!auth){alert('최고관리자만 상품 자체를 추가·수정할 수 있습니다.');return;}
             const m=document.getElementById('shopEditorModal');if(!m)return;m.style.display='flex';
+            const generation=++shopEditorGeneration;
+            shopEditorStatusTab='active';shopEditorLoadedAuth='';shopEditorUncertain=false;
+            document.getElementById('shopEditorSearch').value='';
+            adminShopEditorItems=[];selectedShopEditorItemId='';shopEditorOriginalItem=null;shopEditorInitialForm=null;
+            setShopEditorMessage('');setShopEditorBusy(true);
             document.getElementById('shopEditorList').innerHTML='<div class="point-empty">상품 목록을 불러오는 중...</div>';
             try{
                 const data=await callAdminToolsApi('admin_list_shop_items');
-                adminShopEditorItems=Array.isArray(data.items)?data.items:[];
-                renderShopEditorList();
-                if(adminShopEditorItems.length)selectShopEditorItem(encodeURIComponent(adminShopEditorItems[0].itemId));
-                else startNewShopItem();
-            }catch(e){document.getElementById('shopEditorList').innerHTML=`<div class="point-empty">⚠️ ${escapeHtml(e.message)}</div>`;}
+                if(!shopEditorContextMatches(generation,auth))return;
+                if(!Array.isArray(data.items))throw new Error('상품 목록 응답을 확인하지 못했습니다.');
+                adminShopEditorItems=data.items;shopEditorLoadedAuth=auth;
+                setShopEditorBusy(false);renderShopEditorList();
+                const first=adminShopEditorItems.find(x=>getShopEditorStatus(x)==='active');
+                if(first)selectShopEditorItem(encodeURIComponent(first.itemId));else startNewShopItem();
+            }catch(e){if(shopEditorContextMatches(generation,auth)){document.getElementById('shopEditorList').innerHTML=`<div class="point-empty">⚠️ ${escapeHtml(e.message)}</div>`;setShopEditorMessage('목록을 다시 불러온 뒤 저장할 수 있습니다.');}}
+            finally{setShopEditorBusy(false);}
+        }
+        function setShopEditorStatusTab(tab){
+            if(shopEditorBusy||!['active','completed','archived'].includes(tab))return;
+            shopEditorStatusTab=tab;renderShopEditorList();
         }
         function renderShopEditorList(){
             const box=document.getElementById('shopEditorList');if(!box)return;
+            const labels={active:'사용 중인 상품과 아직 추첨하지 않은 경품입니다.',completed:'추첨이 끝난 경품입니다. 보관함으로 이동해 숨길 수 있습니다.',archived:'학생 상품 목록과 경품 추첨 목록에서 숨긴 상품입니다. 미지급 신청과 당첨 보상은 계속 처리할 수 있습니다.'};
+            const counts={active:0,completed:0,archived:0};adminShopEditorItems.forEach(x=>counts[getShopEditorStatus(x)]++);
+            Object.keys(counts).forEach(key=>{const suffix=key[0].toUpperCase()+key.slice(1),tab=document.getElementById('shopEditorTab'+suffix),count=document.getElementById('shopEditorCount'+suffix);if(tab)tab.setAttribute('aria-pressed',String(shopEditorStatusTab===key));if(count)count.textContent=String(counts[key]);});
+            const desc=document.getElementById('shopEditorStatusDescription');if(desc)desc.textContent=labels[shopEditorStatusTab];
             const q=String(document.getElementById('shopEditorSearch')?.value||'').trim().toLowerCase();
-            const items=adminShopEditorItems.filter(x=>!q||String(x.itemId||'').toLowerCase().includes(q)||String(x.itemName||'').toLowerCase().includes(q));
-            box.innerHTML=items.length?items.map(x=>`<button class="${selectedShopEditorItemId===x.itemId?'active':''}" onclick="selectShopEditorItem('${encodeURIComponent(String(x.itemId||''))}')"><b>${escapeHtml(x.itemId||'')}</b> · ${escapeHtml(x.itemName||'')}<br><small>${x.type==='draw'?'🎟 경품':'🎁 일반'} · ${Number(x.cost)||0}P · ${x.active?'공개':'숨김'}</small></button>`).join(''):'<div class="point-empty">검색 결과가 없습니다.</div>';
+            const items=adminShopEditorItems.filter(x=>getShopEditorStatus(x)===shopEditorStatusTab&&(!q||String(x.itemId||'').toLowerCase().includes(q)||String(x.itemName||'').toLowerCase().includes(q)));
+            box.innerHTML=items.length?items.map(x=>`<button type="button" ${shopEditorBusy?'disabled':''} class="${selectedShopEditorItemId===x.itemId?'active':''}" aria-pressed="${selectedShopEditorItemId===x.itemId}" onclick="selectShopEditorItem('${encodeURIComponent(String(x.itemId||''))}')"><b>${escapeHtml(x.itemId||'')}</b> · ${escapeHtml(x.itemName||'')}<br><small>${x.type==='draw'?'🎟 경품':'🎁 일반'} · ${Number(x.cost)||0}P · ${getShopEditorStatus(x)==='archived'?'보관 중':(getShopEditorStatus(x)==='completed'?'추첨 완료':'사용 중')}</small></button>`).join(''):`<div class="point-empty">${q?'현재 구분에서 검색 결과가 없습니다.':'이 구분에 표시할 상품이 없습니다.'}</div>`;
         }
         function isoToKstDatetimeLocal(value){
             if(!value)return'';const d=new Date(value);if(!Number.isFinite(d.getTime()))return'';
@@ -9114,8 +9292,10 @@ window.addEventListener('storage',event=>{
             const v=String(value||'').trim();if(!v)return'';const d=new Date(v+':00+09:00');return Number.isFinite(d.getTime())?d.toISOString():'';
         }
         function selectShopEditorItem(encodedItemId){
+            if(shopEditorBusy)return;
             const itemId=decodeURIComponent(String(encodedItemId||''));const item=adminShopEditorItems.find(x=>String(x.itemId)===itemId);if(!item)return;
             selectedShopEditorItemId=itemId;
+            shopEditorOriginalItem=JSON.parse(JSON.stringify(item));
             const id=document.getElementById('shopEditItemId');id.value=item.itemId||'';id.disabled=true;
             document.getElementById('shopEditType').value=item.type==='draw'?'draw':'exchange';
             document.getElementById('shopEditName').value=item.itemName||'';
@@ -9128,33 +9308,104 @@ window.addEventListener('storage',event=>{
             document.getElementById('shopEditWinnerCount').value=item.winnerCount==null?1:item.winnerCount;
             document.getElementById('shopEditDescription').value=item.description||'';
             document.getElementById('shopEditorDrawnNote').textContent=item.drawnAt?`⚠️ 이미 추첨된 경품입니다. 추첨 완료 시각: ${item.drawnAt}. 추첨 기록은 이 화면에서 초기화할 수 없습니다.`:'';
-            updateShopEditorTypeFields();renderShopEditorList();
+            shopEditorInitialForm=readShopEditorForm();
+            updateShopEditorTypeFields();renderShopEditorList();syncShopEditorActions();
         }
         function startNewShopItem(){
+            if(shopEditorBusy)return;
+            shopEditorOriginalItem=null;
             selectedShopEditorItemId='';const id=document.getElementById('shopEditItemId');id.disabled=false;id.value='';
             document.getElementById('shopEditType').value='exchange';document.getElementById('shopEditName').value='';document.getElementById('shopEditCost').value='';
             document.getElementById('shopEditStock').value='';document.getElementById('shopEditMaxPerUser').value='';document.getElementById('shopEditActive').value='true';
             document.getElementById('shopEditEntryDeadline').value='';document.getElementById('shopEditDrawDate').value='';document.getElementById('shopEditWinnerCount').value='1';
             document.getElementById('shopEditDescription').value='';document.getElementById('shopEditorDrawnNote').textContent='';
-            updateShopEditorTypeFields();renderShopEditorList();setTimeout(()=>id.focus(),50);
+            shopEditorInitialForm=readShopEditorForm();
+            updateShopEditorTypeFields();renderShopEditorList();syncShopEditorActions();setTimeout(()=>id.focus(),50);
         }
         function updateShopEditorTypeFields(){
             const draw=document.getElementById('shopEditType')?.value==='draw';
             ['shopDrawDeadlineField','shopDrawDateField','shopDrawWinnerField'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=draw?'':'none';});
             const ex=document.getElementById('shopExchangeLimitField');if(ex)ex.style.display=draw?'none':'';
         }
-        async function saveShopEditorItem(){
-            const itemId=String(document.getElementById('shopEditItemId')?.value||'').trim().toUpperCase();
-            const itemName=String(document.getElementById('shopEditName')?.value||'').trim();const type=document.getElementById('shopEditType')?.value||'exchange';
-            const cost=Number(document.getElementById('shopEditCost')?.value);const stockRaw=String(document.getElementById('shopEditStock')?.value||'').trim();
-            const maxRaw=String(document.getElementById('shopEditMaxPerUser')?.value||'').trim();const winnerRaw=String(document.getElementById('shopEditWinnerCount')?.value||'').trim();
-            if(!itemId||!itemName||!Number.isInteger(cost)||cost<1){alert('상품 ID, 이름, 1P 이상의 가격을 확인해 주세요.');return;}
-            if(!confirm(adminShopEditorItems.some(x=>x.itemId===itemId)?`${itemId} 상품 정보를 수정할까요?`:`${itemId} 새 상품을 추가할까요?`))return;
-            try{
-                const data=await callAdminToolsApi('admin_save_shop_item',{itemId,itemName,type,cost,stock:stockRaw===''?null:Number(stockRaw),active:document.getElementById('shopEditActive')?.value==='true',description:String(document.getElementById('shopEditDescription')?.value||'').trim(),maxPerUser:maxRaw===''?null:Number(maxRaw),entryDeadline:type==='draw'?kstDatetimeLocalToIso(document.getElementById('shopEditEntryDeadline')?.value):'',drawDate:type==='draw'?kstDatetimeLocalToIso(document.getElementById('shopEditDrawDate')?.value):'',winnerCount:type==='draw'?(winnerRaw===''?1:Number(winnerRaw)):null});
-                alert('✅ '+data.message);const refreshed=await callAdminToolsApi('admin_list_shop_items');adminShopEditorItems=Array.isArray(refreshed.items)?refreshed.items:[];selectShopEditorItem(encodeURIComponent(itemId));
-            }catch(e){alert('❌ 상품 저장 실패: '+e.message);}
+
+        function shopEditorSavedPayload(item){
+            return {itemId:String(item.itemId||''),itemName:String(item.itemName||''),type:item.type==='draw'?'draw':'exchange',cost:item.cost,stock:item.stock??null,active:item.active===true,description:String(item.description||''),maxPerUser:item.maxPerUser??null,entryDeadline:item.entryDeadline||'',drawDate:item.drawDate||'',winnerCount:item.winnerCount??null};
         }
+        function shopEditorFormPayload(form){
+            const optionalNumber=value=>String(value||'').trim()===''?null:Number(value);
+            return {itemId:form.itemId.trim().toUpperCase(),itemName:form.itemName.trim(),type:form.type,cost:Number(form.cost),stock:optionalNumber(form.stock),active:form.active==='true',description:form.description.trim(),maxPerUser:optionalNumber(form.maxPerUser),entryDeadline:kstDatetimeLocalToIso(form.entryDeadline),drawDate:kstDatetimeLocalToIso(form.drawDate),winnerCount:optionalNumber(form.winnerCount)};
+        }
+        function shopEditorValidate(payload){
+            if(!/^[A-Z0-9_-]{3,30}$/.test(payload.itemId)||!payload.itemName||!Number.isInteger(payload.cost)||payload.cost<1)throw new Error('상품 ID, 이름, 1P 이상의 가격을 확인해 주세요.');
+            for(const [key,min]of [['stock',0],['maxPerUser',1],['winnerCount',1]]){if(payload[key]!==null&&(!Number.isInteger(payload[key])||payload[key]<min))throw new Error('재고·1인 제한·당첨 인원은 허용 범위의 정수로 입력해 주세요.');}
+        }
+        async function setShopEditorArchived(archived){
+            if(shopEditorBusy||shopEditorUncertain)return;
+            const item=adminShopEditorItems.find(x=>String(x.itemId)===selectedShopEditorItemId);if(!item)return;
+            const active=document.getElementById('shopEditActive'),before=active.value;
+            active.value=archived?'false':'true';
+            const saved=await saveShopEditorItem();
+            if(saved===false&&selectedShopEditorItemId===String(item.itemId)&&!shopEditorBusy)active.value=before;
+        }
+        async function saveShopEditorItem(){
+            if(shopEditorBusy||shopEditorUncertain)return false;
+            const generation=shopEditorGeneration,auth=shopEditorLoadedAuth;
+            if(!shopEditorContextMatches(generation,auth)){setShopEditorMessage('관리자 인증을 확인한 뒤 목록을 새로고침하세요.');return false;}
+            const form=readShopEditorForm(),initial=shopEditorInitialForm,original=shopEditorOriginalItem;
+            const values=shopEditorFormPayload(form);
+            try{shopEditorValidate(values);}catch(e){alert(e.message);return false;}
+            if(original&&values.itemId!==String(original.itemId)){alert('기존 상품 ID는 변경할 수 없습니다.');return false;}
+            const changed=Object.keys(SHOP_EDITOR_FORM_FIELDS).filter(key=>!original||form[key]!==initial?.[key]);
+            if(original&&!changed.length){setShopEditorMessage('변경한 내용이 없습니다.');return false;}
+            const visibilityChanged=original&&changed.includes('active');
+            const question=visibilityChanged?(values.active?'상품을 복원할까요? 이미 완료한 추첨은 다시 열리지 않습니다.':'상품을 보관함으로 이동할까요? 학생 상품 목록과 경품 추첨 목록에서 숨깁니다. 신청·당첨 기록과 미지급 보상은 유지합니다.'):(original?'상품 정보를 수정할까요?':'새 상품을 추가할까요?');
+            const extra=visibilityChanged&&changed.some(key=>key!=='active')?'\n현재 편집한 다른 상품 정보도 함께 저장됩니다.':'';
+            if(!confirm(question+extra))return false;
+            setShopEditorBusy(true);setShopEditorMessage('저장할 최신 상품 정보를 확인하는 중입니다.');
+            let writeStarted=false,writeAcknowledged=false;
+            try{
+                const current=await callAdminToolsApi('admin_list_shop_items');
+                if(!shopEditorContextMatches(generation,auth))return false;
+                if(!Array.isArray(current.items))throw new Error('최신 상품 목록을 확인하지 못했습니다.');
+                const latest=current.items.find(x=>String(x.itemId)===values.itemId);
+                if(original&&!latest)throw new Error('이 상품을 최신 목록에서 찾지 못했습니다. 목록을 새로고침하세요.');
+                if(!original&&latest)throw new Error('같은 ID의 상품이 이미 있습니다. 해당 상품을 선택해 수정하세요.');
+                let payload=values;
+                if(original){
+                    const baseline=shopEditorSavedPayload(original);payload=shopEditorSavedPayload(latest);
+                    for(const key of changed){
+                        if(JSON.stringify(payload[key])!==JSON.stringify(baseline[key])&&JSON.stringify(payload[key])!==JSON.stringify(values[key]))throw new Error('편집 중 같은 상품 정보가 변경됐습니다. 목록을 새로고침한 뒤 다시 확인하세요.');
+                        payload[key]=values[key];
+                    }
+                }
+                shopEditorValidate(payload);
+                writeStarted=true;setShopEditorMessage('상품 정보를 저장하는 중입니다.');
+                const data=await callAdminToolsApi('admin_save_shop_item',payload);
+                if(data?.success!==true)throw new Error(data?.message||'저장 응답을 확인하지 못했습니다.');
+                writeAcknowledged=true;
+                if(!shopEditorContextMatches(generation,auth))return false;
+                const refreshed=await callAdminToolsApi('admin_list_shop_items');
+                if(!shopEditorContextMatches(generation,auth))return false;
+                if(!Array.isArray(refreshed.items))throw new Error('저장 후 상품 목록을 확인하지 못했습니다.');
+                const saved=refreshed.items.find(x=>String(x.itemId)===values.itemId);
+                if(!saved||saved.active!==payload.active)throw new Error('저장 후 표시 상태를 확인하지 못했습니다.');
+                adminShopEditorItems=refreshed.items;shopEditorStatusTab=getShopEditorStatus(saved);
+                document.getElementById('shopEditorSearch').value='';
+                setShopEditorBusy(false);selectShopEditorItem(encodeURIComponent(saved.itemId));
+                setShopEditorMessage(payload.active===false?'보관함에 저장했습니다. 미지급 신청·당첨 보상은 계속 처리할 수 있습니다.':(visibilityChanged?'복원했습니다. 추첨이 끝난 경품은 추첨 완료 목록에 표시됩니다.':'상품 정보를 저장하고 최신 목록을 확인했습니다.'));
+                refreshPendingRewardBadge();
+                if(document.getElementById('adminRewardModal')?.style.display==='flex')loadAdminRewardRequests();
+                return true;
+            }catch(e){
+                if(shopEditorContextMatches(generation,auth)){
+                    shopEditorUncertain=writeStarted;
+                    const prefix=writeAcknowledged?'저장은 접수됐지만 최신 목록 확인에 실패했습니다. ':writeStarted?'저장 결과를 확인하지 못했습니다. ':'';
+                    setShopEditorMessage(prefix+e.message+(writeStarted?' 반복 저장하지 말고 목록 새로고침으로 실제 상태를 확인하세요.':''));
+                }
+                return false;
+            }finally{setShopEditorBusy(false);}
+        }
+        /* SHOP_EDITOR_ARCHIVE_END */
 
         async function loadAdminAccounts(){const data=await callAdminToolsApi('admin_list_accounts',{schoolYear:CURRENT_SCHOOL_YEAR});adminAccountsCache=Array.isArray(data.items)?data.items:[];return adminAccountsCache;}
         function filteredAdminAccounts(id){const q=String(document.getElementById(id)?.value||'').trim().toLowerCase();return adminAccountsCache.filter(x=>!q||String(x.studentId||'').toLowerCase().includes(q)||String(x.name||'').toLowerCase().includes(q));}
@@ -9931,6 +10182,131 @@ window.addEventListener('storage',event=>{
             });
         }
 
+
+        /* WORKSHEET_PDF_ORIGINAL_HELPERS_START */
+        function getWorksheetArchiveLesson(unit, item) {
+            if (!unit || !item || item.adminOnly === true || item.category === 'eval' || unit.category === 'eval' || unit.adminOnly === true) return null;
+            const lessonUnit = defaultCurriculum[item.unitKey || 'unit' + unit.unitNum];
+            if (!lessonUnit || lessonUnit.category !== 'regular' || lessonUnit.adminOnly === true) return null;
+            const lessonId = item.lessonId || String(item.id).replace(/^ws_/, '');
+            const lesson = lessonUnit.lessons?.find(entry => entry.id === lessonId && entry.adminOnly !== true);
+            if (!lesson || (item.lessonFile && item.lessonFile !== lesson.file)) return null;
+            return lesson;
+        }
+
+        function getWorksheetOriginalPdfUrl(unit, item) {
+            if (!getWorksheetArchiveLesson(unit, item) || item.pdfAvailable === false) return '';
+            const path = item.pdf;
+            // The generated catalog keeps legacy worksheet links and separately records file availability.
+            // PDF files are public repository assets; this check controls only the archive opening flow.
+            if (typeof path !== 'string' || !path || path !== path.trim()) return '';
+            if (/[\\:?#\x00-\x1f\x7f]/.test(path) || path.startsWith('/')) return '';
+            try {
+                const parts = path.split('/').map(part => decodeURIComponent(part));
+                // Decode once so ordinary encoded Korean names/spaces work; reject hidden separators and traversal.
+                if (parts.some(part => !part || part === '.' || part === '..' || /[\\/:%?#\x00-\x1f\x7f]/.test(part))) return '';
+                if (!/\.pdf$/i.test(parts[parts.length - 1])) return '';
+                const base = new URL('.', window.location.href);
+                if (!['http:', 'https:'].includes(base.protocol)) return '';
+                const url = new URL(parts.map(part => encodeURIComponent(part)).join('/'), base);
+                if (url.origin !== base.origin || !url.pathname.startsWith(base.pathname) || url.search || url.hash) return '';
+                return url.href;
+            } catch (error) {
+                return '';
+            }
+        }
+
+        function findWorksheetArchiveItem(itemId) {
+            for (const unit of worksheetCurriculum.units) {
+                const item = unit.items?.find(entry => entry.id === itemId);
+                if (item && getWorksheetArchiveLesson(unit, item)) return { unit, item };
+            }
+            return null;
+        }
+
+        function openWorksheetOriginalPdf(itemId) {
+            const initial = findWorksheetArchiveItem(itemId);
+            if (!initial || !getWorksheetOriginalPdfUrl(initial.unit, initial.item)) {
+                alert('등록된 PDF 원본이 없습니다.');
+                return;
+            }
+            // Open synchronously in the click gesture, then navigate only after a fresh lock check.
+            let popup;
+            try { popup = window.open('about:blank', '_blank'); } catch (error) { popup = null; }
+            if (!popup) {
+                alert('PDF 원본을 열려면 브라우저의 팝업 차단을 해제한 뒤 다시 눌러 주세요.');
+                return;
+            }
+            let settled = false;
+            const deny = message => {
+                if (settled) return;
+                settled = true;
+                try { if (!popup.closed) popup.close(); } catch (error) { /* Already closed. */ }
+                alert(message);
+            };
+            try {
+                popup.opener = null;
+                popup.document.title = '학습지 공개 상태 확인 중';
+                popup.document.body.textContent = '학습지 공개 상태를 확인하고 있습니다.';
+            } catch (error) {
+                deny('PDF 창을 준비하지 못했습니다. 다시 시도해 주세요.');
+                return;
+            }
+            try {
+                const request = loadLocksFromCloud(ok => {
+                    if (settled) return;
+                    try {
+                        if (!ok || !worksheetCloudReady) {
+                            deny('학습지 공개 상태를 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.');
+                            return;
+                        }
+                        const latest = findWorksheetArchiveItem(itemId);
+                        if (!latest || (!isAdminMode && (worksheetCurriculum.isLocked || latest.unit.isLocked || latest.item.isLocked))) {
+                            renderWorksheetList();
+                            deny('🔒 아직 공개되지 않은 학습지입니다.');
+                            return;
+                        }
+                        const url = getWorksheetOriginalPdfUrl(latest.unit, latest.item);
+                        if (!url) { deny('등록된 PDF 원본이 없습니다.'); return; }
+                        if (popup.closed) { settled = true; return; }
+                        popup.location.replace(url);
+                        settled = true;
+                    } catch (error) {
+                        deny('PDF 원본을 열지 못했습니다. 다시 시도해 주세요.');
+                    }
+                });
+                if (request && typeof request.catch === 'function') {
+                    request.catch(() => deny('학습지 공개 상태를 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.'));
+                }
+            } catch (error) {
+                deny('학습지 공개 상태를 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.');
+            }
+        }
+
+        function appendWorksheetOriginalPdfActions(unitBlock, unit, items) {
+            unitBlock.querySelectorAll('.worksheet-row-card').forEach((row, index) => {
+                const item = items[index];
+                const actions = row.querySelector('.worksheet-row-actions');
+                if (!actions || !item) return;
+                if (item.pdf && item.pdfAvailable === false) {
+                    const unavailable = document.createElement('span');
+                    unavailable.className = 'ws-original-missing';
+                    unavailable.textContent = '원본 PDF 미등록';
+                    actions.appendChild(unavailable);
+                    return;
+                }
+                if (!getWorksheetOriginalPdfUrl(unit, item)) return;
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'ws-btn-original';
+                button.textContent = 'PDF 원본 열기';
+                button.disabled = !worksheetCloudReady || (!isAdminMode && (worksheetCurriculum.isLocked || unit.isLocked || item.isLocked));
+                button.addEventListener('click', () => openWorksheetOriginalPdf(item.id));
+                actions.appendChild(button);
+            });
+        }
+        /* WORKSHEET_PDF_ORIGINAL_HELPERS_END */
+
         function renderWorksheetList() {
             const container = document.getElementById('worksheetUnitListContainer');
             container.innerHTML = '';
@@ -9955,17 +10331,18 @@ window.addEventListener('storage',event=>{
                 const isUnitLocked = unit.isLocked;
                 unitBlock.className = `worksheet-unit-block ${isUnitLocked ? 'is-locked' : ''}`;
 
+                const archiveItems = (unit.items || []).filter(item => getWorksheetArchiveLesson(unit, item));
                 let itemsHtml = '';
-                if (unit.items && unit.items.length > 0) {
-                    itemsHtml = unit.items.map(item => {
+                if (archiveItems.length > 0) {
+                    itemsHtml = archiveItems.map(item => {
                         const isItemLocked = !worksheetCloudReady || isUnitLocked || item.isLocked || worksheetCurriculum.isLocked;
                         
                         let actionBtnHtml = '';
                         if (isAdminMode) {
                             actionBtnHtml = `
                                 <div class="worksheet-btn-group">
-                                    <button class="ws-btn-pdf" onclick="openWorksheetLesson('${item.id}')">${item.pdf ? '학습지 열기' : '학습지 도구'}</button>
-                                    <button class="ws-toggle-btn ${item.isLocked ? 'toggle-unlock-btn' : 'toggle-lock-btn'}" onclick="toggleWorksheetItemLock('${item.id}', event)">
+                                    <button class="ws-btn-pdf" onclick="openWorksheetLesson(${escapeHtml(JSON.stringify(item.id))})">${item.pdf ? '학습지 열기' : '학습지 도구'}</button>
+                                    <button class="ws-toggle-btn ${item.isLocked ? 'toggle-unlock-btn' : 'toggle-lock-btn'}" onclick="toggleWorksheetItemLock(${escapeHtml(JSON.stringify(item.id))}, event)">
                                         ${item.isLocked ? '🔓 해제' : '🔒 잠금'}
                                     </button>
                                 </div>
@@ -9975,7 +10352,7 @@ window.addEventListener('storage',event=>{
                                 ? `<button class="ws-btn-locked" disabled>연결된 PDF 없음</button>`
                                 : isItemLocked
                                 ? `<button class="ws-btn-locked" disabled>🔒 준비 중</button>`
-                                : `<button class="ws-btn-pdf" onclick="openWorksheetLesson('${item.id}')">📑 학습지 열기</button>`;
+                                : `<button class="ws-btn-pdf" onclick="openWorksheetLesson(${escapeHtml(JSON.stringify(item.id))})">📑 학습지 열기</button>`;
                         }
 
                         return `
@@ -9984,7 +10361,7 @@ window.addEventListener('storage',event=>{
                                     <span>${isItemLocked ? '🔒' : '📄'}</span>
                                     <span>${escapeHtml(item.name)}${!item.pdf ? '<small style="display:block;color:#94a3b8;font-weight:normal;">준비 중 · 연결된 PDF 없음</small>' : ''}</span>
                                 </div>
-                                <div>
+                                <div class="worksheet-row-actions">
                                     ${actionBtnHtml}
                                 </div>
                             </div>
@@ -10007,7 +10384,7 @@ window.addEventListener('storage',event=>{
                             <span>${escapeHtml(unit.unitTitle)}</span>
                         </div>
                         <div class="worksheet-header-right">
-                            <span class="worksheet-count-badge">${isUnitLocked ? '🔒 단원 잠김' : `${unit.items ? unit.items.length : 0}개 차시`}</span>
+                            <span class="worksheet-count-badge">${isUnitLocked ? '🔒 단원 잠김' : `${archiveItems.length}개 차시`}</span>
                             ${adminUnitToggleHtml}
                         </div>
                     </div>
@@ -10016,6 +10393,7 @@ window.addEventListener('storage',event=>{
                     </div>
                 `;
 
+                appendWorksheetOriginalPdfActions(unitBlock, unit, archiveItems);
                 container.appendChild(unitBlock);
             });
         }
@@ -11099,5 +11477,7 @@ window.addEventListener('storage',event=>{
     window.lessonUploadSyncAccess();
 })();
 </script>
+<script src="./submission-management.js"></script>
+<script src="./platform-manage.js"></script>
 </body>
 </html>

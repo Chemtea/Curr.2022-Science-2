@@ -1,0 +1,59 @@
+/* PLATFORM_SUBMISSIONS_STYLES_START */
+.platform-submissions {
+    box-sizing: border-box; width: 100%; min-width: 0; padding: 22px;
+    border: 1px solid rgba(148, 163, 184, .18); border-radius: 16px;
+    background: #151a23; color: #e2e8f0;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+    line-height: 1.6; color-scheme: dark;
+}
+.platform-manage .platform-submissions { padding: 8px 0 0; background: transparent; border: 0; border-radius: 0; }
+.platform-submissions *, .platform-submissions *::before, .platform-submissions *::after { box-sizing: border-box; }
+.platform-submissions[hidden], .platform-submissions [hidden] { display: none !important; }
+.platform-submissions h3 { margin: 0 0 8px; font-size: 1.15rem; color: #f8fafc; font-weight: 800; }
+.platform-submissions h4 { color: #f8fafc; }
+.platform-submissions p { margin: 8px 0; font-size: .88rem; color: #94a3b8; line-height: 1.65; overflow-wrap: anywhere; }
+.platform-submissions .ps-controls { display: flex; align-items: end; flex-wrap: wrap; gap: 14px; margin: 22px 0 16px; }
+.platform-submissions label { display: flex; flex-direction: column; min-width: 0; gap: 8px; font-weight: 700; font-size: .88rem; color: #cbd5e1; }
+.platform-submissions input, .platform-submissions select, .platform-submissions textarea { box-sizing: border-box; max-width: 100%; min-width: 0; min-height: 46px; font: inherit; font-size: .92rem; line-height: 1.5; color: #f8fafc; border: 1px solid rgba(148, 163, 184, .25); border-radius: 12px; padding: 11px 13px; background: #0b0e14; }
+.platform-submissions input::placeholder, .platform-submissions textarea::placeholder { color: #7c8ba1; opacity: 1; }
+.platform-submissions input:hover:not(:disabled), .platform-submissions select:hover:not(:disabled), .platform-submissions textarea:hover:not(:disabled) { border-color: rgba(148, 163, 184, .5); }
+.platform-submissions input:disabled, .platform-submissions select:disabled, .platform-submissions textarea:disabled { opacity: .6; cursor: not-allowed; }
+.platform-submissions #psYear { width: 112px; }
+.platform-submissions #psLesson { width: 100%; max-width: 360px; }
+.platform-submissions .ps-controls > label:has(#psLesson) { flex: 1 1 230px; }
+.platform-submissions button { min-height: 44px; max-width: 100%; margin: 2px 5px 2px 0; padding: 10px 16px; border: 1px solid rgba(148, 163, 184, .24); border-radius: 12px; background: rgba(15, 23, 42, .45); color: #cbd5e1; font: inherit; font-size: .88rem; line-height: 1.5; font-weight: 800; cursor: pointer; white-space: normal; overflow-wrap: anywhere; transition: border-color .18s ease, background .18s ease; }
+.platform-submissions button:hover:not(:disabled) { border-color: rgba(56, 189, 248, .65); background: rgba(56, 189, 248, .08); color: #f8fafc; }
+.platform-submissions #psLoad, .platform-submissions #psApply { color: #fff; border-color: transparent; background: linear-gradient(135deg, #0284c7, #6366f1); }
+.platform-submissions #psLoad:hover:not(:disabled), .platform-submissions #psApply:hover:not(:disabled) { background: linear-gradient(135deg, #0369a1, #4f46e5); border-color: rgba(125, 211, 252, .7); }
+.platform-submissions button.ps-secondary { background: transparent; color: #cbd5e1; border-color: rgba(148, 163, 184, .24); }
+.platform-submissions button.ps-secondary:hover:not(:disabled) { background: rgba(56, 189, 248, .08); border-color: rgba(56, 189, 248, .65); }
+.platform-submissions button:disabled { opacity: .45; cursor: not-allowed; }
+.platform-submissions :is(button, input, select, textarea):focus-visible { outline: 3px solid #7dd3fc; outline-offset: 3px; }
+.platform-submissions .ps-message { min-height: 1.5em; padding: 12px 14px; border: 1px solid rgba(148, 163, 184, .14); border-radius: 12px; background: rgba(11, 14, 20, .4); color: #aebed2; }
+.platform-submissions .ps-error { background: rgba(239, 68, 68, .06); border-color: rgba(248, 113, 113, .28); color: #fca5a5; }
+.platform-submissions .ps-counts { margin-top: 20px; font-weight: 800; color: #e2e8f0; }
+.platform-submissions .ps-table-wrap { width: 100%; overflow: auto; margin: 14px 0 20px; border: 1px solid rgba(148, 163, 184, .16); border-radius: 12px; scrollbar-color: #475569 #0b0e14; }
+.platform-submissions table { width: 100%; min-width: 570px; border-collapse: collapse; background: rgba(11, 14, 20, .28); }
+.platform-submissions th, .platform-submissions td { padding: 13px 12px; border-bottom: 1px solid rgba(148, 163, 184, .14); text-align: left; vertical-align: top; font-size: .88rem; color: #e2e8f0; }
+.platform-submissions th { background: rgba(148, 163, 184, .06); color: #aebed2; font-weight: 700; white-space: nowrap; }
+.platform-submissions tbody tr:last-child td { border-bottom: 0; }
+.platform-submissions tbody tr:hover { background: rgba(56, 189, 248, .035); }
+.platform-submissions td button { min-height: 36px; padding: 6px 10px; font-size: .8rem; margin: 0; }
+.platform-submissions .ps-confirm:not(:empty) { margin: 22px 0; padding: 22px; border: 1px solid rgba(148, 163, 184, .18); border-top: 3px solid rgba(56, 189, 248, .65); border-radius: 16px; background: rgba(11, 14, 20, .42); }
+.platform-submissions .ps-confirm h4 { margin: 0 0 8px; }
+.platform-submissions .ps-confirm textarea { width: 100%; margin: 8px 0 10px; resize: vertical; }
+.platform-submissions .ps-check { flex-direction: row; align-items: flex-start; margin: 12px 0 16px; font-weight: 500; }
+.platform-submissions .ps-check input { width: 20px; height: 20px; min-height: 20px; flex: none; margin-top: 3px; padding: 0; border-radius: 5px; accent-color: #38bdf8; }
+@media (max-width: 620px) {
+    .platform-submissions { padding: 18px 14px; }
+    .platform-submissions .ps-controls { gap: 12px; }
+    .platform-submissions .ps-controls > label { width: 100%; flex: 1 1 100%; }
+    .platform-submissions .ps-controls > label:has(#psLesson) { flex: 1 1 100%; }
+    .platform-submissions .ps-controls select, .platform-submissions #psLesson, .platform-submissions #psYear { width: 100%; max-width: 100%; }
+    .platform-submissions .ps-controls > button { flex: 1 1 140px; margin-right: 0; }
+    .platform-submissions .ps-confirm:not(:empty) { padding: 16px 12px; }
+    .platform-submissions .ps-confirm > button { width: 100%; margin: 5px 0 0; }
+    .platform-submissions .ps-table-wrap { margin-top: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .platform-submissions button { transition: none; } }
+/* PLATFORM_SUBMISSIONS_STYLES_END */

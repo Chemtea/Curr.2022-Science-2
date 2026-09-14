@@ -85,6 +85,8 @@ def marker_pattern(label: str):
 
 
 def marker_content(source: str, label: str) -> str:
+    if any(source.count(f"/* AUTO_CATALOG_{label}_{edge} */") != 1 for edge in ("START", "END")):
+        raise CatalogError(f"index.html: exactly one AUTO_CATALOG_{label} start and end marker is required")
     matches = list(marker_pattern(label).finditer(source))
     if len(matches) != 1:
         raise CatalogError(f"index.html: exactly one AUTO_CATALOG_{label} marker pair is required")
@@ -354,8 +356,8 @@ def read_settings_document(root: Path):
     if path.is_symlink():
         raise CatalogError("curriculum-settings.json: symlinks are not permitted")
     settings = strict_json(path.read_text(encoding="utf-8-sig"), path.name)
-    if not isinstance(settings, dict) or set(settings) - {"units", "archivedLessons"} or not isinstance(settings.get("units", {}), dict):
-        raise CatalogError("curriculum-settings.json: expected units and optional archivedLessons objects")
+    if not isinstance(settings, dict) or set(settings) - {"units", "archivedLessons", "lessons"} or not isinstance(settings.get("units", {}), dict):
+        raise CatalogError("curriculum-settings.json: expected units and optional archivedLessons/lessons objects")
     units = settings.get("units", {})
     for key, values in units.items():
         unit_info(key, f"curriculum-settings.json/{key}")
@@ -366,6 +368,7 @@ def read_settings_document(root: Path):
             if field in {"color", "accentColor"} and not COLOR_RE.fullmatch(value):
                 raise CatalogError(f"curriculum-settings.json/{key}/{field}: use #RRGGBB")
     validate_archive_settings(settings.get("archivedLessons", {}))
+    validate_lesson_settings(settings.get("lessons", {}))
     return settings
 
 
@@ -376,6 +379,125 @@ def read_settings(root: Path):
 
 def read_archive_settings(root: Path):
     return read_settings_document(root).get("archivedLessons", {})
+
+
+def lesson_setting_text(value, location: str, limit: int, allow_empty: bool = False):
+    require_string(value, location, allow_empty)
+    if any(ord(char) == 127 or 0xD800 <= ord(char) <= 0xDFFF for char in value):
+        raise CatalogError(f"{location}: control characters and lone surrogates are not permitted")
+    # Match the upload server's JavaScript String.length bound for emoji strings.
+    if len(value.encode("utf-16-le")) // 2 > limit:
+        raise CatalogError(f"{location}: text is longer than {limit} UTF-16 units")
+
+
+def validate_lesson_settings(overrides: dict):
+    if not isinstance(overrides, dict):
+        raise CatalogError("curriculum-settings.json/lessons: expected an object")
+    allowed = {"unitKey", "lessonId", "title", "description", "lessonOrder", "tags", "worksheetPdf"}
+    for relative, values in overrides.items():
+        location = f"curriculum-settings.json/lessons/{relative}"
+        safe_relative(relative, location)
+        if (relative != relative.strip() or "%" in relative or relative == "index.html"
+                or Path(relative).suffix.lower() not in {".html", ".htm"}
+                or any(part.startswith(".") or part.lower() in EXCLUDED_DIRS | {"server"} for part in relative.split("/"))):
+            raise CatalogError(f"{location}: expected an exact registered lesson HTML path")
+        if not isinstance(values, dict) or set(values) - allowed or not {"unitKey", "lessonId"} <= set(values):
+            raise CatalogError(f"{location}: only identity, title, description, lessonOrder, tags and worksheetPdf are permitted")
+        unit_info(values["unitKey"], location)
+        if not isinstance(values["lessonId"], str) or len(values["lessonId"]) > 100 or not ID_RE.fullmatch(values["lessonId"]):
+            raise CatalogError(f"{location}: invalid lessonId")
+        for field, limit in (("title", 200), ("description", 3000)):
+            if field in values:
+                lesson_setting_text(values[field], f"{location}/{field}", limit, field == "description")
+        if "lessonOrder" in values:
+            order = values["lessonOrder"]
+            if isinstance(order, bool) or not isinstance(order, (int, float)) or not math.isfinite(order) or not 0 < order <= 10000:
+                raise CatalogError(f"{location}/lessonOrder: expected a finite number greater than 0 and at most 10000")
+        if "tags" in values:
+            tags = values["tags"]
+            if not isinstance(tags, list) or len(tags) > 30:
+                raise CatalogError(f"{location}/tags: expected at most 30 strings")
+            for tag in tags:
+                lesson_setting_text(tag, f"{location}/tags", 100)
+        if "worksheetPdf" in values and values["worksheetPdf"] is not None:
+            pdf = safe_relative(values["worksheetPdf"], f"{location}/worksheetPdf")
+            if ("%" in pdf or not pdf.startswith("worksheets/") or Path(pdf).suffix.lower() != ".pdf"
+                    or any(part.startswith(".") for part in pdf.split("/"))):
+                raise CatalogError(f"{location}/worksheetPdf: expected a literal PDF path under worksheets/")
+
+
+def apply_lesson_settings(curriculum: dict, worksheets: dict, overrides: dict, root: Path | None = None):
+    """Apply presentation overrides after HTML validation, never change identity or access.
+
+    A null worksheetPdf removes only the PDF link. A legacy worksheet panel and its
+    ws_ identifier/lock remain present. Public lesson originals are never rewritten.
+    """
+    validate_lesson_settings(overrides)
+    by_file = {
+        baseline_path(lesson["file"], f"{key}/{lesson['id']}"): (key, lesson)
+        for key, unit in curriculum.items() for lesson in unit["lessons"]
+    }
+    for relative, values in overrides.items():
+        location = f"curriculum-settings.json/lessons/{relative}"
+        target = by_file.get(relative)
+        if target is None:
+            raise CatalogError(f"{location}: target is no longer in the catalog")
+        key, lesson = target
+        if key != values["unitKey"] or lesson["id"] != values["lessonId"]:
+            raise CatalogError(f"{location}: unitKey/lessonId does not match the catalog")
+        if root is not None and not reject_symlink_path(root, relative, location).is_file():
+            raise CatalogError(f"{location}: lesson file is missing")
+        number, category = unit_info(key, location)
+        if values.get("worksheetPdf") is not None:
+            if category == "eval" or lesson.get("adminOnly", False):
+                raise CatalogError(f"{location}: worksheets cannot expose evaluation/adminOnly lessons")
+            if root is not None and not reject_symlink_path(root, values["worksheetPdf"], location).is_file():
+                raise CatalogError(f"{location}: worksheetPdf must reference an existing PDF")
+        for field, destination in (("title", "title"), ("description", "desc"), ("lessonOrder", "lessonOrder"), ("tags", "tags")):
+            if field in values:
+                lesson[destination] = copy.deepcopy(values[field])
+        if "lessonOrder" in values and ("chasi" not in lesson or re.fullmatch(r"\s*[0-9]+(?:\.[0-9]+)?\s*차시\s*", str(lesson["chasi"]))):
+            order = values["lessonOrder"]
+            label = str(int(order)) if float(order).is_integer() else str(order)
+            lesson["chasi"] = f"{label}차시"
+
+        candidates = []
+        for group in worksheets["units"]:
+            for item in group["items"]:
+                item_key = item.get("unitKey") or f"unit{group.get('unitNum')}"
+                item_id = item.get("lessonId") or (item.get("id", "")[3:] if isinstance(item.get("id"), str) and item["id"].startswith("ws_") else None)
+                item_file = baseline_path(item["lessonFile"], location) if item.get("lessonFile") else None
+                if item_file == relative or item_id == lesson["id"] or item.get("id") == f"ws_{lesson['id']}":
+                    if (item_key != key or group.get("unitNum") != number or (item_id and item_id != lesson["id"])
+                            or (item_file and item_file != relative)):
+                        raise CatalogError(f"{location}: conflicting worksheet references")
+                    candidates.append(item)
+        if len(candidates) > 1:
+            raise CatalogError(f"{location}: more than one worksheet matches this lesson")
+        if candidates and (category == "eval" or lesson.get("adminOnly", False)):
+            raise CatalogError(f"{location}: worksheet references evaluation/adminOnly lesson")
+        if not candidates and values.get("worksheetPdf") is not None:
+            groups = [group for group in worksheets["units"] if group.get("unitNum") == number]
+            if len(groups) > 1:
+                raise CatalogError(f"worksheetCurriculum: duplicate unitNum {number}")
+            if groups:
+                group = groups[0]
+            else:
+                unit = curriculum[key]
+                group = {"unitNum": number, "unitTitle": unit["title"], "icon": unit["icon"], "isLocked": True, "items": []}
+                worksheets["units"].append(group)
+            item = {"id": f"ws_{lesson['id']}", "isLocked": True}
+            group["items"].append(item)
+            candidates.append(item)
+        for item in candidates:
+            item.update({"unitKey": key, "lessonId": lesson["id"], "lessonFile": url_for(relative)})
+            if "title" in values or "name" not in item:
+                item["name"] = lesson["title"]
+            if "lessonOrder" in values:
+                item["lessonOrder"] = values["lessonOrder"]
+            if "worksheetPdf" in values:
+                item["pdf"] = url_for(values["worksheetPdf"]) if values["worksheetPdf"] is not None else ""
+    return curriculum, worksheets
 
 
 def validate_archive_settings(archives: dict):
@@ -454,7 +576,7 @@ def lesson_order(lesson, fallback: int):
     return float(match.group(1)) if match else float(fallback + 1)
 
 
-def build_catalog(curriculum: dict, worksheets: dict, records, settings: dict, warnings: list[str]):
+def build_catalog(curriculum: dict, worksheets: dict, records, settings: dict, warnings: list[str], lesson_settings: dict | None = None, root: Path | None = None):
     curriculum = copy.deepcopy(curriculum)
     worksheets = copy.deepcopy(worksheets)
     if not isinstance(worksheets.get("units"), list):
@@ -590,6 +712,7 @@ def build_catalog(curriculum: dict, worksheets: dict, records, settings: dict, w
             })
             worksheet_count += 1
 
+    curriculum, worksheets = apply_lesson_settings(curriculum, worksheets, lesson_settings or {}, root)
     for key, unit in curriculum.items():
         indexed = list(enumerate(unit["lessons"]))
         unit["lessons"] = [lesson for _, lesson in sorted(indexed, key=lambda pair: (lesson_order(pair[1], pair[0]), pair[0]))]
@@ -639,6 +762,19 @@ def make_styles(styles: dict) -> str:
     return "\n\n".join(blocks)
 
 
+def mark_worksheet_pdf_availability(worksheets: dict, root: Path):
+    """Annotate generated links; preserve the editable source and future uploads."""
+    for group in worksheets["units"]:
+        for item in group["items"]:
+            item["pdfAvailable"] = False
+            if not item.get("pdf"):
+                continue
+            relative = baseline_path(item["pdf"], f"worksheet/{item.get('id')}/pdf")
+            target = reject_symlink_path(root, relative, f"worksheet/{item.get('id')}/pdf")
+            item["pdfAvailable"] = target.suffix.lower() == ".pdf" and target.is_file()
+    return worksheets
+
+
 def generate(root: Path, output: Path):
     root = root.resolve()
     if not root.is_dir():
@@ -664,8 +800,9 @@ def generate(root: Path, output: Path):
     records, scanned = scan_lessons(root, output, warnings)
     settings_document = read_settings_document(root)
     settings = settings_document.get("units", {})
-    curriculum, worksheets, styles, counts = build_catalog(curriculum, worksheets, records, settings, warnings)
+    curriculum, worksheets, styles, counts = build_catalog(curriculum, worksheets, records, settings, warnings, settings_document.get("lessons", {}), root)
     curriculum, worksheets, styles = apply_archives(curriculum, worksheets, styles, settings_document.get("archivedLessons", {}), root)
+    worksheets = mark_worksheet_pdf_availability(worksheets, root)
     generated = replace_marker(source, "CURRICULUM", "const defaultCurriculum = " + safe_json(curriculum) + ";")
     generated = replace_marker(generated, "WORKSHEETS", "const worksheetCurriculum = " + safe_json(worksheets) + ";")
     generated = replace_marker(generated, "STYLES", make_styles(styles))
