@@ -4136,7 +4136,7 @@ function classroomUpdateToolVisibility() {
     const show = classroomShowTeacherTools();
     ['classroomPickerToolBtn','classroomPoolToolBtn','classroomAwardsToolBtn'].forEach(id => {
         const button = document.getElementById(id);
-        if (button) { button.hidden = !show; button.style.display = show ? 'block' : 'none'; }
+        if (button) { button.hidden = !show; button.style.display = show ? '' : 'none'; }
     });
 }
 function classroomLaunchTool(tool) {
