@@ -1,0 +1,1874 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔊 교실 실시간 소음 측정기 & 3초 데시벨 경보기</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+            background-color: #0b0f19;
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            overflow-x: hidden;
+            transition: background-color 0.25s ease;
+        }
+
+        /* 3초 경고 발령 시 화면 전체 강력 플래시 */
+        body.alarm-active {
+            background-color: #450a0a !important;
+            animation: pulseAlert 0.35s infinite alternate ease-in-out;
+        }
+        @keyframes pulseAlert {
+            from { background-color: #5c0808; }
+            to { background-color: #1c0303; }
+        }
+
+        /* 자동 PiP 원클릭 스타트 오버레이 */
+        .auto-pip-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(11, 15, 25, 0.95);
+            backdrop-filter: blur(8px);
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-align: center;
+            padding: 20px;
+        }
+        .auto-pip-box {
+            background: linear-gradient(145deg, rgba(30, 58, 138, 0.9), rgba(15, 23, 42, 0.95));
+            border: 2.5px solid #38bdf8;
+            box-shadow: 0 15px 40px rgba(56, 189, 248, 0.4);
+            border-radius: 28px;
+            padding: 35px 30px;
+            max-width: 440px;
+            width: 100%;
+            animation: pulseCard 2s infinite ease-in-out;
+        }
+        @keyframes pulseCard {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+        .auto-pip-icon {
+            font-size: 3.5rem;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 4px 10px rgba(56, 189, 248, 0.5));
+        }
+        .auto-pip-btn {
+            background: linear-gradient(135deg, #0284c7, #6366f1);
+            color: #ffffff;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 14px;
+            font-size: 1.15rem;
+            font-weight: 800;
+            margin-top: 18px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4);
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-top: 5px;
+            margin-bottom: 16px;
+            width: 100%;
+            max-width: 960px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header-title-box {
+            text-align: left;
+        }
+        .header-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981, #06b6d4);
+            color: #0f172a;
+            font-size: 0.8rem;
+            font-weight: 800;
+            padding: 3px 12px;
+            border-radius: 20px;
+            margin-bottom: 6px;
+        }
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #f8fafc;
+        }
+        .top-btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .top-nav-btn {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid #334155;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .top-nav-btn:hover {
+            background: #334155;
+            color: #fff;
+        }
+        .btn-pip {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(124, 58, 237, 0.25));
+            border-color: #3b82f6;
+            color: #93c5fd;
+        }
+        .btn-pip:hover {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+        .btn-pip-active {
+            background: #2563eb !important;
+            color: #ffffff !important;
+            border-color: #60a5fa !important;
+        }
+        .btn-info-guide {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.4);
+            color: #34d399;
+        }
+        .btn-info-guide:hover {
+            background: #059669;
+            color: #fff;
+        }
+        .btn-test-sound {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: rgba(56, 189, 248, 0.4);
+            color: #38bdf8;
+        }
+        .btn-test-sound:hover {
+            background: #0284c7;
+            color: #fff;
+        }
+        .btn-stop-alarm-top {
+            background: rgba(239, 68, 68, 0.25);
+            border-color: #ef4444;
+            color: #fca5a5;
+            display: none;
+            animation: pulseStopBtn 0.8s infinite alternate;
+        }
+        @keyframes pulseStopBtn {
+            from { transform: scale(1); }
+            to { transform: scale(1.05); }
+        }
+        .btn-stop-alarm-top:hover {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        /* 메인 계측기 카드 */
+        .main-container {
+            width: 100%;
+            max-width: 960px;
+            background: rgba(22, 27, 38, 0.95);
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 28px 28px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        /* 데시벨 수치 표시부 */
+        .db-display-wrap {
+            text-align: center;
+            margin-bottom: 12px;
+            width: 100%;
+        }
+        .db-number {
+            font-size: 6rem;
+            font-weight: 900;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+            letter-spacing: -2px;
+            transition: color 0.15s ease, transform 0.1s ease;
+        }
+        .db-unit {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #94a3b8;
+            margin-left: 6px;
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+            padding: 8px 24px;
+            border-radius: 30px;
+            font-size: 1.15rem;
+            font-weight: 800;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1.5px solid rgba(52, 211, 153, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        /* 실시간 소음 비유 & 청각 영향 브리핑 바 */
+        .live-impact-box {
+            width: 100%;
+            margin-top: 14px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 14px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            gap: 12px;
+            flex-wrap: wrap;
+            transition: all 0.2s ease;
+        }
+        .live-impact-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.88rem;
+        }
+        .live-impact-label {
+            color: #94a3b8;
+            font-size: 0.78rem;
+            font-weight: 700;
+            background: #1e293b;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+        .live-impact-val {
+            font-weight: 800;
+            color: #f1f5f9;
+        }
+
+        /* 경고 발생 시 즉시 중지 컨트롤 바 */
+        .emergency-stop-box {
+            display: none;
+            margin-top: 12px;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-emergency-stop {
+            background: #ef4444;
+            color: #ffffff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 900;
+            font-size: 0.95rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.5);
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-emergency-stop:hover {
+            background: #dc2626;
+            transform: scale(1.04);
+        }
+        .shortcut-hint {
+            font-size: 0.78rem;
+            color: #fca5a5;
+        }
+
+        /* 3초 카운트다운 프로그레스 바 */
+        .alarm-timer-bar-wrap {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin-top: 12px;
+            overflow: hidden;
+            display: none;
+        }
+        .alarm-timer-bar-fill {
+            height: 100%;
+            width: 100%;
+            background: #ef4444;
+            transition: width 0.05s linear;
+        }
+
+        /* 색상 상태 클래스 */
+        .color-green { color: #34d399 !important; text-shadow: 0 0 30px rgba(52, 211, 153, 0.4) !important; }
+        .color-yellow { color: #facc15 !important; text-shadow: 0 0 30px rgba(250, 204, 21, 0.4) !important; }
+        .color-orange { color: #fb923c !important; text-shadow: 0 0 30px rgba(251, 146, 60, 0.4) !important; }
+        .color-red { color: #f87171 !important; text-shadow: 0 0 45px rgba(248, 113, 113, 0.9) !important; animation: shake 0.15s infinite; }
+
+        @keyframes shake {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(-3px, 2px); }
+            50% { transform: translate(3px, -2px); }
+            75% { transform: translate(-2px, -2px); }
+            100% { transform: translate(2px, 2px); }
+        }
+
+        /* 데시벨 게이지 바 */
+        .gauge-bar-wrapper {
+            width: 100%;
+            height: 26px;
+            background: #0f172a;
+            border-radius: 14px;
+            border: 1px solid #334155;
+            position: relative;
+            overflow: hidden;
+            margin: 16px 0 18px;
+        }
+        .gauge-bar-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 14px;
+            background: linear-gradient(90deg, #10b981 0%, #facc15 65%, #f97316 80%, #ef4444 100%);
+            transition: width 0.08s ease-out;
+        }
+        .threshold-marker {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #ffffff;
+            box-shadow: 0 0 10px #ffffff;
+            z-index: 10;
+            transform: translateX(-50%);
+        }
+        .threshold-label {
+            position: absolute;
+            top: -24px;
+            transform: translateX(-50%);
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            padding: 1px 6px;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+
+        /* 파형 캔버스 */
+        canvas#waveCanvas {
+            width: 100%;
+            height: 60px;
+            background: #0f172a;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 18px;
+        }
+
+        /* 하단 제어판 영역 */
+        .control-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 768px) {
+            .control-grid { grid-template-columns: 1fr; }
+            .db-number { font-size: 4.5rem; }
+        }
+
+        .control-card {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .control-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .control-title {
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .slider-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        input[type=range] {
+            flex: 1;
+            accent-color: #10b981;
+            cursor: pointer;
+            height: 6px;
+        }
+        .slider-val {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #38bdf8;
+            min-width: 55px;
+            text-align: right;
+        }
+
+        /* 벌칙 카운터 박스 */
+        .penalty-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1.5px dashed rgba(239, 68, 68, 0.4);
+            border-radius: 12px;
+            padding: 8px 14px;
+        }
+        .penalty-count-text {
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: #f87171;
+        }
+        .btn-reset {
+            background: #334155;
+            color: #cbd5e1;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-reset:hover {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        /* 메인 시작 / 정지 버튼 */
+        .main-start-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            font-size: 1.25rem;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: #ffffff;
+        }
+        .main-start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(16, 185, 129, 0.45);
+        }
+        .main-start-btn.is-running {
+            background: linear-gradient(135deg, #dc2626, #ea580c);
+            box-shadow: 0 4px 20px rgba(220, 38, 38, 0.3);
+        }
+
+        /* 소음 수준 & 청각 건강 정보 모달창 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.82);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-card-guide {
+            background: #182238;
+            border: 2px solid #38bdf8;
+            border-radius: 24px;
+            padding: 28px;
+            max-width: 820px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(56, 189, 248, 0.25);
+            animation: zoomIn 0.25s ease;
+        }
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .guide-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 18px 0;
+            font-size: 0.88rem;
+        }
+        .guide-table th, .guide-table td {
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
+        }
+        .guide-table th {
+            background: rgba(15, 23, 42, 0.95);
+            color: #38bdf8;
+            font-weight: 800;
+        }
+        .guide-table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .tag-safe { background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+        .tag-warn { background: rgba(234, 179, 8, 0.2); color: #facc15; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+        .tag-danger { background: rgba(249, 115, 22, 0.2); color: #fb923c; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+        .tag-hazard { background: rgba(239, 68, 68, 0.25); color: #f87171; font-weight: 800; padding: 2px 8px; border-radius: 6px; }
+
+        .modal-close-btn {
+            background: #334155;
+            color: #ffffff;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: block;
+            margin: 15px auto 0;
+            transition: all 0.2s;
+        }
+        .modal-close-btn:hover {
+            background: #475569;
+        }
+
+        footer {
+            margin-top: 25px;
+            color: #64748b;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="autoPipOverlay" class="auto-pip-overlay" onclick="handleAutoPipStart()">
+        <div class="auto-pip-box" onclick="event.stopPropagation(); handleAutoPipStart();">
+            <div class="auto-pip-icon">🤫</div>
+            <h2 style="font-size: 1.45rem; color:#f8fafc; margin-bottom: 6px;">자습 모드 (항상 위 PiP)</h2>
+            <p style="font-size: 0.9rem; color:#94a3b8; line-height: 1.5;">화면을 클릭하면 마이크 측정과 함께<br><b>작은 항상 위 미니창(PiP)이 바로 실행</b>됩니다.</p>
+            <button class="auto-pip-btn">🚀 [클릭] 실시간 PiP 미니창 켜기</button>
+        </div>
+    </div>
+
+    <header>
+        <div class="header-title-box">
+            <span class="header-tag">수업 집중 & 조별 활동 관리 도구</span>
+            <h1>🔊 교실 실시간 소음 측정 & 3초 경보 시스템</h1>
+        </div>
+        <div class="top-btn-group">
+            <button id="pipBtn" class="top-nav-btn btn-pip" onclick="togglePiPMode()" title="다른 창/PPT 위에도 항상 떠 있는 미니창">📌 항상 위 미니창 (PiP)</button>
+            <button class="top-nav-btn btn-info-guide" onclick="openGuideModal()">ℹ️ 소음 기준표</button>
+            <button id="topStopBtn" class="top-nav-btn btn-stop-alarm-top" onclick="stopAlarmImmediately()" title="스페이스바/ESC 키로도 중지 가능">⏹️ 경고음 즉시 중지 (Space)</button>
+            <button class="top-nav-btn btn-test-sound" onclick="testAlarmSound()">🔊 경고음 3초 테스트</button>
+            <button class="top-nav-btn" onclick="toggleFullScreen()">🖥️ 전체화면</button>
+            <button class="top-nav-btn" onclick="history.back()">⬅️ 메인으로</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="db-display-wrap">
+            <div>
+                <span class="db-number color-green" id="dbDisplay">--</span>
+                <span class="db-unit">dB</span>
+            </div>
+            <div class="status-badge" id="statusBadge">🎙️ [마이크 시작] 버튼을 눌러주세요</div>
+            
+            <div class="live-impact-box" id="liveImpactBox">
+                <div class="live-impact-item">
+                    <span class="live-impact-label">🏢 일상 환경 비유</span>
+                    <span class="live-impact-val" id="liveContextText">측정 대기 중</span>
+                </div>
+                <div class="live-impact-item">
+                    <span class="live-impact-label">👂 청각 건강 영향</span>
+                    <span class="live-impact-val" id="liveHearingText">마이크를 켜주세요</span>
+                </div>
+            </div>
+
+            <div class="emergency-stop-box" id="emergencyStopBox">
+                <button class="btn-emergency-stop" onclick="stopAlarmImmediately()">
+                    <span>⏹️ 경고음 즉시 중지</span>
+                </button>
+                <span class="shortcut-hint">[단축키: 스페이스바 또는 ESC]</span>
+            </div>
+
+            <div class="alarm-timer-bar-wrap" id="alarmBarWrap">
+                <div class="alarm-timer-bar-fill" id="alarmBarFill"></div>
+            </div>
+        </div>
+
+        <div class="gauge-bar-wrapper">
+            <div class="threshold-marker" id="thresholdMarker" style="left: 57.1%;">
+                <span class="threshold-label" id="thresholdMarkerLabel">한도 70dB</span>
+            </div>
+            <div class="gauge-bar-fill" id="gaugeFill"></div>
+        </div>
+
+        <canvas id="waveCanvas"></canvas>
+
+        <div class="control-grid">
+            <div class="control-card">
+                <div class="control-header">
+                    <span class="control-title">🎯 경고 기준 데시벨 설정</span>
+                    <label style="font-size:0.82rem; color:#94a3b8; display:flex; align-items:center; gap:5px; cursor:pointer;">
+                        <input type="checkbox" id="alarmSoundToggle" checked> 🔔 경고음 사용
+                    </label>
+                </div>
+                <div class="slider-wrap">
+                    <input type="range" id="thresholdSlider" min="40" max="100" value="70" step="1">
+                    <span class="slider-val" id="thresholdValText">70 dB</span>
+                </div>
+                <div class="slider-wrap" style="margin-top:2px;">
+                    <span style="font-size:0.78rem; color:#94a3b8;">🔊 경고음 볼륨:</span>
+                    <input type="range" id="alarmVolumeSlider" min="10" max="100" value="90" step="5" style="accent-color:#ef4444;">
+                    <span class="slider-val" id="alarmVolText" style="font-size:0.88rem; color:#f87171;">90%</span>
+                </div>
+            </div>
+
+            <div class="control-card">
+                <div class="control-header">
+                    <span class="control-title">🚨 소음 초과 벌칙 카운터</span>
+                    <button class="btn-reset" onclick="resetPenaltyCount()">초기화</button>
+                </div>
+                <div class="penalty-box">
+                    <span style="font-size:0.88rem; font-weight:700; color:#cbd5e1;">기준 초과 횟수:</span>
+                    <span class="penalty-count-text" id="penaltyCountText">0회</span>
+                </div>
+                <div class="slider-wrap" style="margin-top:2px;">
+                    <span style="font-size:0.78rem; color:#94a3b8;">마이크 감도 보정:</span>
+                    <input type="range" id="sensitivitySlider" min="-20" max="20" value="0" step="1">
+                    <span class="slider-val" id="sensitivityValText" style="font-size:0.88rem;">0 dB</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="main-start-btn" id="startBtn" onclick="toggleNoiseMeter()">
+            <span>🎙️</span>
+            <span id="startBtnText">마이크 소음 감지 시작하기</span>
+        </button>
+    </div>
+
+    <canvas id="pipCanvas" width="480" height="280" style="display:none;"></canvas>
+    <video id="pipVideo" muted autoplay playsinline style="position:fixed; top:-9999px; left:-9999px; width:1px; height:1px; opacity:0; pointer-events:none;"></video>
+
+    <div id="guideModal" class="modal-overlay" onclick="closeGuideModal(event)">
+        <div class="modal-card-guide" onclick="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
+                <h3 style="color:#f8fafc; font-size:1.3rem;">📊 소음 수준별 일상 예시 및 청각 건강 가이드</h3>
+                <span style="font-size:0.85rem; color:#38bdf8; font-weight:700;">세계보건기구(WHO) 기준</span>
+            </div>
+            
+            <table class="guide-table">
+                <thead>
+                    <tr>
+                        <th style="width:18%;">소음 (dB)</th>
+                        <th style="width:38%;">일상생활 환경 예시</th>
+                        <th style="width:44%;">청각 건강 영향 및 위험도</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><b>30 ~ 40 dB</b></td>
+                        <td>🤫 조용한 도서관, 속삭임, 심야 주택가</td>
+                        <td><span class="tag-safe">매우 안전</span> 집중력 및 안정감 향상</td>
+                    </tr>
+                    <tr>
+                        <td><b>40 ~ 55 dB</b></td>
+                        <td>☕ 조용한 사무실, 평온한 거실 대화</td>
+                        <td><span class="tag-safe">안전</span> 청각 손상 전혀 없음</td>
+                    </tr>
+                    <tr>
+                        <td><b>55 ~ 68 dB</b></td>
+                        <td>🗣️ 일반 대화, 식당, 조별 모둠 활동</td>
+                        <td><span class="tag-safe">안전</span> 장시간 노출 시 가벼운 피로</td>
+                    </tr>
+                    <tr>
+                        <td><b>68 ~ 79 dB</b></td>
+                        <td>🚗 번화가 도로, 진공청소기, 시끄러운 교실</td>
+                        <td><span class="tag-warn">청각 피로</span> 스트레스 증가, 대화 방해</td>
+                    </tr>
+                    <tr>
+                        <td><b>80 ~ 89 dB</b></td>
+                        <td>🚇 지하철 소음, 잔디깎이, 도로변 교통</td>
+                        <td><span class="tag-danger">⚠️ 청각 손실 위험</span> 8시간 이상 지속 노출 시 소음성 난청</td>
+                    </tr>
+                    <tr>
+                        <td><b>90 ~ 99 dB</b></td>
+                        <td>🏗️ 공사장 굴착기, 록 콘서트, 대형 트럭</td>
+                        <td><span class="tag-hazard">🚨 청각 손상 경고</span> 단시간 노출로도 유모세포 손상</td>
+                    </tr>
+                    <tr>
+                        <td><b>100 dB+</b></td>
+                        <td>⚡ 전동톱, 헬리콥터, 전투기 이착륙</td>
+                        <td><span class="tag-hazard">💥 영구 손상 위험</span> 즉각적인 이명 및 청력 저하</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p style="color:#94a3b8; font-size:0.84rem; line-height:1.6;">
+                💡 <b>교실 팁:</b> 개별 학습 및 시험 시 <b>55dB 이하</b>, 조별 토의 및 실험 시 <b>70~72dB 이하</b>를 유지하는 것이 귀 건강과 학습 집중에 가장 이상적입니다.
+            </p>
+
+            <button class="modal-close-btn" onclick="closeGuideModal()">닫기</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 중2 과학 디지털 탐구 플랫폼 · 수업용 교실 소음 관리 프로그램</p>
+    </footer>
+
+    <script>
+        let isRunning = false;
+        let audioContext = null;
+        let analyser = null;
+        let microphone = null;
+        let backgroundLoopTimer = null;
+
+        // 설정값
+        let thresholdDb = 70;
+        let sensitivityOffset = 0;
+        let isAlarmEnabled = true;
+        let alarmVolume = 0.9;
+
+        // 벌칙 및 3초 알람 타이머 상태
+        let penaltyCount = 0;
+        let alarmEndTime = 0;
+        let isTestModeActive = false;
+        const ALARM_HOLD_MS = 3000;
+
+        let activeAlarmNodes = [];
+
+        // Document PiP 객체 참조
+        let docPipWindow = null;
+        let docPipDoc = null;
+        let isPipCompact = false; // 초소형 모드 여부
+
+        // DOM 요소
+        const dbDisplay = document.getElementById('dbDisplay');
+        const statusBadge = document.getElementById('statusBadge');
+        const liveContextText = document.getElementById('liveContextText');
+        const liveHearingText = document.getElementById('liveHearingText');
+        const emergencyStopBox = document.getElementById('emergencyStopBox');
+        const topStopBtn = document.getElementById('topStopBtn');
+        const alarmBarWrap = document.getElementById('alarmBarWrap');
+        const alarmBarFill = document.getElementById('alarmBarFill');
+        const gaugeFill = document.getElementById('gaugeFill');
+        const thresholdMarker = document.getElementById('thresholdMarker');
+        const thresholdMarkerLabel = document.getElementById('thresholdMarkerLabel');
+        const thresholdSlider = document.getElementById('thresholdSlider');
+        const thresholdValText = document.getElementById('thresholdValText');
+        const alarmVolumeSlider = document.getElementById('alarmVolumeSlider');
+        const alarmVolText = document.getElementById('alarmVolText');
+        const sensitivitySlider = document.getElementById('sensitivitySlider');
+        const sensitivityValText = document.getElementById('sensitivityValText');
+        const alarmSoundToggle = document.getElementById('alarmSoundToggle');
+        const penaltyCountText = document.getElementById('penaltyCountText');
+        const startBtn = document.getElementById('startBtn');
+        const startBtnText = document.getElementById('startBtnText');
+        const pipBtn = document.getElementById('pipBtn');
+        const autoPipOverlay = document.getElementById('autoPipOverlay');
+        const waveCanvas = document.getElementById('waveCanvas');
+        const canvasCtx = waveCanvas.getContext('2d');
+
+        const pipCanvas = document.getElementById('pipCanvas');
+        const pipCtx = pipCanvas.getContext('2d');
+        const pipVideo = document.getElementById('pipVideo');
+
+        function resizeCanvas() {
+            waveCanvas.width = waveCanvas.offsetWidth * window.devicePixelRatio;
+            waveCanvas.height = waveCanvas.offsetHeight * window.devicePixelRatio;
+            canvasCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        /* 자동 PiP 원클릭 핸들러 */
+        async function handleAutoPipStart() {
+            autoPipOverlay.style.display = 'none';
+            await togglePiPMode();
+        }
+
+        /* 모달 제어 함수 */
+        function openGuideModal() {
+            document.getElementById('guideModal').style.display = 'flex';
+        }
+        function closeGuideModal(e) {
+            document.getElementById('guideModal').style.display = 'none';
+        }
+
+        // 1. 기준 데시벨 및 볼륨 양방향 동기화 함수
+        function setThreshold(val) {
+            thresholdDb = Math.max(40, Math.min(100, parseInt(val)));
+            thresholdSlider.value = thresholdDb;
+            thresholdValText.innerText = thresholdDb + " dB";
+            thresholdMarkerLabel.innerText = "한도 " + thresholdDb + "dB";
+            const percent = ((thresholdDb - 30) / 70) * 100;
+            thresholdMarker.style.left = `${Math.max(0, Math.min(100, percent))}%`;
+
+            if (docPipDoc) {
+                const pipThreshSlider = docPipDoc.getElementById('pipThreshSlider');
+                const pipThreshVal = docPipDoc.getElementById('pipThreshVal');
+                const pipMiniThresh = docPipDoc.getElementById('pipMiniThresh');
+                if (pipThreshSlider) pipThreshSlider.value = thresholdDb;
+                if (pipThreshVal) pipThreshVal.innerText = thresholdDb + " dB";
+                if (pipMiniThresh) pipMiniThresh.innerText = thresholdDb + "dB";
+            }
+        }
+
+        function setAlarmVolume(val) {
+            const volInt = Math.max(10, Math.min(100, parseInt(val)));
+            alarmVolume = volInt / 100;
+            alarmVolumeSlider.value = volInt;
+            alarmVolText.innerText = volInt + "%";
+
+            if (docPipDoc) {
+                const pipVolSlider = docPipDoc.getElementById('pipVolSlider');
+                const pipVolVal = docPipDoc.getElementById('pipVolVal');
+                if (pipVolSlider) pipVolSlider.value = volInt;
+                if (pipVolVal) pipVolVal.innerText = volInt + "%";
+            }
+        }
+
+        thresholdSlider.addEventListener('input', (e) => setThreshold(e.target.value));
+        alarmVolumeSlider.addEventListener('input', (e) => setAlarmVolume(e.target.value));
+
+        sensitivitySlider.addEventListener('input', (e) => {
+            sensitivityOffset = parseInt(e.target.value);
+            sensitivityValText.innerText = (sensitivityOffset > 0 ? "+" : "") + sensitivityOffset + " dB";
+        });
+
+        alarmSoundToggle.addEventListener('change', (e) => {
+            isAlarmEnabled = e.target.checked;
+        });
+
+        function resetPenaltyCount() {
+            penaltyCount = 0;
+            penaltyCountText.innerText = "0회";
+            if (docPipDoc) {
+                const pipPenalty = docPipDoc.getElementById('pipPenaltyText');
+                const pipMiniPenalty = docPipDoc.getElementById('pipMiniPenalty');
+                if (pipPenalty) pipPenalty.innerText = "0회";
+                if (pipMiniPenalty) pipMiniPenalty.innerText = "0회";
+            }
+        }
+
+        // 2. AudioContext 준비 및 브라우저 잠금 해제
+        function ensureAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            return audioContext;
+        }
+
+        // 3. 강력한 3초 듀얼 사이렌 생성기
+        function play3SecondSiren() {
+            if (!isAlarmEnabled) return;
+            const ctx = ensureAudioContext();
+            if (!ctx) return;
+
+            stopCurrentSirenNodes();
+
+            const now = ctx.currentTime;
+            const duration = 3.0;
+
+            const masterGain = ctx.createGain();
+            masterGain.gain.setValueAtTime(0.55 * alarmVolume, now);
+            masterGain.gain.setValueAtTime(0.55 * alarmVolume, now + duration - 0.1);
+            masterGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+            const osc1 = ctx.createOscillator();
+            osc1.type = 'sawtooth';
+            for (let t = 0; t < duration; t += 0.4) {
+                osc1.frequency.setValueAtTime(620, now + t);
+                osc1.frequency.linearRampToValueAtTime(1250, now + t + 0.2);
+                osc1.frequency.linearRampToValueAtTime(620, now + t + 0.4);
+            }
+
+            const osc2 = ctx.createOscillator();
+            osc2.type = 'square';
+            osc2.frequency.setValueAtTime(880, now);
+            
+            const beepGain = ctx.createGain();
+            for (let t = 0; t < duration; t += 0.25) {
+                beepGain.gain.setValueAtTime(0.35 * alarmVolume, now + t);
+                beepGain.gain.setValueAtTime(0.0, now + t + 0.16);
+            }
+
+            osc1.connect(masterGain);
+            osc2.connect(beepGain);
+            beepGain.connect(masterGain);
+            masterGain.connect(ctx.destination);
+
+            osc1.start(now);
+            osc2.start(now);
+            osc1.stop(now + duration);
+            osc2.stop(now + duration);
+
+            activeAlarmNodes = [osc1, osc2, masterGain, beepGain];
+        }
+
+        function stopCurrentSirenNodes() {
+            activeAlarmNodes.forEach(node => {
+                try {
+                    if (node.stop) node.stop();
+                    if (node.disconnect) node.disconnect();
+                } catch (e) {}
+            });
+            activeAlarmNodes = [];
+        }
+
+        // 4. 교사용 경고음 즉시 중지 (Emergency Stop)
+        function stopAlarmImmediately() {
+            alarmEndTime = 0;
+            isTestModeActive = false;
+            stopCurrentSirenNodes();
+
+            alarmBarWrap.style.display = 'none';
+            emergencyStopBox.style.display = 'none';
+            topStopBtn.style.display = 'none';
+            document.body.classList.remove('alarm-active');
+
+            if (docPipDoc) {
+                const pipBar = docPipDoc.getElementById('pipAlarmBar');
+                const pipStopBtn = docPipDoc.getElementById('pipStopBtn');
+                const pipMiniStopBtn = docPipDoc.getElementById('pipMiniStopBtn');
+                if (pipBar) pipBar.style.display = 'none';
+                if (pipStopBtn) pipStopBtn.style.display = 'none';
+                if (pipMiniStopBtn) pipMiniStopBtn.style.display = 'none';
+                docPipDoc.body.classList.remove('alarm-active');
+            }
+
+            if (!isRunning) {
+                dbDisplay.className = "db-number color-green";
+                statusBadge.innerText = "🎙️ 측정이 일시 정지되었습니다";
+                statusBadge.style.color = "#34d399";
+                statusBadge.style.borderColor = "rgba(52, 211, 153, 0.4)";
+                statusBadge.style.backgroundColor = "rgba(16, 185, 129, 0.15)";
+            }
+        }
+
+        // 키보드 단축키 (Space / Escape)
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.key === 'Escape') {
+                if (Date.now() < alarmEndTime) {
+                    e.preventDefault();
+                    stopAlarmImmediately();
+                }
+            }
+        });
+
+        // 5. 교사용 경고음 3초 테스트
+        function testAlarmSound() {
+            ensureAudioContext();
+            isTestModeActive = true;
+            triggerAlarmEvent(true);
+        }
+
+        function triggerAlarmEvent(isTest = false) {
+            const now = Date.now();
+            alarmEndTime = now + ALARM_HOLD_MS;
+
+            if (!isTest) {
+                isTestModeActive = false;
+                penaltyCount++;
+                penaltyCountText.innerText = penaltyCount + "회";
+                if (docPipDoc) {
+                    const pipPenalty = docPipDoc.getElementById('pipPenaltyText');
+                    const pipMiniPenalty = docPipDoc.getElementById('pipMiniPenalty');
+                    if (pipPenalty) pipPenalty.innerText = penaltyCount + "회";
+                    if (pipMiniPenalty) pipMiniPenalty.innerText = penaltyCount + "회";
+                }
+            }
+
+            play3SecondSiren();
+        }
+
+        // 6. 마이크 소음 감지 시작/정지 토글
+        async function toggleNoiseMeter() {
+            if (isRunning) {
+                stopNoiseMeter();
+            } else {
+                await startNoiseMeter();
+            }
+        }
+
+        async function startNoiseMeter() {
+            try {
+                ensureAudioContext();
+
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: { 
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false
+                    } 
+                });
+
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 512;
+                analyser.smoothingTimeConstant = 0.3;
+
+                microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+
+                isRunning = true;
+                startBtn.classList.add('is-running');
+                startBtnText.innerText = "소음 감지 중지하기";
+
+                if (backgroundLoopTimer) clearInterval(backgroundLoopTimer);
+                backgroundLoopTimer = setInterval(processAudioTick, 33);
+
+            } catch (err) {
+                alert("❌ 마이크 권한이 필요합니다. 주소창 좌측 마이크 권한을 '허용'해주세요!\n" + err);
+            }
+        }
+
+        function stopNoiseMeter() {
+            isRunning = false;
+            stopAlarmImmediately();
+            if (backgroundLoopTimer) {
+                clearInterval(backgroundLoopTimer);
+                backgroundLoopTimer = null;
+            }
+            if (microphone) microphone.disconnect();
+
+            startBtn.classList.remove('is-running');
+            startBtnText.innerText = "마이크 소음 감지 시작하기";
+            dbDisplay.innerText = "--";
+            dbDisplay.className = "db-number color-green";
+            statusBadge.innerText = "🎙️ 측정이 일시 정지되었습니다";
+            statusBadge.style.color = "#34d399";
+            statusBadge.style.borderColor = "rgba(52, 211, 153, 0.4)";
+            statusBadge.style.backgroundColor = "rgba(16, 185, 129, 0.15)";
+            liveContextText.innerText = "측정 정지됨";
+            liveHearingText.innerText = "마이크를 켜주세요";
+            gaugeFill.style.width = "0%";
+
+            drawPiPCanvas(30, false, 0);
+        }
+
+        // 7. 실시간 백그라운드 무한 처리 루프
+        function processAudioTick() {
+            if (!isRunning || !analyser) return;
+
+            const timeData = new Float32Array(analyser.fftSize);
+            analyser.getFloatTimeDomainData(timeData);
+
+            let sumSquares = 0.0;
+            let peak = 0.0;
+            for (let i = 0; i < timeData.length; i++) {
+                const absVal = Math.abs(timeData[i]);
+                if (absVal > peak) peak = absVal;
+                sumSquares += absVal * absVal;
+            }
+            const rms = Math.sqrt(sumSquares / timeData.length);
+            const mixedSignal = Math.max(rms, peak * 0.7);
+
+            let rawDb = 30;
+            if (mixedSignal > 0.00001) {
+                rawDb = 20 * Math.log10(mixedSignal) + 95;
+            }
+
+            let currentDb = Math.round(rawDb + sensitivityOffset);
+            currentDb = Math.max(30, Math.min(110, currentDb));
+
+            dbDisplay.innerText = currentDb;
+            const gaugePercent = ((currentDb - 30) / 70) * 100;
+            gaugeFill.style.width = `${Math.max(0, Math.min(100, gaugePercent))}%`;
+
+            updateStatusAndAlarm(currentDb);
+
+            if (!document.hidden) {
+                drawWaveform(timeData);
+            }
+        }
+
+        // 8. 3초 지속 경고 및 상태 판별
+        function updateStatusAndAlarm(db) {
+            const now = Date.now();
+            const isAlarmCurrentlyActive = now < alarmEndTime;
+
+            let contextStr = "";
+            let hearingStr = "";
+
+            if (db < 40) {
+                contextStr = "🤫 속삭임, 조용한 도서관 수준";
+                hearingStr = "🟢 매우 안전 (집중력 및 안정감 향상)";
+            } else if (db < 55) {
+                contextStr = "☕ 조용한 사무실, 평온한 거실 수준";
+                hearingStr = "🟢 안전 (일상적 쾌적 환경, 무해)";
+            } else if (db < 68) {
+                contextStr = "🗣️ 일반 대화, 조별 토의 수준";
+                hearingStr = "🟡 안전 (장시간 지속 시 가벼운 피로)";
+            } else if (db < 79) {
+                contextStr = "🚗 번화가 도로변, 청소기 소음 수준";
+                hearingStr = "🟠 청각 피로 유발 (스트레스 증가 주의)";
+            } else if (db < 89) {
+                contextStr = "🚇 지하철 내부 소음, 잔디깎이 수준";
+                hearingStr = "⚠️ 청각 손실 위험 (지속 노출 시 난청 위험)";
+            } else if (db < 99) {
+                contextStr = "🏗️ 공사장 굴착기, 록 콘서트 수준";
+                hearingStr = "🚨 청각 손상 경고 (단시간으로도 청력 저하)";
+            } else {
+                contextStr = "⚡ 전동톱, 헬리콥터 소음 수준";
+                hearingStr = "💥 극도 위험 (즉각적인 영구 손상 및 이명)";
+            }
+
+            liveContextText.innerText = contextStr;
+            liveHearingText.innerText = hearingStr;
+
+            if (db >= thresholdDb) {
+                if (!isAlarmCurrentlyActive) {
+                    triggerAlarmEvent(false);
+                }
+            }
+
+            let remainingSec = 0;
+            if (now < alarmEndTime) {
+                remainingSec = ((alarmEndTime - now) / 1000).toFixed(1);
+                const progressPercent = ((alarmEndTime - now) / ALARM_HOLD_MS) * 100;
+
+                dbDisplay.className = "db-number color-red";
+                if (isTestModeActive) {
+                    statusBadge.innerText = `🔊 [경고음 테스트 중] 소리 출력 확인 (${remainingSec}초)`;
+                    statusBadge.style.color = "#38bdf8";
+                    statusBadge.style.borderColor = "#0284c7";
+                    statusBadge.style.backgroundColor = "rgba(2, 132, 199, 0.3)";
+                } else {
+                    statusBadge.innerText = `🚨 [3초 경고 발령] 소음 기준치 초과! (${remainingSec}초)`;
+                    statusBadge.style.color = "#f87171";
+                    statusBadge.style.borderColor = "#ef4444";
+                    statusBadge.style.backgroundColor = "rgba(239, 68, 68, 0.3)";
+                }
+                
+                alarmBarWrap.style.display = 'block';
+                alarmBarFill.style.width = `${progressPercent}%`;
+                emergencyStopBox.style.display = 'flex';
+                topStopBtn.style.display = 'inline-flex';
+                document.body.classList.add('alarm-active');
+
+                // Document PiP 창 실시간 업데이트
+                if (docPipDoc) {
+                    const pipDbNum = docPipDoc.getElementById('pipDbNum');
+                    const pipStatus = docPipDoc.getElementById('pipStatus');
+                    const pipBar = docPipDoc.getElementById('pipAlarmBar');
+                    const pipBarFill = docPipDoc.getElementById('pipAlarmBarFill');
+                    const pipStopBtn = docPipDoc.getElementById('pipStopBtn');
+                    const pipMiniDbNum = docPipDoc.getElementById('pipMiniDbNum');
+                    const pipMiniStatus = docPipDoc.getElementById('pipMiniStatus');
+                    const pipMiniStopBtn = docPipDoc.getElementById('pipMiniStopBtn');
+
+                    if (pipDbNum) {
+                        pipDbNum.innerText = db;
+                        pipDbNum.style.color = "#f87171";
+                    }
+                    if (pipMiniDbNum) {
+                        pipMiniDbNum.innerText = db;
+                        pipMiniDbNum.style.color = "#f87171";
+                    }
+                    if (pipStatus) {
+                        pipStatus.innerText = `🚨 [경고] 조용히 하세요! (${remainingSec}s)`;
+                        pipStatus.style.color = "#f87171";
+                        pipStatus.style.borderColor = "#ef4444";
+                        pipStatus.style.backgroundColor = "rgba(239, 68, 68, 0.3)";
+                    }
+                    if (pipMiniStatus) {
+                        pipMiniStatus.innerText = `🚨 경고 (${remainingSec}s)`;
+                        pipMiniStatus.style.color = "#f87171";
+                        pipMiniStatus.style.borderColor = "#ef4444";
+                    }
+                    if (pipBar) pipBar.style.display = 'block';
+                    if (pipBarFill) pipBarFill.style.width = `${progressPercent}%`;
+                    if (pipStopBtn) pipStopBtn.style.display = 'block';
+                    if (pipMiniStopBtn) pipMiniStopBtn.style.display = 'block';
+                    docPipDoc.body.classList.add('alarm-active');
+                }
+            } else {
+                alarmBarWrap.style.display = 'none';
+                emergencyStopBox.style.display = 'none';
+                topStopBtn.style.display = 'none';
+                document.body.classList.remove('alarm-active');
+                isTestModeActive = false;
+
+                let color = "#34d399";
+                let statusText = "🤫 아주 조용함";
+                let borderCol = "rgba(52, 211, 153, 0.4)";
+                let bgCol = "rgba(16, 185, 129, 0.15)";
+
+                if (db < thresholdDb - 15) {
+                    dbDisplay.className = "db-number color-green";
+                    statusBadge.innerText = "🤫 쾌적함: 아주 조용한 집중 상태";
+                    statusBadge.style.color = "#34d399";
+                    statusBadge.style.borderColor = "rgba(52, 211, 153, 0.4)";
+                    statusBadge.style.backgroundColor = "rgba(16, 185, 129, 0.15)";
+                } else if (db < thresholdDb - 5) {
+                    dbDisplay.className = "db-number color-yellow";
+                    statusBadge.innerText = "🗣️ 양호함: 적당한 활동 및 대화 소리";
+                    statusBadge.style.color = "#facc15";
+                    statusBadge.style.borderColor = "rgba(250, 204, 21, 0.4)";
+                    statusBadge.style.backgroundColor = "rgba(234, 179, 8, 0.15)";
+                    color = "#facc15";
+                    statusText = "🗣️ 적당한 대화";
+                    borderCol = "rgba(250, 204, 21, 0.4)";
+                    bgCol = "rgba(234, 179, 8, 0.15)";
+                } else {
+                    dbDisplay.className = "db-number color-orange";
+                    statusBadge.innerText = "⚠️ 주의: 기준 데시벨에 근접 중!";
+                    statusBadge.style.color = "#fb923c";
+                    statusBadge.style.borderColor = "rgba(251, 146, 60, 0.4)";
+                    statusBadge.style.backgroundColor = "rgba(249, 115, 22, 0.15)";
+                    color = "#fb923c";
+                    statusText = "⚠️ 기준치 근접 주의";
+                    borderCol = "rgba(251, 146, 60, 0.4)";
+                    bgCol = "rgba(249, 115, 22, 0.15)";
+                }
+
+                if (docPipDoc) {
+                    const pipDbNum = docPipDoc.getElementById('pipDbNum');
+                    const pipStatus = docPipDoc.getElementById('pipStatus');
+                    const pipBar = docPipDoc.getElementById('pipAlarmBar');
+                    const pipStopBtn = docPipDoc.getElementById('pipStopBtn');
+                    const pipMiniDbNum = docPipDoc.getElementById('pipMiniDbNum');
+                    const pipMiniStatus = docPipDoc.getElementById('pipMiniStatus');
+                    const pipMiniStopBtn = docPipDoc.getElementById('pipMiniStopBtn');
+
+                    if (pipDbNum) {
+                        pipDbNum.innerText = db;
+                        pipDbNum.style.color = color;
+                    }
+                    if (pipMiniDbNum) {
+                        pipMiniDbNum.innerText = db;
+                        pipMiniDbNum.style.color = color;
+                    }
+                    if (pipStatus) {
+                        pipStatus.innerText = statusText;
+                        pipStatus.style.color = color;
+                        pipStatus.style.borderColor = borderCol;
+                        pipStatus.style.backgroundColor = bgCol;
+                    }
+                    if (pipMiniStatus) {
+                        pipMiniStatus.innerText = statusText;
+                        pipMiniStatus.style.color = color;
+                        pipMiniStatus.style.borderColor = borderCol;
+                    }
+                    if (pipBar) pipBar.style.display = 'none';
+                    if (pipStopBtn) pipStopBtn.style.display = 'none';
+                    if (pipMiniStopBtn) pipMiniStopBtn.style.display = 'none';
+                    docPipDoc.body.classList.remove('alarm-active');
+                }
+            }
+
+            drawPiPCanvas(db, now < alarmEndTime, remainingSec);
+        }
+
+        // 9. PiP Video 캔버스 렌더러
+        function drawPiPCanvas(db, isAlert, remainingSec) {
+            const w = 480;
+            const h = 280;
+
+            if (isAlert) {
+                const isFlash = Math.floor(Date.now() / 250) % 2 === 0;
+                pipCtx.fillStyle = isFlash ? '#5c0808' : '#1c0303';
+            } else {
+                pipCtx.fillStyle = '#0b0f19';
+            }
+            pipCtx.fillRect(0, 0, w, h);
+
+            pipCtx.font = 'bold 18px Pretendard, sans-serif';
+            pipCtx.fillStyle = '#94a3b8';
+            pipCtx.textAlign = 'left';
+            pipCtx.fillText('🔊 교실 소음 모니터', 24, 34);
+
+            pipCtx.textAlign = 'right';
+            pipCtx.font = 'bold 16px Pretendard, sans-serif';
+            pipCtx.fillStyle = '#cbd5e1';
+            pipCtx.fillText(`한도: ${thresholdDb}dB | 볼륨: ${Math.round(alarmVolume*100)}% | 초과: ${penaltyCount}회`, w - 24, 34);
+
+            pipCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            pipCtx.lineWidth = 1;
+            pipCtx.beginPath();
+            pipCtx.moveTo(24, 46);
+            pipCtx.lineTo(w - 24, 46);
+            pipCtx.stroke();
+
+            pipCtx.textAlign = 'center';
+            pipCtx.font = '900 84px Pretendard, sans-serif';
+            
+            let color = '#34d399';
+            let statusText = '🤫 아주 조용함';
+            if (isAlert) {
+                color = '#f87171';
+                statusText = `🚨 [경고] 조용히 하세요! (${remainingSec}초)`;
+            } else if (db >= thresholdDb - 5) {
+                color = '#fb923c';
+                statusText = '⚠️ 기준치 근접 주의!';
+            } else if (db >= thresholdDb - 15) {
+                color = '#facc15';
+                statusText = '🗣️ 적당한 대화 소리';
+            }
+
+            pipCtx.fillStyle = color;
+            pipCtx.fillText(`${db}`, w / 2 - 25, 140);
+
+            pipCtx.font = 'bold 28px Pretendard, sans-serif';
+            pipCtx.fillStyle = '#94a3b8';
+            pipCtx.fillText('dB', w / 2 + 65, 140);
+
+            const badgeY = 165;
+            pipCtx.font = 'bold 18px Pretendard, sans-serif';
+            const textWidth = pipCtx.measureText(statusText).width;
+            
+            pipCtx.fillStyle = isAlert ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 255, 255, 0.08)';
+            pipCtx.strokeStyle = isAlert ? '#ef4444' : color;
+            pipCtx.lineWidth = 1.5;
+            
+            drawRoundRect(pipCtx, w / 2 - textWidth / 2 - 16, badgeY, textWidth + 32, 34, 17, true, true);
+
+            pipCtx.fillStyle = isAlert ? '#fca5a5' : color;
+            pipCtx.fillText(statusText, w / 2, badgeY + 24);
+
+            const barX = 30;
+            const barY = 225;
+            const barW = w - 60;
+            const barH = 18;
+
+            pipCtx.fillStyle = '#0f172a';
+            pipCtx.strokeStyle = '#334155';
+            pipCtx.lineWidth = 1;
+            drawRoundRect(pipCtx, barX, barY, barW, barH, 9, true, true);
+
+            const percent = Math.max(0, Math.min(1, (db - 30) / 70));
+            if (percent > 0) {
+                const grad = pipCtx.createLinearGradient(barX, 0, barX + barW, 0);
+                grad.addColorStop(0, '#10b981');
+                grad.addColorStop(0.65, '#facc15');
+                grad.addColorStop(0.8, '#f97316');
+                grad.addColorStop(1, '#ef4444');
+
+                pipCtx.save();
+                drawRoundRect(pipCtx, barX, barY, barW * percent, barH, 9, false, false);
+                pipCtx.clip();
+                pipCtx.fillStyle = grad;
+                pipCtx.fillRect(barX, barY, barW, barH);
+                pipCtx.restore();
+            }
+
+            const threshPercent = Math.max(0, Math.min(1, (thresholdDb - 30) / 70));
+            const markX = barX + barW * threshPercent;
+            pipCtx.fillStyle = '#ffffff';
+            pipCtx.fillRect(markX - 2, barY - 3, 4, barH + 6);
+        }
+
+        function drawRoundRect(ctx, x, y, width, height, radius, fill, stroke) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            if (fill) ctx.fill();
+            if (stroke) ctx.stroke();
+        }
+
+        // 10. 인터랙티브 PiP 모드 실행 (Document PiP 지원 및 초소형 모드 전환)
+        async function togglePiPMode() {
+            if (!isRunning) {
+                await startNoiseMeter();
+            }
+
+            if ('documentPictureInPicture' in window) {
+                if (docPipWindow) {
+                    docPipWindow.close();
+                    docPipWindow = null;
+                    docPipDoc = null;
+                    return;
+                }
+
+                try {
+                    docPipWindow = await window.documentPictureInPicture.requestWindow({
+                        width: 430,
+                        height: 460
+                    });
+                    docPipDoc = docPipWindow.document;
+                    isPipCompact = false;
+
+                    const style = docPipDoc.createElement('style');
+                    style.textContent = `
+                        * { box-sizing: border-box; margin: 0; padding: 0; }
+                        body {
+                            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+                            background-color: #0b0f19;
+                            color: #f8fafc;
+                            padding: 14px;
+                            display: flex;
+                            flex-direction: column;
+                            gap: 8px;
+                            overflow: hidden;
+                            user-select: none;
+                            transition: background-color 0.25s ease;
+                        }
+                        body.alarm-active {
+                            background-color: #450a0a !important;
+                            animation: pulseAlert 0.35s infinite alternate ease-in-out;
+                        }
+                        @keyframes pulseAlert {
+                            from { background-color: #5c0808; }
+                            to { background-color: #1c0303; }
+                        }
+                        .pip-header {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                            padding-bottom: 6px;
+                        }
+                        .pip-title {
+                            font-size: 0.88rem;
+                            font-weight: 800;
+                            color: #38bdf8;
+                        }
+                        .btn-mode-toggle {
+                            background: #1e293b;
+                            color: #38bdf8;
+                            border: 1px solid #38bdf8;
+                            padding: 3px 10px;
+                            border-radius: 8px;
+                            font-size: 0.76rem;
+                            font-weight: 800;
+                            cursor: pointer;
+                        }
+                        .btn-mode-toggle:hover {
+                            background: #0284c7;
+                            color: #ffffff;
+                        }
+                        .pip-db-wrap {
+                            text-align: center;
+                        }
+                        .pip-db-num {
+                            font-size: 3.8rem;
+                            font-weight: 900;
+                            line-height: 1;
+                            letter-spacing: -2px;
+                            color: #34d399;
+                        }
+                        .pip-status {
+                            display: inline-block;
+                            margin-top: 3px;
+                            padding: 3px 12px;
+                            border-radius: 14px;
+                            font-size: 0.8rem;
+                            font-weight: 800;
+                            border: 1px solid rgba(52, 211, 153, 0.4);
+                            background: rgba(16, 185, 129, 0.15);
+                            color: #34d399;
+                        }
+                        .pip-alarm-bar {
+                            width: 100%;
+                            height: 6px;
+                            background: rgba(255, 255, 255, 0.1);
+                            border-radius: 3px;
+                            overflow: hidden;
+                            display: none;
+                            margin-top: 6px;
+                        }
+                        .pip-alarm-fill {
+                            height: 100%;
+                            width: 100%;
+                            background: #ef4444;
+                        }
+                        .pip-ctrl-row {
+                            background: rgba(15, 23, 42, 0.85);
+                            border: 1px solid rgba(255, 255, 255, 0.08);
+                            border-radius: 10px;
+                            padding: 7px 10px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            gap: 8px;
+                        }
+                        .pip-ctrl-label {
+                            font-size: 0.76rem;
+                            font-weight: 800;
+                            color: #cbd5e1;
+                            min-width: 70px;
+                        }
+                        .pip-ctrl-slider-wrap {
+                            display: flex;
+                            align-items: center;
+                            gap: 6px;
+                            flex: 1;
+                        }
+                        input[type=range] {
+                            flex: 1;
+                            accent-color: #10b981;
+                            cursor: pointer;
+                            height: 5px;
+                        }
+                        .pip-ctrl-val {
+                            font-size: 0.82rem;
+                            font-weight: 800;
+                            color: #38bdf8;
+                            min-width: 48px;
+                            text-align: right;
+                        }
+                        .btn-step {
+                            background: #334155;
+                            color: #fff;
+                            border: none;
+                            width: 22px;
+                            height: 22px;
+                            border-radius: 6px;
+                            font-weight: 800;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 0.8rem;
+                        }
+                        .btn-step:hover { background: #475569; }
+                        .pip-penalty-row {
+                            background: rgba(239, 68, 68, 0.1);
+                            border: 1px dashed rgba(239, 68, 68, 0.4);
+                            border-radius: 10px;
+                            padding: 6px 10px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                        }
+                        .pip-penalty-count {
+                            font-size: 1.2rem;
+                            font-weight: 900;
+                            color: #f87171;
+                        }
+                        .btn-pip-reset {
+                            background: #334155;
+                            color: #cbd5e1;
+                            border: none;
+                            padding: 4px 8px;
+                            border-radius: 6px;
+                            font-size: 0.72rem;
+                            font-weight: 700;
+                            cursor: pointer;
+                        }
+                        .btn-pip-reset:hover { background: #ef4444; color: #fff; }
+                        .btn-pip-stop-alert {
+                            width: 100%;
+                            padding: 7px 0;
+                            border-radius: 8px;
+                            background: #ef4444;
+                            color: #fff;
+                            font-weight: 800;
+                            font-size: 0.82rem;
+                            border: none;
+                            cursor: pointer;
+                            display: none;
+                        }
+                        .btn-pip-stop-alert:hover { background: #dc2626; }
+
+                        /* =========================================
+                           신규: 초소형 모드 (Compact Mode) 전용 스타일
+                           ========================================= */
+                        body.is-compact {
+                            padding: 8px 12px;
+                            gap: 4px;
+                            justify-content: center;
+                        }
+                        body.is-compact .full-view-only {
+                            display: none !important;
+                        }
+                        .compact-view-only {
+                            display: none;
+                        }
+                        body.is-compact .compact-view-only {
+                            display: flex !important;
+                        }
+                        .compact-row-main {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            gap: 8px;
+                            width: 100%;
+                        }
+                        .compact-db-box {
+                            display: flex;
+                            align-items: baseline;
+                            gap: 3px;
+                        }
+                        .compact-db-num {
+                            font-size: 2.5rem;
+                            font-weight: 900;
+                            line-height: 1;
+                            color: #34d399;
+                        }
+                        .compact-penalty-box {
+                            background: rgba(239, 68, 68, 0.15);
+                            border: 1px solid rgba(239, 68, 68, 0.4);
+                            padding: 3px 8px;
+                            border-radius: 8px;
+                            display: flex;
+                            align-items: center;
+                            gap: 5px;
+                        }
+                        .compact-penalty-val {
+                            font-weight: 900;
+                            color: #f87171;
+                            font-size: 0.95rem;
+                        }
+                        .btn-mini-stop {
+                            background: #ef4444;
+                            color: #fff;
+                            border: none;
+                            padding: 5px 12px;
+                            border-radius: 8px;
+                            font-size: 0.78rem;
+                            font-weight: 800;
+                            cursor: pointer;
+                            display: none;
+                            width: 100%;
+                            margin-top: 2px;
+                        }
+                        .btn-mini-stop:hover { background: #dc2626; }
+                    `;
+                    docPipDoc.head.appendChild(style);
+
+                    // 미니창 내부 UI 템플릿
+                    docPipDoc.body.innerHTML = `
+                        <div class="pip-header full-view-only">
+                            <span class="pip-title">🔊 교실 소음 모니터</span>
+                            <button class="btn-mode-toggle" onclick="window.openerToggleCompact()">🔍 초소형 모드</button>
+                        </div>
+
+                        <div class="pip-db-wrap full-view-only">
+                            <div>
+                                <span class="pip-db-num" id="pipDbNum">${dbDisplay.innerText}</span>
+                                <span style="font-size:1.3rem; font-weight:700; color:#94a3b8;">dB</span>
+                            </div>
+                            <div class="pip-status" id="pipStatus">🤫 아주 조용함</div>
+                            <div class="pip-alarm-bar" id="pipAlarmBar">
+                                <div class="pip-alarm-fill" id="pipAlarmBarFill"></div>
+                            </div>
+                        </div>
+
+                        <button id="pipStopBtn" class="btn-pip-stop-alert full-view-only" onclick="window.openerStopAlarm()">⏹️ 경고음 즉시 멈춤</button>
+
+                        <div class="pip-penalty-row full-view-only">
+                            <span style="font-size:0.78rem; font-weight:700; color:#cbd5e1;">🚨 기준 초과 횟수:</span>
+                            <span class="pip-penalty-count" id="pipPenaltyText">${penaltyCount}회</span>
+                            <button class="btn-pip-reset" onclick="window.openerResetPenalty()">초기화</button>
+                        </div>
+
+                        <div class="pip-ctrl-row full-view-only">
+                            <span class="pip-ctrl-label">🎯 기준 데시벨</span>
+                            <div class="pip-ctrl-slider-wrap">
+                                <button class="btn-step" onclick="window.openerStepThresh(-1)">-</button>
+                                <input type="range" id="pipThreshSlider" min="40" max="100" value="${thresholdDb}" step="1">
+                                <button class="btn-step" onclick="window.openerStepThresh(1)">+</button>
+                            </div>
+                            <span class="pip-ctrl-val" id="pipThreshVal">${thresholdDb} dB</span>
+                        </div>
+
+                        <div class="pip-ctrl-row full-view-only">
+                            <span class="pip-ctrl-label">🔊 경고음 볼륨</span>
+                            <div class="pip-ctrl-slider-wrap">
+                                <button class="btn-step" onclick="window.openerStepVol(-5)">-</button>
+                                <input type="range" id="pipVolSlider" min="10" max="100" value="${Math.round(alarmVolume*100)}" step="5" style="accent-color:#ef4444;">
+                                <button class="btn-step" onclick="window.openerStepVol(5)">+</button>
+                            </div>
+                            <span class="pip-ctrl-val" id="pipVolVal" style="color:#f87171;">${Math.round(alarmVolume*100)}%</span>
+                        </div>
+
+                        <div class="compact-view-only compact-row-main">
+                            <div class="compact-db-box">
+                                <span class="compact-db-num" id="pipMiniDbNum">${dbDisplay.innerText}</span>
+                                <span style="font-size:0.9rem; font-weight:700; color:#94a3b8;">dB</span>
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:2px; flex:1; margin:0 4px;">
+                                <div style="display:flex; align-items:center; justify-content:space-between;">
+                                    <span id="pipMiniStatus" style="font-size:0.75rem; font-weight:800; color:#34d399;">🤫 조용함</span>
+                                    <span style="font-size:0.72rem; color:#94a3b8;">한도 <b id="pipMiniThresh" style="color:#38bdf8;">${thresholdDb}dB</b></span>
+                                </div>
+                                <div class="compact-penalty-box">
+                                    <span style="font-size:0.72rem; color:#cbd5e1; font-weight:700;">초과:</span>
+                                    <span class="compact-penalty-val" id="pipMiniPenalty">${penaltyCount}회</span>
+                                    <button class="btn-pip-reset" style="padding:1px 5px; font-size:0.68rem;" onclick="window.openerResetPenalty()">리셋</button>
+                                </div>
+                            </div>
+                            <button class="btn-mode-toggle" style="padding:4px 8px; font-size:0.72rem;" onclick="window.openerToggleCompact()">⚙️ 설정</button>
+                        </div>
+                        <button id="pipMiniStopBtn" class="btn-mini-stop compact-view-only" onclick="window.openerStopAlarm()">⏹️ 경고음 즉시 멈춤</button>
+                    `;
+
+                    // PiP 창과 메인 창 이벤트 연결
+                    docPipWindow.openerStopAlarm = stopAlarmImmediately;
+                    docPipWindow.openerResetPenalty = resetPenaltyCount;
+                    docPipWindow.openerStepThresh = (delta) => setThreshold(thresholdDb + delta);
+                    docPipWindow.openerStepVol = (delta) => setAlarmVolume(Math.round(alarmVolume * 100) + delta);
+                    
+                    // 초소형 모드 토글 함수
+                    docPipWindow.openerToggleCompact = () => {
+                        isPipCompact = !isPipCompact;
+                        if (isPipCompact) {
+                            docPipDoc.body.classList.add('is-compact');
+                            docPipWindow.resizeTo(320, 145);
+                        } else {
+                            docPipDoc.body.classList.remove('is-compact');
+                            docPipWindow.resizeTo(430, 460);
+                        }
+                    };
+
+                    const pipThresh = docPipDoc.getElementById('pipThreshSlider');
+                    const pipVol = docPipDoc.getElementById('pipVolSlider');
+                    if (pipThresh) pipThresh.addEventListener('input', (e) => setThreshold(e.target.value));
+                    if (pipVol) pipVol.addEventListener('input', (e) => setAlarmVolume(e.target.value));
+
+                    docPipWindow.addEventListener('keydown', (e) => {
+                        if (e.code === 'Space' || e.key === 'Escape') {
+                            if (Date.now() < alarmEndTime) {
+                                e.preventDefault();
+                                stopAlarmImmediately();
+                            }
+                        }
+                    });
+
+                    docPipWindow.addEventListener('pagehide', () => {
+                        docPipWindow = null;
+                        docPipDoc = null;
+                        isPipCompact = false;
+                        pipBtn.classList.remove('btn-pip-active');
+                        pipBtn.innerText = '📌 항상 위 미니창 (PiP)';
+                    });
+
+                    pipBtn.classList.add('btn-pip-active');
+                    pipBtn.innerText = '📌 미니창(PiP) 닫기';
+                    return;
+                } catch (e) {
+                    console.warn("Document PiP 실패, Video PiP로 폴백합니다:", e);
+                }
+            }
+
+            // 폴백 (Video PiP)
+            try {
+                if (document.pictureInPictureElement) {
+                    await document.exitPictureInPicture();
+                    return;
+                }
+
+                drawPiPCanvas(30, false, 0);
+
+                if (!pipVideo.srcObject) {
+                    const stream = pipCanvas.captureStream(30);
+                    pipVideo.srcObject = stream;
+                }
+                await pipVideo.play();
+                await pipVideo.requestPictureInPicture();
+            } catch (err) {
+                alert("❌ PiP 모드 실행 실패: " + err.message + "\n브라우저의 PiP 권한을 확인해주세요.");
+            }
+        }
+
+        pipVideo.addEventListener('enterpictureinpicture', () => {
+            pipBtn.classList.add('btn-pip-active');
+            pipBtn.innerText = '📌 미니창(PiP) 닫기';
+        });
+
+        pipVideo.addEventListener('leavepictureinpicture', () => {
+            pipBtn.classList.remove('btn-pip-active');
+            pipBtn.innerText = '📌 항상 위 미니창 (PiP)';
+        });
+
+        // 11. 메인 화면 파형 렌더링
+        function drawWaveform(timeData) {
+            const width = waveCanvas.offsetWidth;
+            const height = waveCanvas.offsetHeight;
+            const isAlerting = Date.now() < alarmEndTime;
+
+            canvasCtx.clearRect(0, 0, width, height);
+            canvasCtx.lineWidth = 2.5;
+            canvasCtx.strokeStyle = isAlerting ? '#ef4444' : '#10b981';
+            canvasCtx.beginPath();
+
+            const sliceWidth = width / timeData.length;
+            let x = 0;
+
+            for (let i = 0; i < timeData.length; i++) {
+                const v = timeData[i] * 2.8;
+                const y = (height / 2) + (v * (height / 2));
+
+                if (i === 0) {
+                    canvasCtx.moveTo(x, y);
+                } else {
+                    canvasCtx.lineTo(x, y);
+                }
+                x += sliceWidth;
+            }
+
+            canvasCtx.lineTo(width, height / 2);
+            canvasCtx.stroke();
+        }
+
+        // 12. 전체화면 토글
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`전체화면 오류: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
