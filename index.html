@@ -10337,6 +10337,7 @@ window.addEventListener('storage',event=>{
                 if (archiveItems.length > 0) {
                     itemsHtml = archiveItems.map(item => {
                         const isItemLocked = !worksheetCloudReady || isUnitLocked || item.isLocked || worksheetCurriculum.isLocked;
+                        const displayName = String(item.name || '').replace(/^\s*\d+\s*단원\s+/, '');
                         
                         let actionBtnHtml = '';
                         if (isAdminMode) {
@@ -10358,9 +10359,9 @@ window.addEventListener('storage',event=>{
 
                         return `
                             <div class="worksheet-row-card ${isItemLocked ? 'is-locked' : ''}">
-                                <div class="worksheet-name-label" title="${escapeHtml(item.name)}">
+                                <div class="worksheet-name-label" title="${escapeHtml(displayName)}">
                                     <span>${isItemLocked ? '🔒' : '📄'}</span>
-                                    <span>${escapeHtml(item.name)}${!item.pdf ? '<small style="display:block;color:#94a3b8;font-weight:normal;">준비 중 · 연결된 PDF 없음</small>' : ''}</span>
+                                    <span>${escapeHtml(displayName)}${!item.pdf ? '<small style="display:block;color:#94a3b8;font-weight:normal;">준비 중 · 연결된 PDF 없음</small>' : ''}</span>
                                 </div>
                                 <div class="worksheet-row-actions">
                                     ${actionBtnHtml}
