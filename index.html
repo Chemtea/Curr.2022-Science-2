@@ -3039,7 +3039,7 @@
                 <button id="adminToolsCloseBtn" type="button" class="admin-tools-fold" onclick="closeAdminToolsModal()">도구 접기</button>
             </div>
             <div class="admin-tools-categories">
-            <details id="adminToolsCourse" class="admin-tools-section" name="admin-tools-category" open aria-labelledby="adminToolsCourseHeading" hidden>
+            <details id="adminToolsCourse" class="admin-tools-section" name="admin-tools-category" aria-labelledby="adminToolsCourseHeading" hidden>
                 <summary id="adminToolsCourseHeading"><span class="admin-category-icon" aria-hidden="true">📚</span><span class="admin-category-copy"><span class="admin-category-title">수업 기능</span><span class="admin-category-desc">자료 등록 · 수업 꾸미기 · 평가와 활동</span></span></summary>
                 <div class="admin-tools-grid">
                     <button type="button" id="toolLessonUploadBtn" class="tool-primary" style="display:none;" onclick="openLessonUploadModal()"><span class="admin-tool-icon" aria-hidden="true">📤</span><span class="admin-tool-copy"><b>수업 자료 등록</b><small>HTML·학습지 업로드 및 단원·차시 추가</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
@@ -9157,6 +9157,7 @@ window.addEventListener('storage',event=>{
             const panel=document.getElementById('adminToolsModal');if(!panel)return;
             const allowed=isAdminMode && (isFullAdminMode() || ['signup_manage','rewards_manage','draw_manage','curriculum_control','questions_manage','announcements_manage','points_view','points_adjust'].some(permission=>canUseAdminFeature(permission)));
             if(!allowed){closeAdminToolsModal();return;}
+            panel.querySelectorAll('details.admin-tools-section').forEach(section=>{section.open=false;});
             syncAdminToolsMenu();panel.style.display='flex';
             document.getElementById('adminToolsBtn')?.setAttribute('aria-expanded','true');
             panel.scrollIntoView?.({block:'start',behavior:'smooth'});
