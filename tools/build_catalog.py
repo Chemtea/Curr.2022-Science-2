@@ -347,15 +347,15 @@ def scan_lessons(root: Path, output: Path, warnings: list[str]):
     return registered, scanned
 
 
-def read_settings(root: Path):
+def read_settings_document(root: Path):
     path = root / "curriculum-settings.json"
     if not path.exists():
         return {}
     if path.is_symlink():
         raise CatalogError("curriculum-settings.json: symlinks are not permitted")
     settings = strict_json(path.read_text(encoding="utf-8-sig"), path.name)
-    if not isinstance(settings, dict) or set(settings) - {"units"} or not isinstance(settings.get("units", {}), dict):
-        raise CatalogError("curriculum-settings.json: expected {\"units\": {\"unitN\": {...}}}")
+    if not isinstance(settings, dict) or set(settings) - {"units", "archivedLessons"} or not isinstance(settings.get("units", {}), dict):
+        raise CatalogError("curriculum-settings.json: expected units and optional archivedLessons objects")
     units = settings.get("units", {})
     for key, values in units.items():
         unit_info(key, f"curriculum-settings.json/{key}")
@@ -365,7 +365,85 @@ def read_settings(root: Path):
             require_string(value, f"curriculum-settings.json/{key}/{field}", field == "description")
             if field in {"color", "accentColor"} and not COLOR_RE.fullmatch(value):
                 raise CatalogError(f"curriculum-settings.json/{key}/{field}: use #RRGGBB")
-    return units
+    validate_archive_settings(settings.get("archivedLessons", {}))
+    return settings
+
+
+def read_settings(root: Path):
+    # Keep the existing public helper contract: return only the units map.
+    return read_settings_document(root).get("units", {})
+
+
+def read_archive_settings(root: Path):
+    return read_settings_document(root).get("archivedLessons", {})
+
+
+def validate_archive_settings(archives: dict):
+    if not isinstance(archives, dict):
+        raise CatalogError("curriculum-settings.json/archivedLessons: expected an object")
+    for relative, identity in archives.items():
+        safe_relative(relative, "archivedLessons/path")
+        if (relative != relative.strip() or relative == "index.html" or Path(relative).suffix.lower() not in {".html", ".htm"}
+                or any(part.startswith(".") or part.lower() in EXCLUDED_DIRS | {"server"} for part in relative.split("/"))):
+            raise CatalogError(f"archivedLessons/{relative}: expected an exact registered lesson HTML path")
+        if not isinstance(identity, dict) or set(identity) != {"unitKey", "lessonId"}:
+            raise CatalogError(f"archivedLessons/{relative}: expected only unitKey and lessonId")
+        unit_info(identity["unitKey"], f"archivedLessons/{relative}")
+        lesson_id = identity["lessonId"]
+        if not isinstance(lesson_id, str) or len(lesson_id) > 100 or not ID_RE.fullmatch(lesson_id):
+            raise CatalogError(f"archivedLessons/{relative}: invalid lessonId")
+
+
+def apply_archives(curriculum: dict, worksheets: dict, styles: dict, archives: dict, root: Path | None = None):
+    """Filter generated lists only, after all metadata conflicts have been checked.
+
+    Repository lesson files, source fallback catalogs, PDFs, server access policy
+    and private originals remain unchanged. Absence from a list is not an access denial.
+    """
+    validate_archive_settings(archives)
+    if not archives:
+        return curriculum, worksheets, styles
+    by_file = {}
+    for key, unit in curriculum.items():
+        for lesson in unit["lessons"]:
+            relative = baseline_path(lesson["file"], f"{key}/{lesson['id']}")
+            by_file[relative] = (key, lesson)
+    for relative, identity in archives.items():
+        target = by_file.get(relative)
+        if target is None:
+            raise CatalogError(f"archivedLessons/{relative}: target is no longer in the catalog")
+        if target[0] != identity["unitKey"] or target[1]["id"] != identity["lessonId"]:
+            raise CatalogError(f"archivedLessons/{relative}: unitKey/lessonId does not match the catalog")
+        if root is not None and not reject_symlink_path(root, relative, f"archivedLessons/{relative}").is_file():
+            raise CatalogError(f"archivedLessons/{relative}: lesson file is missing")
+    archived_ids = {entry["lessonId"]: (file, entry["unitKey"]) for file, entry in archives.items()}
+    filtered_curriculum = copy.deepcopy(curriculum)
+    filtered_worksheets = copy.deepcopy(worksheets)
+    affected_units = {entry["unitKey"] for entry in archives.values()}
+    for key, unit in list(filtered_curriculum.items()):
+        unit["lessons"] = [lesson for lesson in unit["lessons"] if baseline_path(lesson["file"], key) not in archives]
+        if key in affected_units and not unit["lessons"]:
+            del filtered_curriculum[key]
+    for group in filtered_worksheets["units"]:
+        kept = []
+        for item in group["items"]:
+            item_file = baseline_path(item["lessonFile"], "worksheet/lessonFile") if item.get("lessonFile") else None
+            item_key = item.get("unitKey") or f"unit{group.get('unitNum')}"
+            item_id = item.get("lessonId")
+            if not item_id and isinstance(item.get("id"), str) and item["id"].startswith("ws_"):
+                item_id = item["id"][3:]
+            target_by_file = archives.get(item_file)
+            target_by_id = archived_ids.get(item_id)
+            if target_by_file or target_by_id:
+                expected_file, expected_key, expected_id = ((item_file, target_by_file["unitKey"], target_by_file["lessonId"])
+                    if target_by_file else (target_by_id[0], target_by_id[1], item_id))
+                if item_key != expected_key or (item.get("lessonId") and item["lessonId"] != expected_id) or (item_file and item_file != expected_file):
+                    raise CatalogError(f"worksheet/{item.get('id')}: archive target has conflicting worksheet references")
+                continue
+            kept.append(item)
+        group["items"] = kept
+    filtered_worksheets["units"] = [group for group in filtered_worksheets["units"] if group["items"]]
+    return filtered_curriculum, filtered_worksheets, {key: value for key, value in styles.items() if key in filtered_curriculum}
 
 
 def lesson_order(lesson, fallback: int):
@@ -584,8 +662,10 @@ def generate(root: Path, output: Path):
     marker_content(source, "STYLES")
     warnings = []
     records, scanned = scan_lessons(root, output, warnings)
-    settings = read_settings(root)
+    settings_document = read_settings_document(root)
+    settings = settings_document.get("units", {})
     curriculum, worksheets, styles, counts = build_catalog(curriculum, worksheets, records, settings, warnings)
+    curriculum, worksheets, styles = apply_archives(curriculum, worksheets, styles, settings_document.get("archivedLessons", {}), root)
     generated = replace_marker(source, "CURRICULUM", "const defaultCurriculum = " + safe_json(curriculum) + ";")
     generated = replace_marker(generated, "WORKSHEETS", "const worksheetCurriculum = " + safe_json(worksheets) + ";")
     generated = replace_marker(generated, "STYLES", make_styles(styles))

@@ -2502,6 +2502,16 @@
         .compact-details summary{cursor:pointer;color:#7dd3fc;font-size:.8rem;font-weight:900;user-select:none;}
         .danger-action-btn{background:#7f1d1d;color:#fecaca;border:none;border-radius:8px;padding:8px 11px;font-weight:900;cursor:pointer;}
         .admin-tool-launcher{background:rgba(15,23,42,.35)!important;border:1px solid rgba(255,255,255,.72)!important;}
+        /* ADMIN_TOOLS_GROUPS_START */
+        #adminToolsModal [hidden]{display:none!important;}
+        #adminToolsModal .point-modal-box{max-height:calc(100dvh - 32px);overflow:auto;}
+        #adminToolsModal .admin-tools-section{margin:24px 0 0;padding:18px 0 0;border-top:1px solid #334155;text-align:left;}
+        #adminToolsModal .admin-tools-section h4{margin:0;color:#f8fafc;font-size:1rem;line-height:1.5;}
+        #adminToolsModal .admin-tools-section-description{margin:5px 0 12px;color:#94a3b8;font-size:.8rem;line-height:1.6;}
+        #adminToolsModal .admin-tools-grid button{min-width:0;overflow-wrap:anywhere;line-height:1.6;}
+        #adminToolsModal .admin-tools-grid button small{display:block;margin-top:4px;font-weight:500;color:#b7c7dc;font-size:.78rem;}
+        #adminToolsModal button:focus-visible{outline:3px solid #67e8f9;outline-offset:3px;}
+        /* ADMIN_TOOLS_GROUPS_END */
         .admin-tools-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
         .admin-tools-grid button{border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:12px;padding:14px 12px;font-weight:900;cursor:pointer;text-align:left;}
         .admin-tools-grid button:hover{border-color:#38bdf8;background:#172033;}
@@ -2770,6 +2780,9 @@
 #lessonUploadModal .lu-help{font-size:.82rem;line-height:1.7;color:#aebbd0;margin:9px 0 14px;}
 #lessonUploadModal .lu-connection,#lessonUploadModal .lu-review,#lessonUploadModal .lu-result{border:1px solid #334155;border-radius:12px;padding:16px;margin:16px 0;background:#0b1425;}
 #lessonUploadModal .lu-connection{display:flex;justify-content:space-between;gap:15px;align-items:center;}
+/* LESSON_ARCHIVE_EDITOR_START */
+#luArchiveSelection{white-space:pre-line;overflow-wrap:anywhere;}
+/* LESSON_ARCHIVE_EDITOR_END */
 #lessonUploadModal .lu-connection-text{white-space:pre-line;overflow-wrap:anywhere;font-size:.86rem;line-height:1.65;}
 #lessonUploadModal .lu-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px 18px;}
 #lessonUploadModal .lu-wide{grid-column:1/-1;}#lessonUploadModal .lu-field{min-width:0;}
@@ -2876,12 +2889,6 @@
             <div class="side-ws-icon" id="sideWsIcon">📑</div>
             <div class="side-ws-title">학습지 보관함</div>
             <div class="side-ws-desc" id="sideWsBadge">단원별 PDF</div>
-        </div>
-
-        <div class="floating-side-card side-card-study" onclick="openSelfStudy()" title="자습 모드 (소음 측정기 팝업 실행)">
-            <div class="side-ws-icon">🤫</div>
-            <div class="side-ws-title">자습 모드</div>
-            <div class="side-ws-desc">소음 측정·경보</div>
         </div>
 
         <div id="floatingAnnouncementBar" class="floating-side-card side-card-announcement" onclick="openAnnouncementModal()" title="공지사항 보기">
@@ -3292,32 +3299,52 @@
 
     <!-- 관리자 포인트 지급 -->
 
-    <div id="adminToolsModal" class="modal-overlay" style="display:none;">
+    <!-- ADMIN_TOOLS_GROUPS_START -->
+    <div id="adminToolsModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="adminToolsHeading">
         <div class="modal-box point-modal-box" style="max-width:720px;">
-            <h3>🧰 관리자 도구</h3>
-            <p style="margin:0 0 10px;color:#67e8f9;font-size:.78rem;">수업 도구 · 포인트 모으기·재지급 / 학생 추첨 업데이트</p>
-            <p class="modal-desc-sub">자주 쓰는 공지·질문·포인트·평가관은 상단에 유지하고, 운영·설정 기능은 이곳에 모았습니다.</p>
-            <div class="admin-tools-grid">
-                <button id="classroomPickerToolBtn" class="tool-primary" style="display:none;" onclick="classroomLaunchTool('picker')">🙋 <b>학생 추첨</b><br><small>발표·활동 참여자 선택 · 다시 뽑기</small></button>
-                <button id="classroomPoolToolBtn" class="tool-primary" style="display:none;" onclick="classroomLaunchTool('pool')">↔ <b>포인트 모으기·재지급</b><br><small>활동 기준 차감 · 남은 포인트 보관</small></button>
-                <button id="classroomAwardsToolBtn" style="display:none;" onclick="classroomLaunchTool('awards')">⭐ <b>개별 보상 지급</b><br><small>별도 보상 예산 · 학생별 지급액</small></button>
-                <button id="toolLessonUploadBtn" class="tool-primary" style="display:none;" onclick="openLessonUploadModal()">📤 <b>수업 자료 등록</b><br><small>HTML·학습지 업로드 및 단원·차시 추가</small></button>
-                <button id="toolUnitSettingsBtn" class="tool-primary" style="display:none;" onclick="openUnitSettingsModal()">🎨 <b>단원 꾸미기</b><br><small>기존 단원의 이름·아이콘·색상 변경</small></button>
-                <button id="toolAssessmentCollectionBtn" class="tool-primary" style="display:none;" onclick="openAssessmentCollectionCenter()">🖨️ <b>평가 제출물 수합·인쇄</b><br><small>학생 제출자료 조회·학번순 일괄 인쇄</small></button>
-                <button id="toolRewardBtn" onclick="launchAdminTool('reward')"><span class="admin-tool-title-row"><span>🎁 <b>상품</b></span><span id="toolRewardBadge" class="pending-badge" style="display:none;" title="상품·경품 처리 대기">0</span></span><small>상품 신청 처리·경품 추첨</small></button>
-                <button id="toolShopEditorBtn" class="tool-primary" onclick="launchAdminTool('shopEditor')">🛒 <b>상품 추가·수정</b><br><small>가격·재고·활성화·경품 일정</small></button>
-                <button id="toolRoleBtn" onclick="launchAdminTool('roles')">🛡️ <b>중간관리자</b><br><small>계정 유형 및 권한 설정</small></button>
-                <button id="toolAcademicBtn" onclick="launchAdminTool('academic')">📅 <b>학년도</b><br><small>다음 학년도 준비·전환</small></button>
-                <button id="toolSignupBtn" onclick="launchAdminTool('signup')"><span class="admin-tool-title-row"><span>👥 <b>회원가입</b></span><span id="toolSignupBadge" class="pending-badge" style="display:none;" title="회원가입 승인 대기">0</span></span><small>외부 회원가입 승인·거절</small></button>
-                <button id="toolPasswordResetBtn" class="tool-danger" onclick="launchAdminTool('passwordReset')">🔑 <b>비밀번호 초기화</b><br><small>학생을 최초 비밀번호 설정 상태로 전환</small></button>
-                <button id="toolStudentEditBtn" onclick="launchAdminTool('studentEdit')">✏️ <b>학생 계정 수정</b><br><small>학생 이름 수정·계정 정보 확인</small></button>
-                <button id="toolCreateStudentBtn" class="tool-primary" onclick="launchAdminTool('createStudent')">➕ <b>학생 계정 추가</b><br><small>전학생 학번·이름으로 즉시 계정 생성</small></button>
-            </div>
+            <h3 id="adminToolsHeading">🧰 관리자 도구</h3>
+            <p class="modal-desc-sub">플랫폼 관리·수업 기능·상품 관리로 나누었습니다. 현재 계정에서 사용할 수 있는 도구만 표시됩니다.</p>
+            <section id="adminToolsPlatform" class="admin-tools-section" aria-labelledby="adminToolsPlatformHeading" hidden>
+                <h4 id="adminToolsPlatformHeading">플랫폼 관리</h4>
+                <p class="admin-tools-section-description">계정·권한·학년도 설정</p>
+                <div class="admin-tools-grid">
+                    <button type="button" id="toolRoleBtn" onclick="launchAdminTool('roles')">🛡️ <b>중간관리자</b><br><small>계정 유형 및 권한 설정</small></button>
+                    <button type="button" id="toolAcademicBtn" onclick="launchAdminTool('academic')">📅 <b>학년도</b><br><small>다음 학년도 준비·전환</small></button>
+                    <button type="button" id="toolSignupBtn" onclick="launchAdminTool('signup')"><span class="admin-tool-title-row"><span>👥 <b>회원가입</b></span><span id="toolSignupBadge" class="pending-badge" style="display:none;" title="회원가입 승인 대기">0</span></span><small>외부 회원가입 승인·거절</small></button>
+                    <button type="button" id="toolPasswordResetBtn" class="tool-danger" onclick="launchAdminTool('passwordReset')">🔑 <b>비밀번호 초기화</b><br><small>학생을 최초 비밀번호 설정 상태로 전환</small></button>
+                    <button type="button" id="toolStudentEditBtn" onclick="launchAdminTool('studentEdit')">✏️ <b>학생 계정 수정</b><br><small>학생 이름 수정·계정 정보 확인</small></button>
+                    <button type="button" id="toolCreateStudentBtn" class="tool-primary" onclick="launchAdminTool('createStudent')">➕ <b>학생 계정 추가</b><br><small>전학생 학번·이름으로 즉시 계정 생성</small></button>
+                </div>
+            </section>
+            <section id="adminToolsCourse" class="admin-tools-section" aria-labelledby="adminToolsCourseHeading" hidden>
+                <h4 id="adminToolsCourseHeading">수업 기능</h4>
+                <p class="admin-tools-section-description">수업 자료·평가·교실 활동</p>
+                <div class="admin-tools-grid">
+                    <button type="button" id="toolLessonUploadBtn" class="tool-primary" style="display:none;" onclick="openLessonUploadModal()">📤 <b>수업 자료 등록</b><br><small>HTML·학습지 업로드 및 단원·차시 추가</small></button>
+                    <button type="button" id="toolLessonArchiveBtn" class="tool-primary" style="display:none;" onclick="openLessonArchiveModal()">📦 <b>자료 보관함</b><br><small>자료를 목록에서 숨기거나 다시 복원</small></button>
+                    <button type="button" id="toolUnitSettingsBtn" class="tool-primary" style="display:none;" onclick="openUnitSettingsModal()">🎨 <b>단원 꾸미기</b><br><small>기존 단원의 이름·아이콘·색상 변경</small></button>
+                    <button type="button" id="toolAssessmentCollectionBtn" class="tool-primary" style="display:none;" onclick="openAssessmentCollectionCenter()">🖨️ <b>평가 제출물 수합·인쇄</b><br><small>학생 제출자료 조회·학번순 일괄 인쇄</small></button>
+                    <button type="button" id="classroomPickerToolBtn" class="tool-primary" style="display:none;" onclick="classroomLaunchTool('picker')">🙋 <b>학생 추첨</b><br><small>발표·활동 참여자 선택 · 다시 뽑기</small></button>
+                    <button type="button" id="classroomPoolToolBtn" class="tool-primary" style="display:none;" onclick="classroomLaunchTool('pool')">↔ <b>포인트 모으기·재지급</b><br><small>활동 기준 차감 · 남은 포인트 보관</small></button>
+                    <button type="button" id="classroomAwardsToolBtn" style="display:none;" onclick="classroomLaunchTool('awards')">⭐ <b>개별 보상 지급</b><br><small>별도 보상 예산 · 학생별 지급액</small></button>
+                    <button id="toolSelfStudyBtn" type="button" class="tool-primary" style="display:none;" onclick="launchAdminTool('selfStudy')">🤫 <b>자습 모드</b><br><small>소음 측정·경보 팝업 열기</small></button>
+                </div>
+            </section>
+            <section id="adminToolsProducts" class="admin-tools-section" aria-labelledby="adminToolsProductsHeading" hidden>
+                <h4 id="adminToolsProductsHeading">상품 관리</h4>
+                <p class="admin-tools-section-description">상품 구성·신청 처리</p>
+                <div class="admin-tools-grid">
+                    <button type="button" id="toolRewardBtn" onclick="launchAdminTool('reward')"><span class="admin-tool-title-row"><span>🎁 <b>상품</b></span><span id="toolRewardBadge" class="pending-badge" style="display:none;" title="상품·경품 처리 대기">0</span></span><small>상품 신청 처리·경품 추첨</small></button>
+                    <button type="button" id="toolShopEditorBtn" class="tool-primary" onclick="launchAdminTool('shopEditor')">🛒 <b>상품 추가·수정</b><br><small>가격·재고·활성화·경품 일정</small></button>
+                </div>
+            </section>
+            <p id="adminToolsEmpty" class="modal-desc-sub" role="status" hidden>현재 계정에서 사용할 수 있는 관리자 도구가 없습니다.</p>
             <div class="modal-btn-group" style="margin-top:18px;">
-                <button type="button" class="modal-btn-cancel" onclick="closeAdminToolsModal()">닫기</button>
+                <button id="adminToolsCloseBtn" type="button" class="modal-btn-cancel" onclick="closeAdminToolsModal()">닫기</button>
             </div>
         </div>
     </div>
+    <!-- ADMIN_TOOLS_GROUPS_END -->
 
     <div id="shopEditorModal" class="modal-overlay" style="display:none;">
         <div class="modal-box point-modal-box" style="max-width:980px;">
@@ -5517,6 +5544,8 @@ window.addEventListener('storage',event=>{
             document.getElementById('adminModeBanner').style.display = 'none';
             document.getElementById('adminToggleFooterBtn').innerText = '⚙️ 교사용 관리자 모드';
             renderUserAuthDisplay();
+            syncAdminToolsMenu();
+            closeAdminToolsModal();
             renderCurrentView();
             alert("👋 정상적으로 로그아웃되었습니다.");
         }
@@ -7685,26 +7714,17 @@ window.addEventListener('storage',event=>{
         function openSelfStudy() {
             const popupSpecs = "width=520,height=420,top=100,left=100,status=no,menubar=no,toolbar=no,location=no,resizable=yes";
             const currentUser = getLoggedInUser();
-            if (isAdminMode || (currentUser && currentUser.isAdmin === true && getAdminSessionToken())) {
+            if (getAdminSessionToken() && (isAdminMode || currentUser?.isAdmin === true)) {
                 window.open("Self_study.html?autopip=true", "SelfStudyPopup", popupSpecs);
                 return;
             }
+            // Use the existing server authentication flow; never publish a shared password.
             openAuthModal(
                 "🔒 자습 모드 교사용 인증",
-                "자습 모드(실시간 소음 경보기) 실행을 위한 비밀번호를 입력해주세요.",
-                (pw) => {
-                    if (pw === "21234") {
-                        closeAuthModal();
-                        window.open("Self_study.html?autopip=true", "SelfStudyPopup", popupSpecs);
-                    } else {
-                        alert("❌ 비밀번호가 올바르지 않습니다.");
-                        const input = document.getElementById('modalPwInput');
-                        input.value = '';
-                        input.focus();
-                    }
-                }
+                "최고관리자 인증을 완료한 뒤 자습 모드를 다시 눌러 주세요."
             );
         }
+
 
         /* 3단원 & 7단원 학습지 데이터베이스 */
         /* AUTO_CATALOG_WORKSHEETS_START */
@@ -8407,6 +8427,7 @@ window.addEventListener('storage',event=>{
 
         function updatePrivilegedUiByRole() {
             if (typeof window.lessonUploadSyncAccess === 'function') window.lessonUploadSyncAccess();
+            syncAdminToolsMenu();
             classroomHidePrivatePanels();
             classroomUpdateToolVisibility();
             const user = getLoggedInUser();
@@ -8979,8 +9000,8 @@ window.addEventListener('storage',event=>{
             window.location.href = 'Assessment_Collection_Center.html';
         }
 
-        function openAdminToolsModal(){
-            const m=document.getElementById('adminToolsModal'); if(!m)return;
+        /* ADMIN_TOOLS_GROUPS_START */
+        function syncAdminToolsMenu(){
             const full=isFullAdminMode();
             const show=(id,on)=>{const el=document.getElementById(id);if(el)el.style.display=on?'':'none';};
             show('toolRewardBtn',canUseAdminFeature('rewards_manage')||canUseAdminFeature('draw_manage'));
@@ -8988,16 +9009,43 @@ window.addEventListener('storage',event=>{
             show('toolAssessmentCollectionBtn',!!getAdminSessionToken());
             show('toolLessonUploadBtn',!!getAdminSessionToken());
             show('toolUnitSettingsBtn',!!getAdminSessionToken());
+            show('toolLessonArchiveBtn',!!getAdminSessionToken());
+            show('toolSelfStudyBtn',!!getAdminSessionToken());
             classroomUpdateToolVisibility();
-
-
-
             ['toolShopEditorBtn','toolRoleBtn','toolAcademicBtn','toolPasswordResetBtn','toolStudentEditBtn','toolCreateStudentBtn'].forEach(id=>show(id,full));
-            m.style.display='flex';
+            let visibleGroups=0;
+            ['adminToolsPlatform','adminToolsCourse','adminToolsProducts'].forEach(id=>{
+                const section=document.getElementById(id);if(!section)return;
+                const visible=Array.from(section.querySelectorAll('button')).some(button=>!button.hidden && button.style.display!=='none');
+                section.hidden=!visible;if(visible)visibleGroups++;
+            });
+            const empty=document.getElementById('adminToolsEmpty');if(empty)empty.hidden=visibleGroups>0;
+            const modal=document.getElementById('adminToolsModal');
+            if(modal?.style.display==='flex' && modal.contains(document.activeElement) && !document.activeElement?.getClientRects().length)document.getElementById('adminToolsCloseBtn')?.focus();
         }
-        function closeAdminToolsModal(){const m=document.getElementById('adminToolsModal');if(m)m.style.display='none';}
+        function openAdminToolsModal(){
+            const m=document.getElementById('adminToolsModal');if(!m)return;
+            syncAdminToolsMenu();m.style.display='flex';
+            const first=Array.from(m.querySelectorAll('button')).find(button=>!button.disabled && button.getClientRects().length);
+            first?.focus();
+        }
+        function closeAdminToolsModal(){
+            const m=document.getElementById('adminToolsModal');const wasOpen=m?.style.display==='flex';if(m)m.style.display='none';
+            if(wasOpen){const launcher=document.getElementById('adminToolsBtn');if(launcher?.getClientRects().length)launcher.focus();else document.querySelector('#userAuthDisplayArea button')?.focus();}
+        }
+        function adminToolsTrapFocus(event){
+            const modal=document.getElementById('adminToolsModal');if(event.key!=='Tab' || modal?.style.display!=='flex')return;
+            const buttons=Array.from(modal.querySelectorAll('button')).filter(button=>!button.disabled && button.getClientRects().length);
+            if(!buttons.length){event.preventDefault();return;}
+            const first=buttons[0],last=buttons[buttons.length-1];
+            if(event.shiftKey && (document.activeElement===first || !modal.contains(document.activeElement))){event.preventDefault();last.focus();}
+            else if(!event.shiftKey && (document.activeElement===last || !modal.contains(document.activeElement))){event.preventDefault();first.focus();}
+        }
+        document.addEventListener('keydown',adminToolsTrapFocus);
+        /* ADMIN_TOOLS_GROUPS_END */
         function launchAdminTool(tool){
             closeAdminToolsModal();
+            if(tool==='selfStudy')return openSelfStudy();
             if(tool==='reward')return openAdminRewardModal();
             if(tool==='shopEditor')return openShopEditorModal();
             if(tool==='roles')return openRoleManagerModal();
@@ -10434,11 +10482,14 @@ window.addEventListener('storage',event=>{
     <form id="luForm" novalidate>
       <fieldset id="luFields" disabled>
         <div class="lu-grid">
-          <div class="lu-field"><label for="luOperation">등록 방식</label><select id="luOperation"><option value="create">새 차시 추가</option><option value="replace">기존 차시 파일 교체</option><option value="update_unit">기존 단원 꾸미기</option></select></div>
-          <div class="lu-field" id="luExistingWrap" hidden><label for="luExisting">교체할 차시</label><select id="luExisting"><option value="">차시를 선택하세요</option></select></div>
+          <div class="lu-field"><label for="luOperation">등록 방식</label><select id="luOperation"><option value="create">새 차시 추가</option><option value="replace">기존 차시 파일 교체</option><option value="update_unit">기존 단원 꾸미기</option><option value="archive_lesson">자료 보관 · 일반 목록에서 숨기기</option><option value="restore_lesson">보관한 자료 복원</option></select></div>
+          <div class="lu-field" id="luExistingWrap" hidden><label id="luExistingLabel" for="luExisting">교체할 차시</label><select id="luExisting"><option value="">차시를 선택하세요</option></select></div>
+          <!-- LESSON_ARCHIVE_EDITOR_START -->
+          <div id="luArchiveInfo" class="lu-field lu-wide" hidden><p id="luArchiveSelection" class="lu-help" role="status"></p></div>
+          <!-- LESSON_ARCHIVE_EDITOR_END -->
           <div id="luHtmlWrap" class="lu-field lu-wide"><label for="luHtml">수업 HTML 파일 *</label><input id="luHtml" type="file" accept=".html,.htm,text/html" required><p id="luFileInfo" class="lu-help">HTML 파일은 최대 3 MiB까지 등록할 수 있습니다.</p></div>
           <div id="luFileNameWrap" class="lu-field lu-wide"><label for="luFileName">GitHub에 저장할 파일 이름 *</label><input id="luFileName" maxlength="180" required placeholder="예: 01_photosynthesis.html"><p class="lu-help">한글과 공백을 사용할 수 있습니다. 다른 폴더 경로는 입력하지 마세요.</p></div>
-          <div class="lu-field"><label for="luUnitSelect">단원 *</label><select id="luUnitSelect" required><option value="">단원을 선택하세요</option></select></div>
+          <div id="luUnitSelectWrap" class="lu-field"><label for="luUnitSelect">단원 *</label><select id="luUnitSelect" required><option value="">단원을 선택하세요</option></select></div>
           <div id="luOrderWrap" class="lu-field"><label for="luOrder">차시 순서 *</label><input id="luOrder" type="number" min="1" max="999" step="1" required></div>
           <div id="luTitleWrap" class="lu-field lu-wide"><label for="luTitle">차시 제목 *</label><input id="luTitle" maxlength="160" required placeholder="예: 광합성"></div>
           <div id="luDescriptionWrap" class="lu-field lu-wide"><label for="luDescription">차시 설명</label><textarea id="luDescription" maxlength="1000" placeholder="배너에 표시할 짧은 안내"></textarea></div>
@@ -10466,7 +10517,7 @@ window.addEventListener('storage',event=>{
     const el = id => document.getElementById('lu' + id);
     const state = { open:false, busy:false, phase:'', auth:'', config:null, generation:0, revision:0,
         html:'', fileVersion:0, fileKeys:{}, metadata:{}, explicit:new Set(), prepared:null,
-        receipt:null, timer:null, watch:null, pollStarted:0, polling:false, focus:null, startOperation:'create', legacyPreview:null };
+        receipt:null, timer:null, watch:null, pollStarted:0, polling:false, focus:null, startOperation:'create', legacyPreview:null, archiveNeedsRefresh:false };
     const modal = document.getElementById('lessonUploadModal');
     const MAX_HTML = 3 * 1024 * 1024, MAX_PDF = 8 * 1024 * 1024;
     const token = () => typeof getAdminSessionToken === 'function' ? getAdminSessionToken() : '';
@@ -10480,8 +10531,24 @@ window.addEventListener('storage',event=>{
     };
     const units = () => Array.isArray(state.config?.units) ? state.config.units : [];
     const lessons = () => Array.isArray(state.config?.lessons) ? state.config.lessons : [];
-    const existing = () => lessons()[Number(value('Existing'))] || null;
+    const existing = () => value('Existing')!=='' ? lessons()[Number(value('Existing'))] || null : null;
     const isUnitSettings = () => value('Operation')==='update_unit';
+    /* LESSON_ARCHIVE_EDITOR_START */
+    const isArchiveOperation = operation => ['archive_lesson','restore_lesson'].includes(operation);
+    const isArchive = () => isArchiveOperation(value('Operation'));
+    const archiveEligible = lesson => !!lesson && (value('Operation')==='restore_lesson' ? lesson.archived===true : lesson.archived!==true);
+    const archiveLabel = () => value('Operation')==='restore_lesson' ? '복원' : '보관';
+    const archiveHelp = '보관하면 일반 목록에서 숨기고 자료 보관함에서 복원할 수 있습니다. 원본·PDF·제출 기록·공개 잠금은 유지됩니다. 직접 주소의 열람은 기존 로그인·공개 권한을 따릅니다.';
+    function archiveMessage() {
+        if(state.config?.capabilities?.lessonArchive!==true)return '자료 보관·복원을 사용하려면 업로드 서버를 새 버전으로 업데이트해 주세요.';
+        if(state.archiveNeedsRefresh)return '저장 결과와 최신 자료 목록을 다시 확인해야 합니다. 재등록하지 말고 등록·배포 상태 확인 또는 연결 다시 확인을 눌러 주세요.';
+        return lessons().some(archiveEligible) ? (archiveLabel()+'할 자료를 선택하세요. 변경 내용 확인 후 저장합니다.') : (value('Operation')==='restore_lesson' ? '보관된 자료가 없습니다. 위 등록 방식을 ‘자료 보관’으로 바꾸면 일반 목록의 자료를 선택할 수 있습니다.' : '보관할 자료가 없습니다. 위 등록 방식을 ‘보관한 자료 복원’으로 바꾸면 보관된 자료를 확인할 수 있습니다.');
+    }
+    function renderArchiveSelection() {
+        const item=existing(), unit=units().find(unit=>unit.key===item?.unitKey);
+        el('ArchiveSelection').textContent=item && archiveEligible(item) ? `${item.title || item.id}\n${unit?.title || item.unitKey} · ${item.file}\n현재 상태: ${item.archived===true?'보관 중':'일반 목록에 표시'}` : archiveMessage();
+    }
+    /* LESSON_ARCHIVE_EDITOR_END */
     const selectedUnit = () => units().find(unit=>unit.key===value('UnitSelect'));
     const colorsEdited = () => state.explicit.has('luColor') || state.explicit.has('luAccentColor');
     const usableColor = (color, fallback) => /^#[\da-f]{6}$/i.test(String(color || '')) ? color : fallback;
@@ -10496,17 +10563,17 @@ window.addEventListener('storage',event=>{
         modal.setAttribute('aria-busy',String(state.busy));
         el('Fields').disabled=state.busy || !state.config?.configured;
         el('Reconnect').disabled=state.busy;
-        el('Prepare').disabled=state.busy || !state.config?.configured || (isUnitSettings() ? !selectedUnit() || state.config?.capabilities?.unitSettings!==true : !state.html);
+        el('Prepare').disabled=state.busy || !state.config?.configured || (isArchive() ? !archiveEligible(existing()) || state.archiveNeedsRefresh || state.config?.capabilities?.lessonArchive!==true : isUnitSettings() ? !selectedUnit() || state.config?.capabilities?.unitSettings!==true : !state.html);
         el('Commit').disabled=state.busy || !state.prepared;
         el('CheckStatus').disabled=state.busy || state.polling;
     }
     function setBusy(on,phase='') { state.busy=on; state.phase=on?phase:''; renderBusy(); }
     function resetDraft() {
         invalidate(); state.fileVersion++; state.html=''; state.fileKeys={}; state.metadata={}; state.explicit.clear();
-        el('Form').reset();setValue('Operation',state.startOperation);state.legacyPreview=null;renderMode(); el('ExistingWrap').hidden=true; el('ExistingPdf').hidden=true; el('ClearPdf').hidden=true;
+        el('Form').reset();setValue('Operation',state.startOperation);state.legacyPreview=null;state.archiveNeedsRefresh=false;renderMode(); el('ExistingPdf').hidden=true; el('ClearPdf').hidden=true;
         el('FileInfo').textContent='HTML 파일은 최대 3 MiB까지 등록할 수 있습니다.';
         el('FileName').readOnly=false; el('UnitKey').readOnly=false; el('LessonId').readOnly=false;
-        el('UnitSelect').disabled=false; el('Identifiers').open=false; el('UnitDetails').open=isUnitSettings();
+        el('UnitSelect').disabled=isArchive(); el('Identifiers').open=false; el('UnitDetails').open=isUnitSettings();
         renderPreview();
     }
     function authValid() {
@@ -10550,12 +10617,14 @@ window.addEventListener('storage',event=>{
     function renderConfigOptions() {
         el('UnitSelect').replaceChildren(); option(el('UnitSelect'),'단원을 선택하세요','');
         units().forEach(unit=>option(el('UnitSelect'),String(unit.title || unit.key),unit.key));
-        if(!isUnitSettings())option(el('UnitSelect'),'＋ 새 단원 추가','__new');
-        el('Existing').replaceChildren();option(el('Existing'),'차시를 선택하세요','');
+        if(!isUnitSettings() && !isArchive())option(el('UnitSelect'),'＋ 새 단원 추가','__new');
+        el('Existing').replaceChildren();option(el('Existing'),isArchive()?archiveLabel()+'할 자료를 선택하세요':'차시를 선택하세요','');
         lessons().forEach((lesson,index)=>{
+            if(!archiveEligible(lesson))return;
             const unit=units().find(u=>u.key===lesson.unitKey);
             option(el('Existing'),`${unit?.title || lesson.unitKey} · ${lesson.chasi || numberOrder(lesson)+'차시'} ${lesson.title || lesson.id}`,String(index));
         });
+        setValue('Existing','');if(isArchive())renderArchiveSelection();
     }
     async function reloadConfig() {
         if(state.busy || !authValid())return;
@@ -10572,7 +10641,7 @@ window.addEventListener('storage',event=>{
                 el('Connection').textContent='서버의 GitHub 연결 설정이 필요합니다.'+(needs.length?'\n확인할 설정: '+needs.join(', '):'');
             } else {
                 el('Connection').textContent=`연결 완료 · ${data.repository || '과학 플랫폼 저장소'}${data.branch?' / '+data.branch:''}`;
-                say(isUnitSettings() ? (data.capabilities?.unitSettings===true ? '꾸밀 단원을 선택하세요. 이름·아이콘·색상을 함께 바꿀 수 있습니다.' : '단원 꾸미기 저장을 사용하려면 업로드 서버를 새 버전으로 업데이트해 주세요.') : 'HTML 파일을 선택하면 단원·차시 정보를 읽어 채웁니다.', isUnitSettings() && data.capabilities?.unitSettings!==true ? 'error' : '');
+                say(isArchive() ? archiveMessage() : isUnitSettings() ? (data.capabilities?.unitSettings===true ? '꾸밀 단원을 선택하세요. 이름·아이콘·색상을 함께 바꿀 수 있습니다.' : '단원 꾸미기 저장을 사용하려면 업로드 서버를 새 버전으로 업데이트해 주세요.') : 'HTML 파일을 선택하면 단원·차시 정보를 읽어 채웁니다.', (isArchive() && data.capabilities?.lessonArchive!==true) || (isUnitSettings() && data.capabilities?.unitSettings!==true) ? 'error' : '');
                 if(state.receipt){renderReceipt();state.pollStarted=Date.now();schedulePoll(100);}
             }
         } catch(error) {
@@ -10629,19 +10698,25 @@ window.addEventListener('storage',event=>{
 
     /* UNIT_SETTINGS_EDITOR_START */
     function renderMode() {
-        const mode=isUnitSettings();
-        el('Existing').required=value('Operation')==='replace';el('Existing').disabled=value('Operation')!=='replace';
+        const mode=isUnitSettings(), archive=isArchive(), catalog=mode || archive, selected=value('Operation')==='replace' || archive;
+        el('Existing').required=selected;el('Existing').disabled=!selected;el('ExistingWrap').hidden=!selected;
+        el('ExistingLabel').textContent=archive ? archiveLabel()+'할 자료' : '교체할 차시';
         for(const name of ['Html','FileName','Order','Title','Description','Tags','Pdf']) {
-            el(name+'Wrap').hidden=mode;el(name).disabled=mode;
+            el(name+'Wrap').hidden=catalog;el(name).disabled=catalog;
         }
-        el('Identifiers').hidden=mode;el('UnitKey').disabled=mode;el('LessonId').disabled=mode;
-        el('Heading').textContent=mode?'🎨 단원 꾸미기':'📤 수업 자료 등록';
-        el('Intro').textContent=mode?'이미 만든 단원의 이름·설명·아이콘·색상을 변경합니다.':'HTML과 수업 정보를 등록하면 단원·차시 배너가 자동으로 추가됩니다.';
-        el('Close').setAttribute('aria-label',mode?'단원 꾸미기 창 닫기':'수업 자료 등록 창 닫기');
-        el('Prepare').textContent=mode?'변경 내용 확인':'등록 내용 확인';
-        el('Commit').textContent=mode?'이 내용으로 저장':'이 내용으로 등록';
-        el('ReviewHeading').textContent=mode?'저장 전 확인':'등록 전 확인';
-        el('ModeHelp').textContent=mode?'저장 후 자동 배포가 완료되면 플랫폼에 반영됩니다.':'새 자료는 잠긴 상태로 추가됩니다. 배포가 끝나면 기존 관리자 공개 버튼으로 열어 주세요.';
+        el('Identifiers').hidden=catalog;el('UnitKey').disabled=catalog;el('LessonId').disabled=catalog;
+        el('UnitSelectWrap').hidden=archive;el('UnitSelect').disabled=archive;
+        el('UnitDetails').hidden=archive;
+        for(const name of ['UnitTitle','UnitIcon','UnitDescription','Color','AccentColor'])el(name).disabled=archive;
+        iconButtons.forEach(({button})=>button.disabled=archive);
+        el('ArchiveInfo').hidden=!archive;if(archive)renderArchiveSelection();
+        el('Heading').textContent=archive?'📦 자료 보관함':mode?'🎨 단원 꾸미기':'📤 수업 자료 등록';
+        el('Intro').textContent=archive?'자료를 일반 목록에서 숨기거나, 보관한 자료를 다시 표시합니다.':mode?'이미 만든 단원의 이름·설명·아이콘·색상을 변경합니다.':'HTML과 수업 정보를 등록하면 단원·차시 배너가 자동으로 추가됩니다.';
+        el('Close').setAttribute('aria-label',archive?'자료 보관함 창 닫기':mode?'단원 꾸미기 창 닫기':'수업 자료 등록 창 닫기');
+        el('Prepare').textContent=catalog?'변경 내용 확인':'등록 내용 확인';
+        el('Commit').textContent=archive?'이 자료 '+archiveLabel()+'하기':mode?'이 내용으로 저장':'이 내용으로 등록';
+        el('ReviewHeading').textContent=catalog?'저장 전 확인':'등록 전 확인';
+        el('ModeHelp').textContent=archive?archiveHelp:mode?'저장 후 자동 배포가 완료되면 플랫폼에 반영됩니다.':'새 자료는 잠긴 상태로 추가됩니다. 배포가 끝나면 기존 관리자 공개 버튼으로 열어 주세요.';
         el('ThemeHelp').hidden=!mode;
         if(mode)el('UnitDetails').open=true;
     }
@@ -10668,7 +10743,7 @@ window.addEventListener('storage',event=>{
         syncIconPicker();
     }
     function autoIdentifiers() {
-        if(value('Operation')==='replace' || isUnitSettings())return;
+        if(value('Operation')==='replace' || isUnitSettings() || isArchive())return;
         const key=value('UnitKey');
         if(!state.explicit.has('luOrder') && !state.metadata.lessonOrder) {
             const largest=lessons().filter(l=>l.unitKey===key).reduce((n,l)=>Math.max(n,numberOrder(l)),0);
@@ -10695,8 +10770,9 @@ window.addEventListener('storage',event=>{
         if(state.fileKeys.unitKey && value('UnitKey') && state.fileKeys.unitKey!==value('UnitKey'))say('선택한 단원이 HTML 내부의 단원 식별자와 다릅니다. 수업 식별 정보를 확인해 주세요.','error');
     }
     function selectExisting() {
-        const lesson=value('Existing')===''?null:existing();
-        if(!lesson)return;
+        const lesson=existing();
+        if(isArchive()){renderArchiveSelection();renderBusy();return;}
+        if(!lesson || lesson.archived===true)return;
         setValue('UnitSelect',lesson.unitKey);selectUnit();
         setValue('LessonId',lesson.id);setValue('Order',numberOrder(lesson));setValue('Title',lesson.title);
         setValue('Description',lesson.description || '');setValue('Tags',Array.isArray(lesson.tags)?lesson.tags.join(', '):'');
@@ -10708,16 +10784,17 @@ window.addEventListener('storage',event=>{
     function operationChanged() {
         const previous=state.startOperation;state.startOperation=value('Operation');
         const unitKey=value('UnitSelect');
-        if(previous==='update_unit' || isUnitSettings()) {
+        if(previous==='update_unit' || isUnitSettings() || isArchiveOperation(previous) || isArchive()) {
             state.fileVersion++;state.html='';state.fileKeys={};state.metadata={};state.explicit.clear();
             el('Html').value='';el('Pdf').value='';setValue('FileName','');setValue('LessonId','');setValue('Order','');setValue('Title','');setValue('Description','');setValue('Tags','');
             el('ClearPdf').hidden=true;el('FileInfo').textContent='HTML 파일은 최대 3 MiB까지 등록할 수 있습니다.';
             renderConfigOptions();setValue('UnitSelect',units().some(unit=>unit.key===unitKey)?unitKey:'');selectUnit();
         }
-        renderMode();const replace=value('Operation')==='replace';el('ExistingWrap').hidden=!replace;
-        el('Existing').required=replace;el('UnitSelect').disabled=false;el('FileName').readOnly=false;el('LessonId').readOnly=false;
-        if(replace)selectExisting();
+        renderMode();const replace=value('Operation')==='replace';
+        el('UnitSelect').disabled=isArchive();el('FileName').readOnly=false;el('LessonId').readOnly=false;
+        if(replace || isArchive())selectExisting();
         else {setValue('Existing','');el('ExistingPdf').hidden=true;if(el('Html').files[0])setValue('FileName',el('Html').files[0].name);autoIdentifiers();}
+        if(isArchive())say(archiveMessage(),state.config?.capabilities?.lessonArchive===true?'':'error');
         if(isUnitSettings())say(state.config?.capabilities?.unitSettings===true?'꾸밀 단원을 선택하고 변경 내용을 확인하세요.':'단원 꾸미기 저장을 사용하려면 업로드 서버를 새 버전으로 업데이트해 주세요.',state.config?.capabilities?.unitSettings===true?'':'error');
         renderBusy();
     }
@@ -10799,6 +10876,12 @@ window.addEventListener('storage',event=>{
         return {fileName:file.name,base64:btoa(binary)};
     }
     async function payloadFromForm() {
+        if(isArchive()) {
+            if(state.config?.capabilities?.lessonArchive!==true)throw new Error('자료 보관·복원을 사용하려면 업로드 서버를 새 버전으로 업데이트해 주세요.');
+            if(state.archiveNeedsRefresh)throw new Error('먼저 등록·배포 상태와 최신 자료 목록을 다시 확인해 주세요.');
+            const lesson=existing();if(!archiveEligible(lesson))throw new Error(archiveLabel()+'할 자료를 선택해 주세요.');
+            return {operation:value('Operation'),fileName:lesson.file,unitKey:lesson.unitKey,lessonId:lesson.id};
+        }
         if(isUnitSettings()) {
             if(state.config?.capabilities?.unitSettings!==true)throw new Error('단원 꾸미기 저장을 사용하려면 업로드 서버를 새 버전으로 업데이트해 주세요.');
             const unit=selectedUnit();if(!unit)throw new Error('기존 단원을 선택해 주세요.');
@@ -10811,7 +10894,7 @@ window.addEventListener('storage',event=>{
         if(!/^unit[1-9][0-9]{0,2}(?:_eval)?$/.test(value('UnitKey')))throw new Error('단원 식별자는 unit5 또는 unit3_eval과 같은 형식이어야 합니다.');
         if(!/^[A-Za-z_][A-Za-z0-9_-]{0,79}$/.test(value('LessonId')))throw new Error('차시 식별자는 영문 또는 밑줄로 시작하며 영문·숫자·밑줄·하이픈으로 입력해 주세요.');
         if(/[\\/]/.test(value('FileName')) || !/\.html?$/i.test(value('FileName')) || value('FileName').startsWith('.'))throw new Error('파일 이름에는 폴더 경로를 제외하고 .html 또는 .htm 확장자를 넣어 주세요.');
-        if(value('Operation')==='replace' && value('Existing')==='')throw new Error('교체할 기존 차시를 선택해 주세요.');
+        if(value('Operation')==='replace' && !archiveEligible(existing()))throw new Error('교체할 기존 차시를 선택해 주세요. 보관된 자료는 먼저 복원해 주세요.');
         if(state.fileKeys.unitKey && state.fileKeys.unitKey!==value('UnitKey'))throw new Error('HTML 내부 THIS_UNIT_KEY와 선택한 단원이 다릅니다. 원본 파일이나 단원 선택을 확인해 주세요.');
         if(state.fileKeys.lessonId && state.fileKeys.lessonId!==value('LessonId'))throw new Error('HTML 내부 THIS_LESSON_ID와 차시 식별자가 다릅니다. 원본 파일이나 차시 선택을 확인해 주세요.');
         return {operation:value('Operation'),fileName:value('FileName'),html:state.html,unitKey:value('UnitKey'),lessonId:value('LessonId'),lessonOrder:Number(value('Order')),title:value('Title'),description:value('Description'),tags:value('Tags').split(',').map(t=>t.trim()).filter(Boolean),
@@ -10821,10 +10904,15 @@ window.addEventListener('storage',event=>{
     function summaryLine(label,content) {const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=String(content??'');el('ReviewSummary').append(dt,dd);}
     function renderReview(summary) {
         el('ReviewSummary').replaceChildren();
-        const editing=summary.operation==='update_unit';
-        summaryLine('작업',editing?'기존 단원 꾸미기':summary.operation==='replace'?'기존 차시 교체':'새 차시 추가');
+        const editing=summary.operation==='update_unit',archive=isArchiveOperation(summary.operation);
+        summaryLine('작업',archive?(summary.operation==='archive_lesson'?'자료 보관 · 일반 목록에서 숨기기':'보관한 자료 복원'):editing?'기존 단원 꾸미기':summary.operation==='replace'?'기존 차시 교체':'새 차시 추가');
         summaryLine('단원',summary.unitTitle || summary.unitKey);
-        if(editing) {
+        if(archive) {
+            summaryLine('자료',summary.title);summaryLine('파일 이름',summary.fileName);summaryLine('식별 정보',`${summary.unitKey} / ${summary.lessonId}`);
+            summaryLine('목록 표시',summary.operation==='archive_lesson'?'일반 목록에서 숨김 → 자료 보관함에서 복원 가능':'일반 목록에 다시 표시');
+            summaryLine('유지되는 항목','원본 · PDF · 제출 기록 · 기존 공개 잠금');
+            summaryLine('직접 주소','기존 로그인·공개 권한에 따라 열람됩니다.');
+        } else if(editing) {
             const before=summary.unitBefore || {},after=summary.unitAfter || {};
             const labels={title:'이름',description:'설명',icon:'아이콘',color:'배경색',accentColor:'강조색'};
             for(const [key,label] of Object.entries(labels))if(before[key]!==after[key])summaryLine(label,String(before[key] ?? '기존 테마')+' → '+String(after[key] ?? '기존 테마'));
@@ -10842,14 +10930,14 @@ window.addEventListener('storage',event=>{
     }
     async function prepare(event) {
         event?.preventDefault();if(state.busy || !state.config?.configured || !authValid())return;
-        el('Identifiers').open=!isUnitSettings();el('UnitDetails').open=true;
+        el('Identifiers').open=!isUnitSettings() && !isArchive();el('UnitDetails').open=!isArchive();
         if(!el('Form').reportValidity())return;
-        invalidate();const revision=state.revision,generation=state.generation;setBusy(true,'prepare');say(isUnitSettings()?'단원 변경 내용을 확인하고 있습니다.':'파일과 수업 정보를 확인하고 있습니다.');
+        invalidate();const revision=state.revision,generation=state.generation;setBusy(true,'prepare');say(isArchive()?'자료 '+archiveLabel()+' 내용을 확인하고 있습니다.':isUnitSettings()?'단원 변경 내용을 확인하고 있습니다.':'파일과 수업 정보를 확인하고 있습니다.');
         try {
             const payload=await payloadFromForm();const data=await api('prepare',{payload});
             if(revision!==state.revision || generation!==state.generation || !state.open)return;
             if(!data.ticket || !data.summary)throw new Error('등록 확인 결과가 불완전합니다. 다시 확인해 주세요.');
-            state.prepared={ticket:data.ticket,payload,summary:data.summary,revision};renderReview(data.summary);say(isUnitSettings()?'아래 변경 내용을 확인한 뒤 저장해 주세요.':'아래 내용을 확인한 뒤 등록해 주세요.');
+            state.prepared={ticket:data.ticket,payload,summary:data.summary,revision};renderReview(data.summary);say(isUnitSettings() || isArchive()?'아래 변경 내용을 확인한 뒤 저장해 주세요.':'아래 내용을 확인한 뒤 등록해 주세요.');
         } catch(error){if(generation===state.generation && state.open)say(error.message,'error');}
         finally{if(generation===state.generation)setBusy(false);}
     }
@@ -10857,7 +10945,7 @@ window.addEventListener('storage',event=>{
     // Protection readiness is an independent, server-confirmed state. A GitHub
     // deployment result alone never proves that a protected lesson can be read.
     const protectionReady = data => data?.protectedContentReady===true ? true : data?.protectedContentReady===false ? false : null;
-    const settingsReceipt = () => state.receipt?.operation==='update_unit';
+    const settingsReceipt = () => state.receipt?.operation==='update_unit' || isArchiveOperation(state.receipt?.operation);
     function rememberReceipt() {try{localStorage.setItem(receiptKey(),JSON.stringify(state.receipt));}catch(_){}}
     function protectionMessage(ready) {
         if(ready===true)return '비공개 원본 저장·보호 본문 연결: 확인 완료';
@@ -10872,11 +10960,28 @@ window.addEventListener('storage',event=>{
         if(!state.receipt)return;el('Result').hidden=false;el('RefreshSite').hidden=true;el('ResultLinks').replaceChildren();
         renderReceiptLinks();el('DeployStatus').dataset.kind='';
         if(state.receipt.uncertain)el('DeployStatus').textContent='저장 결과 확인 중 · 이미 저장되었을 수 있습니다. 재등록하지 말고 등록·배포 상태를 확인해 주세요.';
-        else if(settingsReceipt())el('DeployStatus').textContent='단원 설정 파일 저장 완료 · 사이트 반영 상태를 확인하고 있습니다.';
+        else if(settingsReceipt())el('DeployStatus').textContent=(isArchiveOperation(state.receipt.operation)?'자료 목록 설정':'단원 설정')+' 파일 저장 완료 · 사이트 반영 상태를 확인하고 있습니다.';
         else {
             el('DeployStatus').textContent='공개 연결 파일 저장 확인\n'+protectionMessage(protectionReady(state.receipt))+'\n사이트: 배포 상태를 확인하고 있습니다.';
             if(state.receipt.protectedContentReady===false)el('DeployStatus').dataset.kind='error';
         }
+    }
+    async function refreshArchiveCatalog() {
+        // Fetch the authoritative list after a lifecycle write; retain the receipt
+        // and its exact-SHA polling so a list refresh cannot claim deployment.
+        state.archiveNeedsRefresh=true;invalidate();setValue('Existing','');renderBusy();
+        const generation=state.generation,sha=state.receipt?.commitSha,ownsBusy=!state.busy;
+        if(ownsBusy)setBusy(true,'archive-config');
+        try {
+            const data=await api('config');
+            if(generation!==state.generation || !state.open || state.receipt?.commitSha!==sha)return;
+            if(!data.configured)throw new Error('저장소 연결 설정을 확인해 주세요.');
+            state.config=data;state.archiveNeedsRefresh=false;renderConfigOptions();
+            if(isArchive())renderArchiveSelection();
+            say(isArchive() && data.capabilities?.lessonArchive!==true ? archiveMessage() : '최신 자료 목록을 확인했습니다. 저장·배포 결과는 아래에서 확인하세요.',isArchive() && data.capabilities?.lessonArchive!==true?'error':'');
+        } catch(error) {
+            if(generation===state.generation && state.open){if(isArchive())renderArchiveSelection();say('설정 저장 결과는 아래에서 확인할 수 있습니다. 최신 자료 목록을 읽지 못해 추가 보관·복원을 잠시 멈췄습니다. 연결 다시 확인을 눌러 주세요. '+error.message,'error');}
+        } finally {if(ownsBusy && generation===state.generation)setBusy(false);else renderBusy();}
     }
     async function commit() {
         if(state.busy || !state.prepared || !authValid())return;
@@ -10891,12 +10996,14 @@ window.addEventListener('storage',event=>{
             if(!/^[a-f0-9]{40,64}$/i.test(String(data.commitSha || '')))throw new Error('등록 결과의 저장 번호를 확인하지 못했습니다. GitHub Actions에서 저장 여부를 확인해 주세요.');
             state.receipt={operation:prepared.payload.operation,commitSha:data.commitSha,commitUrl:data.commitUrl,siteUrl:data.siteUrl,lessonUrl:data.lessonUrl,workflowUrl:data.workflowUrl,protectedContentReady:protectionReady(data)};
             rememberReceipt();invalidate();
-            if(settingsReceipt())say('단원 설정을 저장했습니다. 자동 배포가 끝나면 새 꾸미기가 반영됩니다.','success');
+            if(isArchiveOperation(state.receipt.operation))say('자료 목록 설정을 저장했습니다. 자동 배포가 끝나면 '+(state.receipt.operation==='archive_lesson'?'일반 목록에서 숨겨집니다.':'일반 목록에 다시 표시됩니다.'),'success');
+            else if(settingsReceipt())say('단원 설정을 저장했습니다. 자동 배포가 끝나면 새 꾸미기가 반영됩니다.','success');
             else say('공개 연결 파일의 저장 응답을 받았습니다. 비공개 원본·보호 본문 연결과 사이트 배포 상태를 아래에서 확인해 주세요.');
             renderReceipt();state.pollStarted=Date.now();schedulePoll(1000);
+            if(isArchiveOperation(state.receipt.operation))await refreshArchiveCatalog();
         } catch(error){if(generation===state.generation){
             say(error.message,'error');invalidate();
-            if(error.commitReceipt){state.receipt={...error.commitReceipt,operation:prepared.payload.operation,protectedContentReady:null};rememberReceipt();renderReceipt();state.pollStarted=Date.now();schedulePoll(1000);}
+            if(error.commitReceipt){if(isArchiveOperation(prepared.payload.operation)){state.archiveNeedsRefresh=true;setValue('Existing','');}state.receipt={...error.commitReceipt,operation:prepared.payload.operation,protectedContentReady:null};rememberReceipt();renderReceipt();state.pollStarted=Date.now();schedulePoll(1000);}
         }}
         finally{if(generation===state.generation)setBusy(false);}
     }
@@ -10924,6 +11031,7 @@ window.addEventListener('storage',event=>{
             rememberReceipt();renderReceiptLinks(data.siteUrl);
             el('RefreshSite').hidden=!complete;
             if(complete && !settingsReceipt())appendLink('등록한 차시 열기',state.receipt.lessonUrl);
+            if(complete && isArchiveOperation(state.receipt.operation) && state.archiveNeedsRefresh)await refreshArchiveCatalog();
             if(!complete && !failed)schedulePoll();
         } catch(error){if(generation===state.generation && state.open && state.receipt?.commitSha===sha){
             state.receipt.protectedContentReady=null;rememberReceipt();
@@ -10942,7 +11050,7 @@ window.addEventListener('storage',event=>{
         if(focus?.getClientRects().length)focus.focus();state.focus=null;
     }
     async function openModal(initialOperation='create') {
-        state.startOperation=initialOperation==='update_unit'?'update_unit':'create';
+        state.startOperation=['update_unit','archive_lesson','restore_lesson'].includes(initialOperation)?initialOperation:'create';
         if(!token()){alert('최고관리자 인증 후 수업 자료를 등록할 수 있습니다.');return;}
         state.focus=document.activeElement;closeAdminToolsModal();state.auth=token();state.open=true;modal.hidden=false;modal.style.display='flex';
         el('Result').hidden=true;state.receipt=null;
@@ -10952,13 +11060,14 @@ window.addEventListener('storage',event=>{
     }
     window.openLessonUploadModal=()=>openModal('create');
     window.openUnitSettingsModal=()=>openModal('update_unit');
+    window.openLessonArchiveModal=()=>openModal('archive_lesson');
     window.closeLessonUploadModal=()=>closeModal(false);
     window.lessonUploadReloadConfig=reloadConfig;
     window.lessonUploadCommit=commit;
     window.lessonUploadCheckStatus=checkStatus;
     window.lessonUploadCancelReview=()=>{if(!state.busy){invalidate();say('내용을 수정한 뒤 등록 내용을 다시 확인해 주세요.');el('Prepare').focus();}};
     window.lessonUploadClearPdf=()=>{if(!state.busy){el('Pdf').value='';el('ClearPdf').hidden=true;invalidate();}};
-    window.lessonUploadSyncAccess=()=>{for(const id of ['toolLessonUploadBtn','toolUnitSettingsBtn']){const button=document.getElementById(id);if(button)button.style.display=token()?'':'none';}if(state.open)authValid();};
+    window.lessonUploadSyncAccess=()=>{for(const id of ['toolLessonUploadBtn','toolUnitSettingsBtn','toolLessonArchiveBtn']){const button=document.getElementById(id);if(button)button.style.display=token()?'':'none';}if(state.open)authValid();};
     el('Form').addEventListener('submit',prepare);
     el('Form').addEventListener('input',event=>{
         if(state.busy)return;invalidate();state.explicit.add(event.target.id);

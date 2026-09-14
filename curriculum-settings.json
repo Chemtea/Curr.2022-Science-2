@@ -14,5 +14,11 @@
       "color": "#7000cc",
       "accentColor": "#ae00ff"
     }
+  },
+  "archivedLessons": {
+    "04_assessment_report_answer.html": {
+      "unitKey": "unit3_eval",
+      "lessonId": "u3e_l4"
+    }
   }
 }
