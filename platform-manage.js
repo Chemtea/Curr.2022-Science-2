@@ -1,7 +1,7 @@
 /* PLATFORM_SELF_SERVICE_START — production inline tools; server authorizes every request. */
 (function () {
     'use strict';
-    const tabs={lessons:'차시 정보',history:'변경 이력',submissions:'제출 관리',diagnostics:'오류 점검'};
+    const tabs={authoring:'수업·문제 제작',lessons:'차시 정보',history:'변경 이력',submissions:'제출 관리',diagnostics:'오류 점검'};
     const caps={lessons:'lessonSettings',history:'settingsHistory',diagnostics:'diagnostics'};
     const shaPattern=/^[a-f0-9]{40}$/;
     const state={open:false,tab:'lessons',auth:'',config:null,busy:false,phase:'',revision:0,generation:0,prepared:null,receipt:null,history:null,historyPage:1,poll:null,pollStarted:0,watch:null,request:null,focus:null,unknown:false};
@@ -70,12 +70,14 @@
           <section id="pmHistory" role="tabpanel" aria-labelledby="pmTabhistory" hidden><p class="pm-note">선택한 단원 또는 차시의 표시 설정만 되돌립니다. 수업 본문·정답·제출·포인트는 이 기능의 복원 대상이 아닙니다.</p><button type="button" id="pmHistoryLoad">변경 이력 불러오기</button><div id="pmHistoryList" class="pm-stack"></div><button type="button" id="pmHistoryMore" hidden>이전 기록 더 보기</button></section>
           <section id="pmDiagnostics" role="tabpanel" aria-labelledby="pmTabdiagnostics" hidden><p class="pm-note">자료 목록, PDF 연결, 보호용 연결 정보와 배포 상태를 읽어 점검합니다. 학생 답안과 포인트를 변경하지 않습니다.</p><button type="button" id="pmInspect" class="pm-primary">지금 점검</button><div id="pmChecks" class="pm-stack"></div></section>
         </fieldset>
-        <section id="pmSubmissions" role="tabpanel" aria-labelledby="pmTabsubmissions" hidden><div id="pmSubmissionsHost"></div></section>
+        <section id="pmAuthoring" role="tabpanel" aria-labelledby="pmTabauthoring" hidden><div id="pmAuthoringHost"></div></section>
+        <section id="pmSubmissions" role="tabpanel" aria-labelledby="pmTabsubmissions" hidden><label class="pm-submission-type">제출 자료 종류<select id="pmSubmissionType"><option value="legacy">기존 형성평가·수행평가</option><option value="authored">제작기로 만든 자료</option></select></label><div id="pmSubmissionsHost"></div><div id="pmAuthoredSubmissionsHost" hidden></div></section>
         <section id="pmReview" class="pm-review" hidden><h4>저장 전 확인</h4><div id="pmDiff"></div><ul id="pmWarnings"></ul><p id="pmExpiry" class="pm-note"></p><button type="button" id="pmCommit" class="pm-primary">확인한 내용으로 저장</button></section>
         <section id="pmResult" class="pm-result" hidden><h4>저장·배포 상태</h4><p id="pmStatus" role="status" aria-live="polite"></p><div class="pm-actions"><button type="button" id="pmCheckStatus">상태 다시 확인</button><button type="button" id="pmRefresh" hidden>플랫폼 새로고침</button></div></section>
         <section id="pmUnknown" class="pm-result" hidden><p>저장 응답이 확인되지 않았습니다. 같은 내용을 다시 저장하기 전에 최신 설정을 불러와 결과를 비교해 주세요.</p><label>확인한 저장 번호가 있다면 입력<input id="pmRecoverySha" autocomplete="off" maxlength="64" placeholder="저장 번호"></label><div class="pm-actions"><button type="button" id="pmRecover">저장 번호로 상태 확인</button><button type="button" id="pmReloadSettings">최신 설정을 다시 읽고 편집</button></div></section>`;
         const tablist=panel.querySelector('.pm-tabs');
         Object.entries(tabs).forEach(([key,label])=>{const b=node('button',label);b.type='button';b.id='pmTab'+key;b.dataset.pmTab=key;b.setAttribute('role','tab');b.setAttribute('aria-controls','pm'+key[0].toUpperCase()+key.slice(1));b.addEventListener('click',()=>open(key));b.addEventListener('keydown',e=>{const keys=Object.keys(tabs),i=keys.indexOf(key);let next;if(e.key==='ArrowRight')next=keys[(i+1)%keys.length];if(e.key==='ArrowLeft')next=keys[(i+keys.length-1)%keys.length];if(e.key==='Home')next=keys[0];if(e.key==='End')next=keys[keys.length-1];if(next){e.preventDefault();open(next);el('Tab'+next).focus();}});tablist.append(b);});
+        el('SubmissionType').addEventListener('change',()=>{if(state.open && state.tab==='submissions')mountSubmissions();});
         el('Close').addEventListener('click',()=>close());el('Reconnect').addEventListener('click',()=>loadConfig());
         el('Unit').addEventListener('change',()=>{invalidate();fillLessons();clearHistory();});
         el('Lesson').addEventListener('change',()=>{invalidate();fillLesson();clearHistory();});
@@ -94,7 +96,7 @@
     function renderMode(){
         panel.querySelectorAll('[data-pm-tab]').forEach(b=>{const selected=b.dataset.pmTab===state.tab;b.setAttribute('aria-selected',String(selected));b.tabIndex=selected?0:-1;});
         Object.keys(tabs).forEach(k=>el(k[0].toUpperCase()+k.slice(1)).hidden=state.tab!==k);
-        el('Fields').hidden=state.tab==='submissions';el('Selection').hidden=!['lessons','history'].includes(state.tab);
+        el('Fields').hidden=['submissions','authoring'].includes(state.tab);panel.querySelector('.pm-connection').hidden=['submissions','authoring'].includes(state.tab);el('Selection').hidden=!['lessons','history'].includes(state.tab);
         el('KindWrap').hidden=state.tab!=='history';el('LessonWrap').hidden=state.tab==='history' && el('Kind').value==='unit';
         el('Heading').textContent=tabs[state.tab];renderBusy();
     }
@@ -194,19 +196,35 @@
             const c=data.counts;if(c&&typeof c==='object'){const names={units:'단원',lessons:'차시',archived:'보관 자료',linkedPdfs:'PDF 연결',missingPdfs:'누락 PDF',protectedReady:'보호 연결 완료'};const summary=Object.entries(names).filter(([k])=>Number.isFinite(c[k])).map(([k,label])=>label+' '+c[k]+'개').join(' · ');if(summary)el('Checks').prepend(node('p',summary,'pm-note'));}say('점검을 마쳤습니다. 오류 항목의 안내를 확인하세요.');
         }catch(error){if(gen===state.generation)say(error.message,'error');}finally{if(gen===state.generation)busy(false);}
     }
+    function disposeSubmissions(){window.PlatformSubmissions?.dispose?.();window.AuthoringSubmissions?.dispose?.();}
+    function mountSubmissions(){
+        disposeSubmissions();const authored=el('SubmissionType').value==='authored';el('SubmissionsHost').hidden=authored;el('AuthoredSubmissionsHost').hidden=!authored;
+        const module=authored?window.AuthoringSubmissions:window.PlatformSubmissions,host=el(authored?'AuthoredSubmissionsHost':'SubmissionsHost');
+        if(module?.mount)module.mount(host);else host.textContent='제출 관리 파일을 함께 설치해 주세요.';
+    }
     async function open(tab='lessons'){
-        if(!mount())return;if(!Object.hasOwn(tabs,tab))tab='lessons';if(state.open && token()!==state.auth)close(true);if(state.busy)return;if(!token()){say('최고관리자로 로그인한 뒤 사용할 수 있습니다.','error');return;}
+        if(!mount())return false;if(!Object.hasOwn(tabs,tab))tab='lessons';if(state.open && token()!==state.auth)close(true);if(state.busy)return false;if(!token()){say('최고관리자로 로그인한 뒤 사용할 수 있습니다.','error');return false;}
+        if(state.open && state.tab==='authoring'){
+            if(tab==='authoring'){el('Heading').focus({preventScroll:true});return true;}
+            if(window.LessonAuthoring?.canLeave?.()===false)return false;
+            window.LessonAuthoring?.dispose?.();
+        }
         if(!state.open){state.focus=document.activeElement;state.open=true;state.auth=token();state.generation++;panel.hidden=false;readReceipt();renderReceipt();state.watch=setInterval(()=>syncAccess(),1000);}
-        invalidate();if(state.tab==='submissions' && tab!=='submissions')window.PlatformSubmissions?.dispose?.();state.tab=tab;clearHistory();renderMode();el('Heading').focus({preventScroll:true});panel.scrollIntoView?.({behavior:'smooth',block:'nearest'});
-        if(tab==='submissions'){window.PlatformSubmissions?.mount?.(el('SubmissionsHost'));if(!window.PlatformSubmissions)el('SubmissionsHost').textContent='제출 관리 파일을 함께 설치해 주세요.';say('');return;}
+        stopPoll();state.request?.abort();state.request=null;state.generation++;
+        invalidate();if(state.tab==='submissions')disposeSubmissions();state.tab=tab;clearHistory();renderMode();el('Heading').focus({preventScroll:true});panel.scrollIntoView?.({behavior:'smooth',block:'nearest'});
+        if(tab==='authoring'){say('');el('Result').hidden=true;el('Unknown').hidden=true;if(window.LessonAuthoring?.mount)window.LessonAuthoring.mount(el('AuthoringHost'));else el('AuthoringHost').textContent='제작기 파일을 함께 설치해 주세요.';return true;}
+        if(tab==='submissions'){mountSubmissions();say('');return true;}
         if(!state.config)await loadConfig();else if(!available())say('이 기능을 사용하려면 함께 제공한 관리 서버 업데이트가 필요합니다. 기존 도구는 계속 사용할 수 있습니다.','warning');else say('관리할 항목을 선택하세요.');
-        if(state.receipt){state.pollStarted=Date.now();schedulePoll(1000);}
+        if(state.receipt){renderReceipt();state.pollStarted=Date.now();schedulePoll(1000);}return true;
     }
     function close(force=false){
-        if(!panel || !state.open)return;if(state.busy && state.phase==='commit' && !force)return;stopPoll();if(state.watch)clearInterval(state.watch);state.watch=null;state.request?.abort();state.request=null;state.generation++;state.open=false;state.auth='';state.config=null;state.busy=false;state.prepared=null;state.unknown=false;state.receipt=null;window.PlatformSubmissions?.dispose?.();
-        panel.hidden=true;el('Result').hidden=true;el('Unknown').hidden=true;el('Checks').replaceChildren();el('Diff').replaceChildren();clearHistory();fillUnits();el('Unit').value='';fillLessons();invalidate();state.focus?.focus?.();
+        if(!panel || !state.open)return true;if(state.busy && state.phase==='commit' && !force)return false;
+        if(!force && state.tab==='authoring' && window.LessonAuthoring?.canLeave?.()===false)return false;
+        stopPoll();if(state.watch)clearInterval(state.watch);state.watch=null;state.request?.abort();state.request=null;state.generation++;state.open=false;state.auth='';state.config=null;state.busy=false;state.prepared=null;state.unknown=false;state.receipt=null;disposeSubmissions();window.LessonAuthoring?.dispose?.();
+        panel.hidden=true;el('Result').hidden=true;el('Unknown').hidden=true;el('Checks').replaceChildren();el('Diff').replaceChildren();clearHistory();fillUnits();el('Unit').value='';fillLessons();invalidate();state.focus?.focus?.();return true;
     }
-    function syncAccess(){if(state.open && (!token() || token()!==state.auth))close(true);window.PlatformSubmissions?.syncAccess?.();}
+    function syncAccess(){if(state.open && (!token() || token()!==state.auth))close(true);window.PlatformSubmissions?.syncAccess?.();window.AuthoringSubmissions?.syncAccess?.();window.LessonAuthoring?.syncAccess?.();}
     window.PlatformManage={open,close,syncAccess};
 })();
 /* PLATFORM_SELF_SERVICE_END */
+

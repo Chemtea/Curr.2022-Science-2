@@ -1,0 +1,88 @@
+/* SCIENCE_AUTHORING_EDITOR_STYLE_START */
+.authoring-editor { --ae-line:rgba(148,163,184,.2); --ae-field:#0b0e14; --ae-muted:#94a3b8; color:#e2e8f0; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif; font-size:14px; line-height:1.55; min-width:0; text-align:left; color-scheme:dark; }
+.authoring-editor *, .authoring-editor *::before, .authoring-editor *::after { box-sizing:border-box; }
+.authoring-editor [hidden] { display:none !important; }
+.authoring-editor h4 { margin:0; font-size:18px; letter-spacing:-.4px; }
+.authoring-editor p { margin:5px 0; overflow-wrap:anywhere; }
+.authoring-editor .ae-note { color:var(--ae-muted); font-size:12px; font-weight:400; line-height:1.6; }
+.authoring-editor button { min-height:36px; padding:7px 12px; border:1px solid var(--ae-line); border-radius:10px; background:rgba(15,23,42,.55); color:#cbd5e1; font:inherit; font-size:13px; font-weight:650; line-height:1.4; cursor:pointer; white-space:normal; }
+.authoring-editor button:hover:not(:disabled) { color:#f8fafc; border-color:rgba(56,189,248,.6); background:rgba(56,189,248,.08); }
+.authoring-editor button:disabled { opacity:.4; cursor:not-allowed; }
+.authoring-editor .ae-primary { background:linear-gradient(135deg,#0284c7,#6366f1); color:white; border-color:transparent; }
+.authoring-editor .ae-primary:hover:not(:disabled) { background:linear-gradient(135deg,#0369a1,#4f46e5); }
+.authoring-editor .ae-danger { color:#fda4af; }
+.authoring-editor :focus-visible { outline:3px solid #7dd3fc; outline-offset:3px; }
+.authoring-editor label { display:flex; flex-direction:column; gap:5px; font-size:13px; font-weight:600; color:#cbd5e1; min-width:0; }
+.authoring-editor input, .authoring-editor select, .authoring-editor textarea { min-height:38px; width:100%; min-width:0; border:1px solid rgba(148,163,184,.26); border-radius:9px; padding:8px 10px; background:var(--ae-field); color:#f1f5f9; font:inherit; font-size:14px; line-height:1.5; }
+.authoring-editor textarea { resize:vertical; }
+.authoring-editor input::placeholder, .authoring-editor textarea::placeholder { color:#77879c; }
+.authoring-editor input[type=checkbox], .authoring-editor input[type=radio] { width:18px; height:18px; min-height:18px; padding:0; margin:0; accent-color:#38bdf8; flex-shrink:0; }
+.authoring-editor input[type=file] { font-size:12px; padding:7px; }
+.authoring-editor input[type=file]::file-selector-button { border:0; border-radius:6px; padding:5px 8px; background:#253249; color:#e2e8f0; margin-right:8px; }
+.authoring-editor .ae-intro { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:12px 0 20px; }
+.authoring-editor .ae-intro p { color:var(--ae-muted); font-size:13px; }
+.authoring-editor .ae-save-state { border:1px solid var(--ae-line); border-radius:20px; padding:5px 10px; font-size:11px; color:#a5b4fc; white-space:nowrap; }
+.authoring-editor .ae-toolbar { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px; }
+.authoring-editor .ae-compact { width:160px; }
+.authoring-editor .ae-drafts { margin-top:16px; border-bottom:1px solid var(--ae-line); padding-bottom:12px; }
+.authoring-editor summary { cursor:pointer; color:#a5b4fc; font-size:13px; font-weight:650; padding:9px 0; }
+.authoring-editor .ae-draft-row { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin:8px 0; }
+.authoring-editor .ae-draft-row label { flex:1 1 240px; }
+.authoring-editor .ae-message { min-height:24px; padding:6px 0; font-size:13px; }
+.authoring-editor .ae-message[data-kind=error] { color:#fda4af; }
+.authoring-editor .ae-message[data-kind=warning] { color:#fde68a; }
+.authoring-editor .ae-message[data-kind=success] { color:#86efac; }
+.authoring-editor .ae-document { display:grid; grid-template-columns:minmax(0,1fr) 150px; gap:12px; padding:16px; border:1px solid var(--ae-line); border-radius:14px; background:rgba(11,14,20,.35); margin:6px 0 16px; }
+.authoring-editor .ae-document > label:nth-child(2) { grid-column:1; grid-row:2; }
+.authoring-editor .ae-mode { grid-column:2; grid-row:1; }
+.authoring-editor .ae-workspace { display:grid; grid-template-columns:225px minmax(0,1fr); gap:16px; align-items:start; }
+.authoring-editor .ae-outline { border:1px solid var(--ae-line); border-radius:14px; padding:12px; min-width:0; background:rgba(11,14,20,.2); }
+.authoring-editor .ae-outline-head { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 3px 10px; font-size:13px; }
+.authoring-editor #aeCount { color:var(--ae-muted); font-size:11px; }
+.authoring-editor #aeOutline { list-style:none; padding:0; margin:0; max-height:540px; overflow:auto; scrollbar-width:thin; }
+.authoring-editor #aeOutline li + li { margin-top:5px; }
+.authoring-editor #aeOutline button { display:flex; align-items:flex-start; gap:9px; width:100%; text-align:left; border-color:transparent; background:transparent; padding:9px 7px; }
+.authoring-editor #aeOutline button[aria-current=true] { border-color:rgba(56,189,248,.35); background:rgba(56,189,248,.08); color:#e0f2fe; }
+.authoring-editor .ae-index { display:grid; place-items:center; background:rgba(148,163,184,.1); color:#aebed2; font-size:11px; width:24px; height:24px; flex-shrink:0; border-radius:7px; margin-top:3px; }
+.authoring-editor .ae-outline-copy { display:flex; flex-direction:column; gap:3px; min-width:0; overflow-wrap:anywhere; }
+.authoring-editor .ae-outline-copy small { font-size:10px; color:var(--ae-muted); }
+.authoring-editor .ae-outline-copy > span { font-size:12px; font-weight:600; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.authoring-editor .ae-add { display:flex; align-items:center; gap:6px; border-top:1px solid var(--ae-line); padding-top:12px; margin:12px 0 8px; }
+.authoring-editor .ae-add select { flex:1; font-size:12px; padding:7px; }
+.authoring-editor .ae-add button { flex-shrink:0; padding:8px; color:#7dd3fc; }
+.authoring-editor .ae-block-panel { min-width:0; border:1px solid var(--ae-line); border-radius:14px; padding:18px; background:rgba(11,14,20,.3); }
+.authoring-editor .ae-block-top { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; padding-bottom:14px; margin-bottom:15px; border-bottom:1px solid var(--ae-line); }
+.authoring-editor .ae-kind { color:#7dd3fc; font-size:12px; font-weight:750; }
+.authoring-editor .ae-inline-actions { display:flex; flex-wrap:wrap; gap:6px; }
+.authoring-editor .ae-inline-actions button { min-height:32px; font-size:12px; padding:5px 9px; }
+.authoring-editor .ae-fields { display:grid; gap:14px; }
+.authoring-editor .ae-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.authoring-editor .ae-scoring { display:flex; gap:20px; align-items:flex-end; flex-wrap:wrap; }
+.authoring-editor .ae-scoring > label:first-child { width:120px; }
+.authoring-editor .ae-check { flex-direction:row; align-items:center; gap:8px; min-height:38px; }
+.authoring-editor .ae-options { border:0; margin:0; padding:0; min-width:0; }
+.authoring-editor .ae-options legend { font-size:13px; font-weight:600; margin-bottom:8px; color:#cbd5e1; }
+.authoring-editor .ae-option { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.authoring-editor .ae-correct { flex-direction:row; align-items:center; gap:6px; flex-shrink:0; font-size:11px; font-weight:500; width:78px; }
+.authoring-editor .ae-option-text { flex:1; }
+.authoring-editor .ae-option button { padding:5px 10px; }
+.authoring-editor .ae-image { max-width:100%; max-height:240px; object-fit:contain; margin:auto; display:block; border-radius:8px; }
+.authoring-editor .ae-table-scroll { overflow:auto; max-width:100%; }
+.authoring-editor .ae-table { border-collapse:collapse; width:100%; font-size:12px; }
+.authoring-editor .ae-table td, .authoring-editor .ae-table th { border:1px solid var(--ae-line); padding:6px; min-width:110px; }
+.authoring-editor .ae-table th:last-child, .authoring-editor .ae-table td:last-child { min-width:36px; }
+.authoring-editor .ae-table input { padding:6px; font-size:12px; min-height:32px; }
+.authoring-editor .ae-table button { min-height:26px; font-size:10px; margin-top:4px; padding:4px 6px; }
+.authoring-editor .ae-preview { border:1px solid var(--ae-line); border-radius:14px; margin-top:16px; padding:10px 16px; }
+.authoring-editor .ae-preview button { margin:8px 0; }
+.authoring-editor #aePreviewFrame { display:block; width:100%; height:640px; max-height:75vh; background:#0b0e14; border:1px solid var(--ae-line); border-radius:10px; margin:10px 0 6px; }
+.authoring-editor .ae-footer { display:flex; align-items:flex-end; justify-content:space-between; gap:14px; flex-wrap:wrap; border-top:1px solid var(--ae-line); margin-top:20px; padding-top:14px; }
+.authoring-editor .ae-filename { max-width:300px; margin-top:8px; font-size:11px; }
+.authoring-editor .ae-filename input { font-size:12px; min-height:34px; }
+.authoring-editor .ae-actions { display:flex; flex-wrap:wrap; gap:7px; }
+.authoring-editor .ae-empty { color:var(--ae-muted); font-size:13px; padding:30px 10px; text-align:center; }
+.authoring-editor .ae-empty h4 { font-size:16px; color:#cbd5e1; }
+.authoring-editor .ae-sr { position:absolute; width:1px; height:1px; margin:-1px; padding:0; border:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+@media(max-width:900px) { .authoring-editor .ae-workspace { grid-template-columns:190px minmax(0,1fr); gap:10px; } .authoring-editor .ae-block-panel { padding:14px; } }
+@media(max-width:620px) { .authoring-editor .ae-workspace { grid-template-columns:minmax(0,1fr); } .authoring-editor #aeOutline { display:flex; overflow:auto; gap:5px; max-height:120px; padding-bottom:4px; } .authoring-editor #aeOutline li { min-width:150px; flex:0 0 150px; } .authoring-editor #aeOutline li + li { margin-top:0; } .authoring-editor .ae-outline .ae-note { display:none; } .authoring-editor .ae-document { grid-template-columns:minmax(0,1fr); padding:12px; } .authoring-editor .ae-mode { grid-column:1; grid-row:3; } .authoring-editor .ae-grid { grid-template-columns:minmax(0,1fr); } .authoring-editor .ae-option { gap:5px; } .authoring-editor .ae-correct { width:64px; font-size:10px; } .authoring-editor .ae-actions { width:100%; } .authoring-editor .ae-actions button { flex:1 1 120px; } .authoring-editor .ae-preview { padding:8px 10px; } .authoring-editor .ae-block-top { align-items:flex-start; } }
+/* SCIENCE_AUTHORING_EDITOR_STYLE_END */
