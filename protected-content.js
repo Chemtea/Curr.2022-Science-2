@@ -150,6 +150,65 @@
     });
   }
 
+  // WORKSHEET_STABILITY_START
+  // Upgrade only the complete, known worksheet lifecycle contract. The private
+  // source and quiz protection remain unchanged; unfamiliar implementations are
+  // left intact instead of applying a partial, unsafe string replacement.
+  function integrateWorksheetStability(html) {
+    return html.replace(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi, (whole, attrs, body) => {
+      if (/\bsrc\s*=/i.test(attrs) || /\btype\s*=\s*["']application\/json/i.test(attrs) ||
+          !body.includes('const worksheetPoll = worksheetPreview ? null : setInterval')) return whole;
+      const pairs = [
+        ["      invalidateWorksheetLocks();\n      refreshWorksheetLocks().then(allowed => { if (allowed && open && !loading) loadPDF(sourceFile); });",
+          "      prepareWorksheetRecheck();\n      refreshWorksheetLocks().then(allowed => { if (allowed && open && !pdf && !loading) loadPDF(sourceFile); });"],
+        ["  function invalidateWorksheetLocks() {",
+          "  function prepareWorksheetRecheck() {\n" +
+          "    if (worksheetPreview || !live()) return;\n" +
+          "    // A fresh check suspends interaction without destroying the accepted\n" +
+          "    // PDF, annotation canvas, draft text, zoom or scroll position.\n" +
+          "    finishStroke(); persist(); cancelWorksheetPrint();\n" +
+          "    ++lockGeneration; lockKnown = false; lockRequest = null;\n" +
+          "    controls();\n" +
+          "  }\n" +
+          "  function onWorksheetLockPending() {\n" +
+          "    prepareWorksheetRecheck();\n" +
+          "    refreshWorksheetLocks().then(allowed => { if (allowed && open && !pdf && !loading && (sourceFile || defaultURL)) loadPDF(sourceFile); });\n" +
+          "  }\n" +
+          "  function invalidateWorksheetLocks() {"],
+        ["    if (archive && (archive.isLocked === true || (unit && (unit.isLocked === true || (unit.items && unit.items[worksheetID] === true))))) invalidateWorksheetLocks();",
+          "    if (!worksheetAdminKey() && archive && (archive.isLocked === true || (unit && (unit.isLocked === true || (unit.items && unit.items[worksheetID] === true))))) invalidateWorksheetLocks();"],
+        ["  function onWorksheetVisible() {\n    if (document.visibilityState !== 'visible') return;\n    invalidateWorksheetLocks();",
+          "  function onWorksheetVisible() {\n    if (document.visibilityState !== 'visible') return;\n    prepareWorksheetRecheck();"],
+        ["  window.addEventListener('ctw-lock-pending', invalidateWorksheetLocks);",
+          "  window.addEventListener('ctw-lock-pending', onWorksheetLockPending);"],
+        ["    window.removeEventListener('ctw-lock-pending',invalidateWorksheetLocks);",
+          "    window.removeEventListener('ctw-lock-pending',onWorksheetLockPending);"],
+        ["    if (Date.now() - lastLockSuccess > 15000) invalidateWorksheetLocks();\n    refreshWorksheetLocks().then(allowed => { if (allowed && open && !pdf && !loading && (sourceFile || defaultURL)) loadPDF(sourceFile); });\n  }, 10000);",
+          "    // Realtime changes, visibility, offline and failures still act immediately.\n" +
+          "    // This backup fetches lock metadata only; an unchanged PDF is retained.\n" +
+          "    refreshWorksheetLocks().then(allowed => { if (allowed && open && !pdf && !loading && (sourceFile || defaultURL)) loadPDF(sourceFile); });\n  }, 60000);"],
+        ["    if (!live()) return false;\n    if (worksheetPreview) return true;\n    if (lockRequest) return lockRequest;",
+          "    if (!live()) return false;\n    if (worksheetPreview) return true;\n    if (window.__SCIENCE_PROTECTED_CONTENT_CONTROLLER__ && !window.__SCIENCE_PROTECTED_CONTENT_CONTROLLER__.hasCurrentIdentity()) { invalidateWorksheetLocks(); return false; }\n    if (lockRequest) return lockRequest;"],
+        ["        if (!live()) return false;\n        if (generation !== lockGeneration) return worksheetAllowed();",
+          "        if (!live()) return false;\n        if (window.__SCIENCE_PROTECTED_CONTENT_CONTROLLER__ && !window.__SCIENCE_PROTECTED_CONTENT_CONTROLLER__.hasCurrentIdentity()) { invalidateWorksheetLocks(); return false; }\n        if (generation !== lockGeneration) return worksheetAllowed();"]
+      ];
+      if (pairs.some(([before]) => body.split(before).length !== 2)) {
+        console.warn('[WORKSHEET] Unrecognized lifecycle; existing worksheet checks retained.');
+        return whole;
+      }
+      let code = body;
+      for (const [before, after] of pairs) code = code.replace(before, after);
+      return '<script' + attrs + '>' + code + '</script>';
+    });
+  }
+  // WORKSHEET_STABILITY_END
+
+  function hasCurrentIdentity() {
+    const current = loaded && !stopped && identity(credentials()) === acceptedIdentity;
+    if (!current && loaded && !stopped) deny({ status: 401 });
+    return current;
+  }
+
   function applyTeacherView() {
     if (stopped || acceptedRole !== 'teacher' || identity(credentials()) !== acceptedIdentity) return;
     // Retain the real stored account. A temporary teacher view must never submit
@@ -225,9 +284,9 @@
       acceptedRole = data.role;
       loaded = true;
       window.__SCIENCE_PROTECTED_CONTENT_ROLE__ = data.role;
-      window.__SCIENCE_PROTECTED_CONTENT_CONTROLLER__ = Object.freeze({ revalidate });
+      window.__SCIENCE_PROTECTED_CONTENT_CONTROLLER__ = Object.freeze({ revalidate, hasCurrentIdentity });
       window.CTProtectedContent = Object.freeze({ apiUrl: endpoint, path, revision });
-      const html = integrateLegacyGuards(data.html);
+      const html = integrateLegacyGuards(integrateWorksheetStability(data.html));
       document.open();
       document.write(html);
       document.close();
