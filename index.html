@@ -2575,6 +2575,9 @@
         #adminToolsModal .admin-tools-grid .tool-danger .admin-tool-icon{background:rgba(239,68,68,.1);}
         #adminToolsModal .admin-tools-grid .tool-danger:hover{border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.06);}
         #adminToolsModal .pending-badge{margin:0;}
+        /* ADMIN_TOOLS_CATEGORY_BADGES_START */
+        #adminToolsModal .admin-category-copy .admin-category-badge{align-self:flex-start;max-width:100%;height:auto;min-height:22px;margin:6px 0 0;padding:2px 9px;border:1px solid rgba(248,113,113,.4);background:rgba(248,113,113,.14);color:#fecaca;font-size:.76rem;line-height:1.4;overflow-wrap:anywhere;}
+        /* ADMIN_TOOLS_CATEGORY_BADGES_END */
         #adminToolsModal :is(button,summary):focus-visible{outline:3px solid #7dd3fc;outline-offset:3px;}
         #adminToolsModal .admin-tools-section summary:focus-visible{outline-offset:-5px;border-radius:18px;}
         #adminToolsModal #adminToolsEmpty{padding:24px;text-align:center;color:#94a3b8;}
@@ -3055,14 +3058,14 @@
                 </div>
             </details>
             <details id="adminToolsProducts" class="admin-tools-section" name="admin-tools-category" aria-labelledby="adminToolsProductsHeading" hidden>
-                <summary id="adminToolsProductsHeading"><span class="admin-category-icon" aria-hidden="true">🎁</span><span class="admin-category-copy"><span class="admin-category-title">상품 관리</span><span class="admin-category-desc">상품 구성 · 신청 처리 · 보관함</span></span></summary>
+                <summary id="adminToolsProductsHeading"><span class="admin-category-icon" aria-hidden="true">🎁</span><span class="admin-category-copy"><span class="admin-category-title">상품 관리</span><span class="admin-category-desc">상품 구성 · 신청 처리 · 보관함</span><span id="adminToolsProductsBadge" class="pending-badge admin-category-badge" role="status" aria-live="polite" aria-atomic="true" hidden></span></span></summary>
                 <div class="admin-tools-grid">
                     <button type="button" id="toolRewardBtn" onclick="launchAdminTool('reward')"><span class="admin-tool-icon" aria-hidden="true">🎁</span><span class="admin-tool-copy"><b>상품</b><small>상품 신청 처리·경품 추첨</small></span><span class="admin-tool-end"><span id="toolRewardBadge" class="pending-badge" style="display:none;" title="상품·경품 처리 대기">0</span><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
                     <button type="button" id="toolShopEditorBtn" class="tool-primary" onclick="launchAdminTool('shopEditor')"><span class="admin-tool-icon" aria-hidden="true">🛒</span><span class="admin-tool-copy"><b>상품 추가·수정</b><small>가격·재고·활성화·경품 일정</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
                 </div>
             </details>
             <details id="adminToolsPlatform" class="admin-tools-section" name="admin-tools-category" aria-labelledby="adminToolsPlatformHeading" hidden>
-                <summary id="adminToolsPlatformHeading"><span class="admin-category-icon" aria-hidden="true">⚙️</span><span class="admin-category-copy"><span class="admin-category-title">플랫폼 관리</span><span class="admin-category-desc">설정 이력 · 계정과 권한 · 오류 점검</span></span></summary>
+                <summary id="adminToolsPlatformHeading"><span class="admin-category-icon" aria-hidden="true">⚙️</span><span class="admin-category-copy"><span class="admin-category-title">플랫폼 관리</span><span class="admin-category-desc">설정 이력 · 계정과 권한 · 오류 점검</span><span id="adminToolsPlatformBadge" class="pending-badge admin-category-badge" role="status" aria-live="polite" aria-atomic="true" hidden></span></span></summary>
                 <div class="admin-tools-grid">
                     <button type="button" id="toolSettingsHistoryBtn" class="tool-primary" style="display:none;" onclick="PlatformManage.open('history')"><span class="admin-tool-icon" aria-hidden="true">↩️</span><span class="admin-tool-copy"><b>변경 이력·되돌리기</b><small>단원·차시 표시 설정을 이전 상태로 복원</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
                     <button type="button" id="toolDiagnosticsBtn" class="tool-primary" style="display:none;" onclick="PlatformManage.open('diagnostics')"><span class="admin-tool-icon" aria-hidden="true">🔎</span><span class="admin-tool-copy"><b>오류 점검</b><small>자료·PDF 연결·보호 정보·배포 상태 확인</small></span><span class="admin-tool-end"><span class="admin-tool-arrow" aria-hidden="true">›</span></span></button>
@@ -6059,6 +6062,7 @@ window.addEventListener('storage',event=>{
                 badge.textContent = String(n);
                 badge.style.display = n > 0 ? 'inline-flex' : 'none';
             });
+            syncAdminToolCategoryBadges();
         }
 
         function refreshPendingSignupBadge() {
@@ -7395,6 +7399,7 @@ window.addEventListener('storage',event=>{
                 badge.textContent = String(n);
                 badge.style.display = n > 0 ? 'inline-flex' : 'none';
             });
+            syncAdminToolCategoryBadges();
         }
 
         function refreshPendingRewardBadge() {
@@ -9128,6 +9133,27 @@ window.addEventListener('storage',event=>{
         }
 
         /* ADMIN_TOOLS_GROUPS_START */
+        /* ADMIN_TOOLS_CATEGORY_BADGES_START */
+        function syncAdminToolCategoryBadges(){
+            // Reuse each tool's existing count; do not fetch or sum the same alert again.
+            const sources=[
+                {badge:'adminToolsProductsBadge',source:'toolRewardBadge',tool:'toolRewardBtn',label:'상품·경품',permissions:['rewards_manage','draw_manage']},
+                {badge:'adminToolsPlatformBadge',source:'toolSignupBadge',tool:'toolSignupBtn',label:'회원가입',permissions:['signup_manage']}
+            ];
+            sources.forEach(item=>{
+                const badge=document.getElementById(item.badge);if(!badge)return;
+                const source=document.getElementById(item.source),tool=document.getElementById(item.tool);
+                const count=Number(source?.textContent);
+                const visible=isAdminMode && item.permissions.some(permission=>canUseAdminFeature(permission))
+                    && tool && !tool.hidden && tool.style.display!=='none'
+                    && source && !source.hidden && source.style.display!=='none'
+                    && Number.isSafeInteger(count) && count>0;
+                const text=visible?`${item.label} ${count}건`:'';
+                if(badge.textContent!==text)badge.textContent=text;
+                badge.hidden=!visible;
+            });
+        }
+        /* ADMIN_TOOLS_CATEGORY_BADGES_END */
         function syncAdminToolsMenu(){
             const full=isFullAdminMode();
             const show=(id,on)=>{const el=document.getElementById(id);if(el)el.style.display=on?'':'none';};
@@ -9149,6 +9175,7 @@ window.addEventListener('storage',event=>{
                 section.hidden=!visible;if(visible)visibleGroups++;
             });
             const empty=document.getElementById('adminToolsEmpty');if(empty)empty.hidden=visibleGroups>0;
+            syncAdminToolCategoryBadges();
             const modal=document.getElementById('adminToolsModal');
             if(!isAdminMode || (!full && !['signup_manage','rewards_manage','draw_manage','curriculum_control','questions_manage','announcements_manage','points_view','points_adjust'].some(permission=>canUseAdminFeature(permission))))closeAdminToolsModal();
             if(modal?.style.display==='flex' && modal.contains(document.activeElement) && !document.activeElement?.getClientRects().length)document.getElementById('adminToolsCloseBtn')?.focus();
