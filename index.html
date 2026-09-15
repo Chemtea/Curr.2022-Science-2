@@ -2908,10 +2908,10 @@
 /* SHOP_EDITOR_ARCHIVE_END */
 </style>
     <!-- PLATFORM_SELF_SERVICE_ASSETS_START -->
-    <link rel="stylesheet" href="./platform-manage.css">
-    <link rel="stylesheet" href="./submission-management.css">
-    <link rel="stylesheet" href="./authoring-editor.css">
-    <link rel="stylesheet" href="./authoring-submissions.css">
+    <style>
+    .pm-lazy{margin:14px 0;padding:12px 16px;border:1px solid rgba(148,163,184,.2);border-radius:12px;background:#151a23;color:#e2e8f0;font-size:14px;}
+    .pm-lazy[hidden]{display:none;}.pm-lazy p{margin:0 0 10px;}.pm-lazy button{font:inherit;margin-right:8px;padding:6px 12px;border:1px solid #334155;border-radius:8px;background:#202c40;color:#e2e8f0;cursor:pointer;}.pm-lazy button:focus-visible{outline:2px solid #7dd3fc;outline-offset:2px;}
+    </style>
     <!-- PLATFORM_SELF_SERVICE_ASSETS_END -->
 </head>
 <body>
@@ -2925,13 +2925,14 @@
                     title="연결 상태 창 닫기"
                     style="border:1px solid rgba(253,230,138,.45);background:rgba(15,23,42,.72);color:#fde68a;width:26px;height:26px;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:900;line-height:1;">✕</button>
         </div>
-        <div id="supabaseTestBackendStatus" style="margin-top:2px;font-size:.78rem;font-weight:800;color:#fecaca;">인증 서버 확인 중...</div>
-        <div id="supabaseTestPointStatus" style="margin-top:2px;font-size:.78rem;font-weight:800;color:#fecaca;">포인트 서버 확인 중...</div>
-        <div id="supabaseTestQuestionStatus" style="margin-top:2px;font-size:.78rem;font-weight:800;color:#fecaca;">질문 서버 확인 중...</div>
-        <div id="supabaseTestAnnouncementStatus" style="margin-top:2px;font-size:.78rem;font-weight:800;color:#fecaca;">공지 서버 확인 중...</div>
-        <div id="supabaseTestAccountStatus" style="margin-top:2px;font-size:.78rem;font-weight:800;color:#fecaca;">계정 서버 확인 중...</div>
-        <div id="supabaseTestSubmissionStatus" style="margin-top:2px;font-size:.78rem;font-weight:800;color:#fecaca;">제출 서버 확인 중...</div>
-        <div id="supabaseTestAcademicYearStatus" style="margin-top:2px;font-size:.78rem;font-weight:800;color:#fecaca;">학년도 서버 확인 중...</div>
+        <button id="productionBackendCheckBtn" type="button" onclick="checkProductionBackend()" style="margin:6px 0;border:1px solid rgba(253,230,138,.45);background:#1e293b;color:#fde68a;padding:4px 9px;border-radius:7px;cursor:pointer;font-size:.76rem;font-weight:800;">서버 상태 확인</button>
+        <div id="supabaseTestBackendStatus" style="margin-top:2px;font-size:.78rem;font-weight:800;color:#cbd5e1;">인증 서버 · 확인 전</div>
+        <div id="supabaseTestPointStatus" style="margin-top:2px;font-size:.78rem;font-weight:800;color:#cbd5e1;">포인트 서버 · 확인 전</div>
+        <div id="supabaseTestQuestionStatus" style="margin-top:2px;font-size:.78rem;font-weight:800;color:#cbd5e1;">질문 서버 · 확인 전</div>
+        <div id="supabaseTestAnnouncementStatus" style="margin-top:2px;font-size:.78rem;font-weight:800;color:#cbd5e1;">공지 서버 · 확인 전</div>
+        <div id="supabaseTestAccountStatus" style="margin-top:2px;font-size:.78rem;font-weight:800;color:#cbd5e1;">계정 서버 · 확인 전</div>
+        <div id="supabaseTestSubmissionStatus" style="margin-top:2px;font-size:.78rem;font-weight:800;color:#cbd5e1;">제출 서버 · 확인 전</div>
+        <div id="supabaseTestAcademicYearStatus" style="margin-top:2px;font-size:.78rem;font-weight:800;color:#cbd5e1;">학년도 서버 · 확인 전</div>
         <div style="margin-top:5px;padding-top:5px;border-top:1px solid rgba(253,230,138,.18);font-size:.68rem;color:#fcd34d;">
             정식 운영 Supabase 서버 · 실제 수업 데이터 사용
         </div>
@@ -4196,6 +4197,7 @@ async function classroomFetchRoster() {
     const year = Number(data.currentSchoolYear);
     if (!Number.isInteger(year) || year < 2000 || year > 2100) throw new Error('현재 학년도를 확인하지 못했습니다. 다시 불러와 주세요.');
     CURRENT_SCHOOL_YEAR = year;
+    syncDashboardAccess();
     if (!Array.isArray(data.items)) throw new Error('학생 명단 응답을 확인하지 못했습니다.');
     return data.items.filter(item => item.accountType === 'student' && Number(item.schoolYear) === year)
         .map(item => ({studentId: String(item.studentId), name: String(item.name || ''), balance: Number(item.balance) || 0}))
@@ -5131,84 +5133,109 @@ window.addEventListener('storage',event=>{
         const ADMIN_ACCOUNT_API_URL = `${window.PLATFORM_CONFIG.baseUrl}/functions/v1/admin-account-api`;
         const ADMIN_DASHBOARD_API_URL = `${window.PLATFORM_CONFIG.baseUrl}/functions/v1/admin-dashboard-api`;
 
-        async function checkProductionBackend() {
-            const authEl = document.getElementById('supabaseTestBackendStatus');
-            const pointEl = document.getElementById('supabaseTestPointStatus');
-            const questionEl = document.getElementById('supabaseTestQuestionStatus');
-            const announcementEl = document.getElementById('supabaseTestAnnouncementStatus');
-            const accountEl = document.getElementById('supabaseTestAccountStatus');
-            const submissionEl = document.getElementById('supabaseTestSubmissionStatus');
-            const academicYearEl = document.getElementById('supabaseTestAcademicYearStatus');
+        /* PRODUCTION_DIAGNOSTICS_ON_DEMAND_START */
+        let productionBackendRun = null;
+        let productionBackendIdentity = '';
+        const PRODUCTION_BACKEND_STATUS_IDS = [
+            ['supabaseTestBackendStatus', '인증 서버'], ['supabaseTestPointStatus', '포인트 서버'],
+            ['supabaseTestQuestionStatus', '질문 서버'], ['supabaseTestAnnouncementStatus', '공지 서버'],
+            ['supabaseTestAccountStatus', '계정 서버'], ['supabaseTestSubmissionStatus', '제출 서버'],
+            ['supabaseTestAcademicYearStatus', '학년도 서버']
+        ];
 
-            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        function productionBackendContext() {
+            if (isAdminMode !== true) return '';
+            const user = getLoggedInUser();
+            const adminSession = getAdminSessionToken() || '';
+            const managerSession = isMiddleManagerUser(user) ? (user?.studentSessionToken || '') : '';
+            return adminSession || managerSession ? JSON.stringify([adminSession, managerSession]) : '';
+        }
 
-            async function checkOne(url, el, label, maxAttempts = 3) {
-                if (!el) return false;
-
-                for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-                    try {
-                        el.textContent = attempt === 1
-                            ? `⏳ ${label} 확인 중...`
-                            : `⏳ ${label} 재확인 중... (${attempt}/${maxAttempts})`;
-                        el.style.color = '#fde68a';
-
-                        const controller = new AbortController();
-                        const timer = setTimeout(() => controller.abort(), 8000);
-
-                        let res;
-                        try {
-                            res = await fetch(url, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                                body: JSON.stringify({ action: 'health' }),
-                                cache: 'no-store',
-                                signal: controller.signal
-                            });
-                        } finally {
-                            clearTimeout(timer);
-                        }
-
-                        let data = null;
-                        try {
-                            data = await res.json();
-                        } catch (_) {}
-
-                        if (res.ok && data && data.success === true && data.backend === 'supabase-edge-function') {
-                            el.textContent = `✅ ${label} v${data.version ?? '?'} 연결됨`;
-                            el.style.color = '#86efac';
-                            return true;
-                        }
-                    } catch (_) {
-                        // Edge Function 콜드 스타트나 일시적인 502/네트워크 오류는 아래에서 재시도합니다.
-                    }
-
-                    if (attempt < maxAttempts) {
-                        await sleep(700 * attempt);
-                    }
-                }
-
-                el.textContent = `❌ ${label} 연결 실패`;
-                el.style.color = '#fecaca';
-                return false;
+        function cancelProductionBackendCheck(reset = false) {
+            const run = productionBackendRun;
+            productionBackendRun = null;
+            if (run) {
+                run.controller?.abort();
+                run.finishWait?.();
             }
-
-            // 여러 Edge Function을 동시에 깨우면 콜드 스타트가 겹쳐 일시적인 502가
-            // 발생할 수 있으므로 TEST 상태 확인은 순차적으로 실행합니다.
-            const checks = [
-                [GOOGLE_SCRIPT_URL, authEl, '인증 API'],
-                [POINT_API_URL, pointEl, '포인트 API'],
-                [QUESTION_API_URL, questionEl, '질문 API'],
-                [ANNOUNCEMENT_API_URL, announcementEl, '공지 API'],
-                [ACCOUNT_API_URL, accountEl, '계정 API'],
-                [SUBMISSION_API_URL, submissionEl, '제출 API'],
-                [ACADEMIC_YEAR_API_URL, academicYearEl, '학년도 API']
-            ];
-
-            for (const [url, el, label] of checks) {
-                await checkOne(url, el, label, 3);
-                await sleep(150);
+            const button = document.getElementById('productionBackendCheckBtn');
+            if (button) { button.disabled = false; button.textContent = '서버 상태 확인'; }
+            if (reset) {
+                productionBackendIdentity = '';
+                for (const [id, label] of PRODUCTION_BACKEND_STATUS_IDS) {
+                    const el = document.getElementById(id);
+                    if (el) { el.textContent = `${label} · 확인 전`; el.style.color = '#cbd5e1'; }
+                }
             }
         }
+
+        function syncProductionBackendCheck() {
+            const context = productionBackendContext();
+            if (productionBackendIdentity && productionBackendIdentity !== context) cancelProductionBackendCheck(true);
+        }
+
+        async function checkProductionBackend() {
+            const context = productionBackendContext();
+            if (!context) { cancelProductionBackendCheck(true); return; }
+            syncProductionBackendCheck();
+            if (productionBackendRun) return;
+            const run = { context, controller: null, finishWait: null };
+            productionBackendRun = run;
+            productionBackendIdentity = context;
+            const current = () => productionBackendRun === run && productionBackendContext() === context;
+            const button = document.getElementById('productionBackendCheckBtn');
+            if (button) { button.disabled = true; button.textContent = '서버 확인 중…'; }
+            const pause = ms => new Promise(resolve => {
+                const finish = () => { clearTimeout(timer); run.finishWait = null; resolve(); };
+                const timer = setTimeout(finish, ms);
+                run.finishWait = finish;
+            });
+            const checks = [GOOGLE_SCRIPT_URL, POINT_API_URL, QUESTION_API_URL, ANNOUNCEMENT_API_URL,
+                ACCOUNT_API_URL, SUBMISSION_API_URL, ACADEMIC_YEAR_API_URL];
+            try {
+                for (let index = 0; index < checks.length && current(); index++) {
+                    const [id, label] = PRODUCTION_BACKEND_STATUS_IDS[index];
+                    const el = document.getElementById(id);
+                    if (!el) continue;
+                    let success = false;
+                    for (let attempt = 1; attempt <= 3 && current(); attempt++) {
+                        el.textContent = attempt === 1 ? `⏳ ${label} 확인 중...` : `⏳ ${label} 재확인 중... (${attempt}/3)`;
+                        el.style.color = '#fde68a';
+                        const controller = new AbortController();
+                        run.controller = controller;
+                        const timer = setTimeout(() => controller.abort(), 8000);
+                        try {
+                            const response = await fetch(checks[index], {
+                                method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                                body: JSON.stringify({ action: 'health' }), cache: 'no-store', signal: controller.signal
+                            });
+                            const data = await response.json();
+                            if (!current()) return;
+                            if (response.ok && data?.success === true && data.backend === 'supabase-edge-function') {
+                                el.textContent = `✅ ${label} v${data.version ?? '?'} 연결됨`;
+                                el.style.color = '#86efac';
+                                success = true;
+                                break;
+                            }
+                        } catch (_) {
+                            if (!current()) return;
+                        } finally {
+                            clearTimeout(timer);
+                            if (run.controller === controller) run.controller = null;
+                        }
+                        if (attempt < 3 && current()) await pause(700 * attempt);
+                    }
+                    if (!current()) return;
+                    if (!success) { el.textContent = `❌ ${label} 연결 실패`; el.style.color = '#fecaca'; }
+                    if (index + 1 < checks.length) await pause(150);
+                }
+            } finally {
+                if (productionBackendRun === run) cancelProductionBackendCheck(productionBackendContext() !== context);
+            }
+        }
+        window.addEventListener('pagehide', () => cancelProductionBackendCheck(true));
+        window.addEventListener('storage', syncProductionBackendCheck);
+        /* PRODUCTION_DIAGNOSTICS_ON_DEMAND_END */
         // 학교 학생 로그인에 사용할 현재 학년도입니다.
         // 서버의 app_settings.current_school_year 값을 자동으로 사용합니다.
         // 2026은 서버 확인 실패 시에만 사용하는 fallback입니다.
@@ -5224,7 +5251,10 @@ window.addEventListener('storage',event=>{
                         body:JSON.stringify({action:'get_public_config'}), cache:'no-store'
                     }, 8000);
                     const y=Number(data.currentSchoolYear);
-                    if(data.success && Number.isInteger(y) && y>=2000 && y<=2100) CURRENT_SCHOOL_YEAR=y;
+                    if(data.success && Number.isInteger(y) && y>=2000 && y<=2100) {
+                        CURRENT_SCHOOL_YEAR=y;
+                        syncDashboardAccess();
+                    }
                 } catch(e) { console.warn('현재 학년도 확인 실패 - fallback 사용:', e); }
                 return CURRENT_SCHOOL_YEAR;
             })();
@@ -5265,6 +5295,8 @@ window.addEventListener('storage',event=>{
         let dashboardRefreshTimer = null;
         let dashboardLastData = null;
         let dashboardRequestSeq = 0;
+        let dashboardInFlight = null;
+        let dashboardOpenContext = null;
 
         // 교사 질문함 UI 캐시
         let teacherQuestionNewAnswerCount = 0;
@@ -5345,6 +5377,7 @@ window.addEventListener('storage',event=>{
                     if(id==='adminToolsModal')closeAdminToolsModal();
                     else if(id==='passwordResetAdminModal')closePasswordResetAdminModal();
                     else if(id==='studentAccountEditModal')closeStudentAccountEditModal();
+                    else if(id==='classDashboardModal')closeClassDashboardModal();
                     else modal.style.display = 'none';
                     event.preventDefault();
                     return;
@@ -5369,6 +5402,10 @@ window.addEventListener('storage',event=>{
         // 서버가 응답하지 않을 때 버튼이 "확인 중..."에 무한정 머무르지 않도록 시간 제한을 둡니다.
         async function fetchJsonWithTimeout(url, options = {}, timeoutMs = 12000) {
             const controller = new AbortController();
+            const externalSignal = options.signal;
+            const abortFromCaller = () => controller.abort();
+            if (externalSignal?.aborted) controller.abort();
+            else externalSignal?.addEventListener('abort', abortFromCaller, { once: true });
             const timer = setTimeout(() => controller.abort(), timeoutMs);
 
             try {
@@ -5402,6 +5439,7 @@ window.addEventListener('storage',event=>{
                 throw error;
             } finally {
                 clearTimeout(timer);
+                externalSignal?.removeEventListener('abort', abortFromCaller);
             }
         }
 
@@ -5551,6 +5589,7 @@ window.addEventListener('storage',event=>{
         }
 
         function setLoggedInUser(user, adminSessionToken = "", studentSessionToken = "") {
+            closeClassDashboardModal();
             cancelWorksheetOriginalPdfOpen();
             const storedUser = { ...(user || {}) };
             if (studentSessionToken) {
@@ -5644,6 +5683,8 @@ window.addEventListener('storage',event=>{
         }
 
         function logoutStudent() {
+            closeClassDashboardModal();
+            cancelProductionBackendCheck(true);
             cancelWorksheetOriginalPdfOpen();
             const user = getLoggedInUser();
             if (user) {
@@ -8583,6 +8624,7 @@ window.addEventListener('storage',event=>{
         }
 
         function updatePrivilegedUiByRole() {
+            syncDashboardAccess();
             syncAdminAccountAccess();
             if (typeof window.lessonUploadSyncAccess === 'function') window.lessonUploadSyncAccess();
             syncAdminToolsMenu();
@@ -8649,6 +8691,7 @@ window.addEventListener('storage',event=>{
                 const data=await fetchJsonWithTimeout(ACADEMIC_YEAR_API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'admin_get_academic_year_status',adminKey:getAdminSessionToken()})},12000);
                 if(!data.success) throw new Error(data.message||'상태 조회 실패');
                 academicYearStatusCache=data; CURRENT_SCHOOL_YEAR=Number(data.currentSchoolYear)||CURRENT_SCHOOL_YEAR;
+                syncDashboardAccess();
                 const next=Number(data.nextSchoolYear)||CURRENT_SCHOOL_YEAR+1;
                 const target=document.getElementById('academicYearTarget'); if(target) target.value=String(next);
                 const confirm=document.getElementById('academicYearConfirm'); if(confirm) confirm.placeholder=`${next} 입력`;
@@ -8698,6 +8741,7 @@ window.addEventListener('storage',event=>{
                 const data=await fetchJsonWithTimeout(ACADEMIC_YEAR_API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'admin_activate_academic_year',adminKey:getAdminSessionToken(),newSchoolYear:next,confirmation})},20000);
                 if(!data.success) throw new Error(data.message||'학년도 전환 실패');
                 CURRENT_SCHOOL_YEAR=Number(data.currentSchoolYear)||next; academicYearConfigPromise=null;
+                syncDashboardAccess();
                 alert(`✅ ${data.message}\n이전 학년도 계정 ${Number(data.archivedAccountCount)||0}명과 제출 ${Number(data.archivedSubmissionCount)||0}건은 그대로 보존되었습니다.`);
                 await loadAcademicYearStatus();
             }catch(e){alert('❌ '+e.message);}
@@ -8965,19 +9009,64 @@ window.addEventListener('storage',event=>{
             else select.value = '';
         }
 
+        // 한 요청이 끝난 뒤 다음 조회를 예약합니다. 닫기·인증·필터 변경은 이전 응답을 무효화합니다.
+        function isClassDashboardOpen() {
+            const modal = document.getElementById('classDashboardModal');
+            return !!modal && getComputedStyle(modal).display !== 'none';
+        }
+
+        function clearClassDashboardData() {
+            dashboardLastData = null;
+            ['dashTotalCount', 'dashSubmittedCount', 'dashMissingCount'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = '-';
+            });
+            const rate = document.getElementById('dashSubmissionRate');
+            if (rate) rate.textContent = '-%';
+            const fill = document.getElementById('dashRateFill');
+            if (fill) fill.style.width = '0%';
+            const missing = document.getElementById('dashboardMissingText');
+            if (missing) missing.value = '';
+            const recent = document.getElementById('dashboardRecentList');
+            if (recent) recent.innerHTML = '<div class="dashboard-empty">반과 차시를 선택하면 제출 기록이 표시됩니다.</div>';
+            ['dashboardRecentCount', 'dashboardUpdatedAt'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = '';
+            });
+        }
+
         function stopDashboardAutoRefresh() {
-            if (dashboardRefreshTimer) {
-                clearInterval(dashboardRefreshTimer);
+            if (dashboardRefreshTimer !== null) {
+                clearTimeout(dashboardRefreshTimer);
                 dashboardRefreshTimer = null;
             }
         }
 
+        function invalidateDashboardRequest(clearData = false) {
+            stopDashboardAutoRefresh();
+            dashboardRequestSeq++;
+            const pending = dashboardInFlight;
+            dashboardInFlight = null;
+            pending?.controller.abort();
+            if (clearData) clearClassDashboardData();
+        }
+
+        function syncDashboardAccess() {
+            if (dashboardOpenContext && (!isFullAdminMode() ||
+                getAdminSessionToken() !== dashboardOpenContext.adminKey ||
+                CURRENT_SCHOOL_YEAR !== dashboardOpenContext.schoolYear ||
+                isAdminMode !== dashboardOpenContext.adminMode)) closeClassDashboardModal();
+        }
+
         function updateDashboardAutoRefresh() {
             stopDashboardAutoRefresh();
-            const modal = document.getElementById('classDashboardModal');
+            syncDashboardAccess();
             const checked = document.getElementById('dashboardAutoRefresh')?.checked === true;
-            if (!checked || !modal || getComputedStyle(modal).display === 'none') return;
-            dashboardRefreshTimer = setInterval(() => refreshClassDashboard(false), 8000);
+            if (!checked || !isClassDashboardOpen() || document.hidden || dashboardInFlight || !getAdminSessionToken()) return;
+            dashboardRefreshTimer = setTimeout(() => {
+                dashboardRefreshTimer = null;
+                refreshClassDashboard(false);
+            }, 8000);
         }
 
         async function openClassDashboardModal() {
@@ -8987,21 +9076,26 @@ window.addEventListener('storage',event=>{
             }
             const modal = document.getElementById('classDashboardModal');
             if (!modal) return;
+            invalidateDashboardRequest(true);
+            dashboardOpenContext = { adminKey: getAdminSessionToken(), schoolYear: CURRENT_SCHOOL_YEAR, adminMode: isAdminMode };
             modal.style.display = 'flex';
             populateDashboardLessonSelect();
             const classSelect = document.getElementById('dashboardClassSelect');
             if (classSelect) classSelect.value = localStorage.getItem(DASHBOARD_CLASS_KEY) || '';
             await refreshClassDashboard(false);
-            updateDashboardAutoRefresh();
         }
 
         function closeClassDashboardModal() {
-            stopDashboardAutoRefresh();
+            invalidateDashboardRequest(true);
+            dashboardOpenContext = null;
             const modal = document.getElementById('classDashboardModal');
             if (modal) modal.style.display = 'none';
+            const classSelect = document.getElementById('dashboardClassSelect');
+            if (classSelect) classSelect.innerHTML = '<option value="">전체 학년</option>';
         }
 
         function onDashboardFilterChanged() {
+            invalidateDashboardRequest(true);
             const classKey = document.getElementById('dashboardClassSelect')?.value || '';
             const lessonKey = document.getElementById('dashboardLessonSelect')?.value || '';
             localStorage.setItem(DASHBOARD_CLASS_KEY, classKey);
@@ -9010,50 +9104,86 @@ window.addEventListener('storage',event=>{
         }
 
         async function refreshClassDashboard(showAlert = false) {
-            if (!isFullAdminMode()) return;
+            syncDashboardAccess();
+            if (!isFullAdminMode() || !isClassDashboardOpen() || document.hidden) return;
             const adminKey = getAdminSessionToken();
             if (!adminKey) {
                 if (showAlert) alert('최고관리자 인증이 필요합니다.');
                 return;
             }
-
-            const requestId = ++dashboardRequestSeq;
-            const classKey = document.getElementById('dashboardClassSelect')?.value || '';
-            const lessonKey = document.getElementById('dashboardLessonSelect')?.value || '';
-
-            try {
-                const data = await fetchJsonWithTimeout(ADMIN_DASHBOARD_API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({
-                        action: 'get_class_dashboard',
-                        adminKey,
-                        schoolYear: CURRENT_SCHOOL_YEAR,
-                        classKey,
-                        lessonKey
-                    })
-                }, 12000);
-
-                if (requestId !== dashboardRequestSeq) return;
-                if (!data?.success) throw new Error(data?.message || '현황판 정보를 불러오지 못했습니다.');
-
-                dashboardLastData = data;
-                populateDashboardClassSelect(data.classes, classKey);
-                renderClassDashboard(data);
-
-                // 저장된 반이 있었지만 첫 조회에서 select에 옵션이 없었던 경우 한 번 재조회
-                const selectedAfter = document.getElementById('dashboardClassSelect')?.value || '';
-                if (!classKey && selectedAfter) {
-                    await refreshClassDashboard(false);
-                    return;
+            if (dashboardInFlight) return dashboardInFlight.promise;
+            stopDashboardAutoRefresh();
+            const request = {
+                id: ++dashboardRequestSeq,
+                controller: new AbortController(),
+                adminKey,
+                schoolYear: CURRENT_SCHOOL_YEAR,
+                adminMode: isAdminMode,
+                classKey: document.getElementById('dashboardClassSelect')?.value || '',
+                lessonKey: document.getElementById('dashboardLessonSelect')?.value || ''
+            };
+            const isCurrent = (checkFilters = true) => dashboardInFlight === request &&
+                request.id === dashboardRequestSeq && !request.controller.signal.aborted &&
+                isClassDashboardOpen() && !document.hidden && isFullAdminMode() &&
+                getAdminSessionToken() === request.adminKey && CURRENT_SCHOOL_YEAR === request.schoolYear &&
+                isAdminMode === request.adminMode && (!checkFilters || (
+                    (document.getElementById('dashboardClassSelect')?.value || '') === request.classKey &&
+                    (document.getElementById('dashboardLessonSelect')?.value || '') === request.lessonKey));
+            dashboardInFlight = request;
+            request.promise = (async () => {
+                let followSelectedClass = false;
+                try {
+                    const data = await fetchJsonWithTimeout(ADMIN_DASHBOARD_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({
+                            action: 'get_class_dashboard',
+                            adminKey: request.adminKey,
+                            schoolYear: request.schoolYear,
+                            classKey: request.classKey,
+                            lessonKey: request.lessonKey
+                        }),
+                        signal: request.controller.signal
+                    }, 12000);
+                    if (!isCurrent()) return;
+                    if (!data?.success) throw new Error(data?.message || '현황판 정보를 불러오지 못했습니다.');
+                    populateDashboardClassSelect(data.classes, request.classKey);
+                    // 처음 받은 반 목록에서 저장된 반을 복원하거나 사라진 반을 해제한 뒤 새 조건으로 조회합니다.
+                    const selectedAfter = document.getElementById('dashboardClassSelect')?.value || '';
+                    if (selectedAfter !== request.classKey) {
+                        followSelectedClass = true;
+                        return;
+                    }
+                    dashboardLastData = data;
+                    renderClassDashboard(data);
+                } catch (e) {
+                    if (!isCurrent()) return;
+                    const msg = e instanceof Error ? e.message : String(e);
+                    document.getElementById('dashboardUpdatedAt').textContent = `⚠️ 현황판 갱신 실패: ${msg}`;
+                    if (showAlert) alert('❌ 현황판 갱신 실패: ' + msg);
+                } finally {
+                    if (dashboardInFlight === request) {
+                        const refreshSelectedClass = followSelectedClass && isCurrent(false);
+                        dashboardInFlight = null;
+                        if (refreshSelectedClass) refreshClassDashboard(false);
+                        else updateDashboardAutoRefresh();
+                    }
                 }
-            } catch (e) {
-                if (requestId !== dashboardRequestSeq) return;
-                const msg = e instanceof Error ? e.message : String(e);
-                document.getElementById('dashboardUpdatedAt').textContent = `⚠️ 현황판 갱신 실패: ${msg}`;
-                if (showAlert) alert('❌ 현황판 갱신 실패: ' + msg);
-            }
+            })();
+            return request.promise;
         }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) invalidateDashboardRequest();
+            else {
+                syncDashboardAccess();
+                if (isClassDashboardOpen()) refreshClassDashboard(false);
+            }
+        });
+        window.addEventListener('pagehide', closeClassDashboardModal);
+        window.addEventListener('storage', event => {
+            if (!event.key || ['current_student', ADMIN_SESSION_KEY, ADMIN_TEMP_SESSION_FLAG].includes(event.key)) closeClassDashboardModal();
+        });
 
         function renderClassDashboard(data) {
             const total = Number(data?.totalStudents || 0);
@@ -9817,11 +9947,13 @@ window.addEventListener('storage',event=>{
         let productionServerPanelDismissed = false;
 
         function dismissProductionServerPanel() {
+            cancelProductionBackendCheck(true);
             productionServerPanelDismissed = true;
             updateProductionServerPanelVisibility();
         }
 
         function updateProductionServerPanelVisibility() {
+            syncProductionBackendCheck();
             const panel = document.getElementById('supabaseTestEnvBanner');
             if (!panel) return;
 
@@ -9846,6 +9978,7 @@ window.addEventListener('storage',event=>{
                 isAdminMode = true;
                 adminKey = credential || "";
             } else {
+                closeClassDashboardModal();
                 isAdminMode = false;
                 adminKey = '';
 
@@ -10957,7 +11090,6 @@ window.addEventListener('storage',event=>{
         applyFloatingWingMode();
         updateProductionServerPanelVisibility();
         loadAcademicYearConfig();
-        checkProductionBackend();
         restoreAuthSession();
         renderUserAuthDisplay();
         if (getLoggedInUser()) { setTimeout(() => loadAnnouncements(false).then(showUnreadAnnouncementsOnLogin), 900 + Math.floor(Math.random()*1500)); }
@@ -11697,12 +11829,100 @@ window.addEventListener('storage',event=>{
     window.lessonUploadSyncAccess();
 })();
 </script>
-<script src="./authoring-runtime.js"></script>
-<script src="./authoring-editor.js"></script>
-<script src="./authoring-submissions.js"></script>
-<script src="./submission-management.js"></script>
-<script src="./platform-manage.js"></script>
+<script>
+/* PLATFORM_MANAGE_LAZY_START — public assets only; module APIs still verify server authorization. */
+(function () {
+    'use strict';
+    const styles=['platform-manage.css','submission-management.css','authoring-editor.css','authoring-submissions.css'];
+    // Keep the existing dependency order. Internal manager tabs share this complete bundle.
+    const scripts=[
+        ['authoring-runtime.js','ScienceAuthoringRuntime',['printReceipts','answerText']],
+        ['authoring-editor.js','LessonAuthoring',['mount','dispose','syncAccess','canLeave']],
+        ['authoring-submissions.js','AuthoringSubmissions',['mount','dispose','syncAccess']],
+        ['submission-management.js','PlatformSubmissions',['mount','dispose','syncAccess']],
+        ['platform-manage.js','PlatformManage',['open','close','syncAccess']]
+    ];
+    const assets=new Map();
+    const token=()=>typeof getAdminSessionToken==='function'?String(getAdminSessionToken()||''):'';
+    const active=()=>typeof isAdminMode!=='undefined' && isAdminMode===true;
+    let manager=null,loading=null,pending=null,watch=null,slow=null,notice=null,message=null,retry=null;
+    function clearTimers(){if(watch)clearInterval(watch);if(slow)clearTimeout(slow);watch=null;slow=null;}
+    function cancel(restoreFocus=false){
+        const previous=pending;pending=null;clearTimers();if(notice)notice.hidden=true;
+        if(restoreFocus && previous?.focus?.isConnected)previous.focus.focus({preventScroll:true});
+    }
+    function show(request,text,failed=false){
+        if(!notice){
+            const panel=document.getElementById('platformManagePanel');if(!panel)return;
+            notice=document.createElement('section');notice.id='platformManageLoader';notice.className='pm-lazy';
+            message=document.createElement('p');message.setAttribute('role','status');message.setAttribute('aria-live','polite');
+            retry=document.createElement('button');retry.type='button';retry.textContent='다시 불러오기';
+            retry.addEventListener('click',()=>{if(pending)open(pending.tab);});
+            const closeButton=document.createElement('button');closeButton.type='button';closeButton.textContent='접기';
+            closeButton.addEventListener('click',()=>cancel(true));
+            notice.append(message,retry,closeButton);panel.before(notice);
+        }
+        notice.hidden=false;notice.setAttribute('aria-busy',String(!failed));message.textContent=text;retry.hidden=!failed;
+    }
+    function load(file,globalName,methods){
+        if(assets.has(file))return assets.get(file);
+        const promise=new Promise((resolve,reject)=>{
+            const element=document.createElement(globalName?'script':'link');
+            if(globalName){element.src='./'+file;element.async=false;}else{element.rel='stylesheet';element.href='./'+file;}
+            function failed(){element.onload=null;element.onerror=null;element.remove();assets.delete(file);reject(new Error('관리 기능 파일을 불러오지 못했습니다. 연결을 확인하고 다시 시도해 주세요.'));}
+            element.onerror=failed;
+            element.onload=()=>{
+                const api=globalName?window[globalName]:null;
+                if(globalName==='PlatformManage')window.PlatformManage=facade;
+                if(globalName && (api===facade || !api || methods.some(name=>typeof api[name]!=='function'))){failed();return;}
+                if(globalName==='PlatformManage')manager=api;
+                element.onload=null;element.onerror=null;resolve();
+            };
+            document.head.append(element);
+        });
+        assets.set(file,promise);return promise;
+    }
+    function ensure(){
+        if(!loading)loading=(async()=>{
+            await Promise.all(styles.map(file=>load(file)));
+            for(const [file,name,methods] of scripts)await load(file,name,methods);
+            return manager;
+        })().catch(error=>{loading=null;throw error;});
+        return loading;
+    }
+    function syncAccess(){
+        if(pending && (!active() || !token() || token()!==pending.auth))cancel();
+        manager?.syncAccess();
+    }
+    async function open(tab='lessons'){
+        const auth=token();if(!auth){syncAccess();return false;}
+        if(manager){cancel();return manager.open(tab);}
+        if(!active()){syncAccess();return false;}
+        const request={auth,tab,focus:pending?.focus || document.activeElement};pending=request;
+        clearTimers();show(request,'관리 기능을 불러오고 있습니다.');
+        watch=setInterval(syncAccess,1000);
+        // Do not remove or retry a still-loading script on a timer: it could execute twice later.
+        slow=setTimeout(()=>{if(pending===request && active() && token()===auth)show(request,'연결이 지연되고 있습니다. 잠시 기다리거나 접은 뒤 다시 열어 주세요.');},20000);
+        try{
+            await ensure();
+            if(pending!==request || !active() || token()!==auth){syncAccess();return false;}
+            if(notice?.contains(document.activeElement) && request.focus?.isConnected)request.focus.focus({preventScroll:true});
+            cancel();return manager.open(tab);
+        }catch(error){
+            if(pending!==request || !active() || token()!==auth){syncAccess();return false;}
+            if(slow)clearTimeout(slow);slow=null;show(request,error.message,true);return false;
+        }
+    }
+    function close(force=false){
+        if(manager?.close(force)===false)return false;
+        cancel(true);return true;
+    }
+    const facade={open,close,syncAccess};
+    window.PlatformManage=facade;
+    window.addEventListener('pagehide',()=>cancel());
+})();
+/* PLATFORM_MANAGE_LAZY_END */
+</script>
 </body>
 </html>
-
 
