@@ -13,6 +13,13 @@
       "icon": "🌌",
       "color": "#7000cc",
       "accentColor": "#ae00ff"
+    },
+    "unit9": {
+      "title": "문제풀이",
+      "description": "과학 개념을 문제에 적용하고 풀이 과정을 점검합니다.",
+      "icon": "📝",
+      "color": "#0284c7",
+      "accentColor": "#6366f1"
     }
   },
   "archivedLessons": {
